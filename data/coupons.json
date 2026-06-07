@@ -1,0 +1,18 @@
+[
+  {
+    "code": "WELCOME10",
+    "discountPercent": 10,
+    "maxUses": -1,
+    "usedCount": 0,
+    "active": true,
+    "expiryDate": "2026-12-31"
+  },
+  {
+    "code": "SUMMER20",
+    "discountPercent": 20,
+    "maxUses": 100,
+    "usedCount": 15,
+    "active": true,
+    "expiryDate": "2026-08-31"
+  }
+]

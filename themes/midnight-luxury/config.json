@@ -1,0 +1,13 @@
+{
+  "name": "Midnight Luxury",
+  "id": "midnight-luxury",
+  "author": "auto-generated",
+  "description": "A premium cinematic dark theme with glassmorphism, soft glow and elevated product cards.",
+  "version": "1.0.0",
+  "colors": {
+    "base": "#0f172a",
+    "surface": "#111827",
+    "accent": "#8b5cf6",
+    "accent2": "#60a5fa"
+  }
+}

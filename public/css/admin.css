@@ -1,0 +1,113 @@
+/* admin.css - Dark theme with gold accent */
+:root {
+  --admin-bg: #0d0d0d; /* dark background */
+  --admin-surface: #1a1a1a; /* card surface */
+  --admin-primary: #d4af37; /* gold */
+  --admin-text: #e0e0e0;
+  --admin-text2: #b0b0b0;
+  --admin-border: #333333;
+  --admin-danger: #ff4d4f;
+  --admin-radius-sm: 6px;
+  --admin-radius: 8px;
+}
+body {
+  background: var(--admin-bg);
+  color: var(--admin-text);
+  font-family: 'Cairo', sans-serif;
+}
+.admin-layout {
+  display: flex;
+  min-height: 100vh;
+}
+.sidebar {
+  width: 260px;
+  background: var(--admin-surface);
+  color: var(--admin-text);
+  overflow-y: auto;
+}
+.sidebar .nav-icon {
+  width: 20px;
+  height: 20px;
+  margin-left: 8px;
+  fill: var(--admin-primary);
+}
+.main-content {
+  flex: 1;
+  background: var(--admin-bg);
+  padding: 24px;
+}
+.topbar {
+  background: var(--admin-surface);
+  padding: 12px 20px;
+  border-radius: var(--admin-radius);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+.topbar .topbar-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--admin-primary);
+}
+.stat-card {
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius);
+  padding: 16px;
+  text-align: center;
+  color: var(--admin-text);
+}
+.stat-card .stat-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+  color: var(--admin-primary);
+}
+.stat-card .stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.stat-card .stat-label {
+  font-size: 0.9rem;
+  color: var(--admin-text2);
+}
+.nav-item.active {
+  background: rgba(212, 175, 55, 0.15);
+}
+.nav-item:hover {
+  background: rgba(212, 175, 55, 0.08);
+}
+/* Table and form styling */
+.admin-table-wrap, .admin-form {
+  background: var(--admin-surface);
+  border-radius: var(--admin-radius);
+  padding: 16px;
+}
+/* Buttons */
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: var(--admin-radius-sm);
+  padding: 8px 14px;
+  font-family: inherit;
+}
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--admin-primary);
+  color: var(--admin-primary);
+}
+.btn-primary {
+  background: var(--admin-primary);
+  color: #000;
+}
+/* Scrollbars */
+*::-webkit-scrollbar {
+  width: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: var(--admin-surface);
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--admin-primary);
+  border-radius: var(--admin-radius-sm);
+}

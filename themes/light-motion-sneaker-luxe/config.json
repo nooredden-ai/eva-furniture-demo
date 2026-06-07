@@ -1,0 +1,12 @@
+{
+  "name": "Light Motion Sneaker Luxe",
+  "id": "light-motion-sneaker-luxe",
+  "author": "auto-generated",
+  "description": "Premium light mode theme for a luxury sneaker storefront with crisp spacing and bold accent blue.",
+  "version": "1.0.0",
+  "colors": {
+    "base": "#f8fafc",
+    "surface": "#ffffff",
+    "accent": "#2563eb"
+  }
+}

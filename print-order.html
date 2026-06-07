@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width,initial-scale=1" />
+      <title>طباعة الطلب</title>
+      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+      <script src="https://unpkg.com/lucide@latest"></script>
+      <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+      <style>
+        :root{--page-bg:#fff;--text:#0f172a;--muted:#6b7280;--accent:#0ea5a4}
+        html,body{height:100%;margin:0;font-family:'Cairo',sans-serif;color:var(--text);background:#f3f4f6}
+        .toolbar{padding:10px 14px;background:#fff;border-bottom:1px solid #e6e9ee;display:flex;gap:10px;align-items:center;justify-content:space-between}
+        .toolbar .actions{display:flex;gap:8px}
+        .btn{padding:8px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;cursor:pointer;font-weight:600}
+        .btn.primary{background:var(--accent);color:#fff;border-color:transparent}
+        .print-container{max-width:1100px;margin:18px auto;padding:8px}
+
+        /* Document card */
+        .doc{background:var(--page-bg);padding:18px;border-radius:6px;margin-bottom:18px;box-shadow:0 2px 8px rgba(2,6,23,0.04);-webkit-print-color-adjust:exact}
+        .doc .head{display:flex;justify-content:space-between;gap:12px;align-items:center}
+        .brand{display:flex;gap:12px;align-items:center}
+        .brand img{height:64px;object-fit:contain}
+        .store-name{font-weight:800;font-size:1.15rem}
+        .doc .meta{text-align:left}
+        .meta div{margin-bottom:6px}
+        .customer{margin-top:14px;display:flex;justify-content:space-between;gap:12px}
+        .customer .left{flex:1}
+        .items{margin-top:14px;width:100%;border-collapse:collapse}
+        .items th,.items td{border:1px solid #eef2f7;padding:10px;text-align:right;font-size:0.98rem}
+        .items th{background:#fafafa;font-weight:800;color:var(--muted)}
+        .item-img{width:64px;height:64px;object-fit:cover;border-radius:6px}
+        .summary{margin-top:12px;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+        .summary .row{display:flex;gap:12px;font-weight:700}
+        .barcode-qr{display:flex;gap:18px;align-items:center;margin-top:12px}
+        .shipping-label{border:2px dashed #e5e7eb;padding:10px;border-radius:6px;margin-top:12px;text-align:center;color:var(--muted)}
+
+        /* Prevent splitting */
+        .doc{page-break-inside:avoid}
+
+        /* Printing sizes */
+        @page { size: A4; margin: 12mm; }
+        @media print{
+          body{background:transparent}
+          .toolbar{display:none !important}
+          .print-container{max-width:100%;margin:0;padding:0}
+          .doc{box-shadow:none;border-radius:0;margin:0;padding:10mm}
+          .doc + .doc{page-break-before:always}
+          .no-print{display:none !important}
+        }
+
+        /* Label (thermal 80mm) */
+        .label .doc{width:80mm;max-width:80mm;padding:6px;margin:0}
+        @media print and (width:80mm){
+          @page{size:80mm auto;margin:4mm}
+          .doc + .doc{page-break-before:always}
+          .items th:nth-child(1),.items td:nth-child(1){display:none}
+          .items th,.items td{font-size:12px;padding:6px}
+        }
+
+        /* Packing slip compact */
+        .packing .items th,.packing .items td{font-size:0.95rem}
+        .packing .check{width:18px;height:18px;border:1px solid #cbd5e1;border-radius:4px;display:inline-block;margin-left:6px}
+
+        /* RTL adjustments */
+        body[dir="rtl"] .meta{text-align:left}
+
+        /* Responsive */
+        @media (max-width:600px){.brand img{height:48px}.items th,.items td{font-size:12px}}
+      </style>
+    </head>
+    <body dir="rtl">
+      <div class="toolbar no-print">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button class="btn" onclick="goBack()"><i data-lucide="arrow-right"></i> العودة للوحة</button>
+          <select id="print-mode" onchange="onModeChange()" class="btn">
+            <option value="invoice">فاتورة (A4)</option>
+            <option value="label">ملصق شحن (80mm)</option>
+            <option value="packing">Packing Slip</option>
+          </select>
+        </div>
+        <div class="actions">
+          <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="auto-print"/> طباعة تلقائية</label>
+          <button class="btn primary" id="do-print" onclick="doPrint()"><i data-lucide="printer"></i> طباعة / حفظ PDF</button>
+        </div>
+      </div>
+
+      <main class="print-container" id="print-root"></main>
+
+      <script>
+        // Helpers
+        function qParam(key){ const u = new URL(window.location.href); return u.searchParams.get(key); }
+        function goBack(){ try{ if (window.opener && !window.opener.closed) { window.close(); window.opener.focus(); window.opener.location = '/admin'; } else { location.href = '/admin'; } } catch(e){ location.href = '/admin'; } }
+        function doPrint(){ window.print(); }
+
+        const selectedMode = qParam('type') || qParam('mode') || 'invoice';
+        const idParam = qParam('id');
+        const idsParam = qParam('ids');
+        const ids = idsParam ? idsParam.split(',').map(s=>s.trim()).filter(Boolean) : (idParam ? [idParam] : []);
+        document.getElementById('print-mode').value = selectedMode;
+
+        async function fetchStore(){ try{ const res = await fetch('/api/settings'); if(!res.ok) throw new Error('settings fetch failed'); return await res.json(); }catch(e){ console.error(e); return null; } }
+        async function fetchOrder(id){ try{ const res = await fetch(`/api/orders/${encodeURIComponent(id)}`); if(!res.ok) return null; return await res.json(); }catch(e){ console.error(e); return null; }
+        }
+
+        function formatCurrency(v, symbol){ try{ return Number(v).toLocaleString('ar-SA') + ' ' + (symbol||''); }catch(e){return v} }
+        function createBarcode(id, target){ try{ JsBarcode(target, String(id), {format:'CODE128', displayValue:true, height:40, fontSize:14}); }catch(e){console.error(e)} }
+        function createQRCode(text, container){ try{ new QRCode(container, {text:text, width:96, height:96}); }catch(e){console.error(e)} }
+
+        function placeholderImg(){ return '/images/branding/placeholder.png'; }
+
+        function buildInvoice(order, store){
+          const currency = store?.currencySymbol || store?.currency || '';
+          const doc = document.createElement('article'); doc.className='doc invoice';
+          doc.innerHTML = `
+            <div class="head">
+              <div class="brand"><img src="${store?.branding?.logo || '/images/branding/logo.png'}" alt="logo" onerror="this.src='${placeholderImg()}'"><div><div class="store-name">${store?.name || 'متجرك'}</div><div style="color:var(--muted)">${store?.phone || ''} • ${store?.email || ''}</div></div></div>
+              <div class="meta"><div><strong>رقم الطلب:</strong> ${order.id}</div><div><strong>التاريخ:</strong> ${order.date}</div><div><strong>الحالة:</strong> ${order.status}</div></div>
+            </div>
+            <div class="customer">
+              <div class="left">
+                <div><strong>العميل:</strong> ${order.customer || '-'}</div>
+                <div><strong>الهاتف:</strong> ${order.phone || '-'}</div>
+                <div><strong>المدينة:</strong> ${order.zoneName || order.zone || '-'}</div>
+                <div><strong>العنوان:</strong> ${order.address || '-'}</div>
+                <div><strong>ملاحظات:</strong> ${order.notes && order.notes.length ? order.notes.join(' | ') : '-'}</div>
+              </div>
+              <div style="text-align:center">
+                <svg id="bc-${order.id}"></svg>
+                <div id="qr-bc-${order.id}"></div>
+              </div>
+            </div>
+            <table class="items"><thead><tr><th>صورة</th><th>المنتج</th><th>الكمية</th><th>السعر</th><th>المجموع</th></tr></thead><tbody>
+            ${ (order.items||[]).map(it=>{
+              const img = it.image || '';
+              const price = it.price || 0;
+              const qty = it.qty || 1;
+              return `<tr><td>${img?`<img src="${img}" class="item-img" onerror="this.src='${placeholderImg()}'"/>`:`-`}</td><td><div style="font-weight:700">${it.name||''}</div><div style="color:var(--muted);font-size:0.9rem">${it.sku||''}</div></td><td>${qty}</td><td>${formatCurrency(price,currency)}</td><td>${formatCurrency(price*qty,currency)}</td></tr>`
+            }).join('') }
+            </tbody></table>
+            <div class="summary">
+              <div class="row">المجموع الفرعي: <span>${formatCurrency(order.subtotal||0,currency)}</span></div>
+              <div class="row">رسوم التوصيل: <span>${formatCurrency(order.shipping||0,currency)}</span></div>
+              ${ order.discount ? `<div class="row">الخصم: <span style="color:green">${formatCurrency(order.discount,currency)}</span></div>` : '' }
+              <div class="row" style="font-size:1.05rem">الإجمالي: <span style="font-weight:900">${formatCurrency(order.total||0,currency)}</span></div>
+              <div class="row">طريقة الدفع: <span>${order.paymentMethod || '-'}</span></div>
+              <div class="row">توقيع المتجر: ____________________</div>
+              <div class="row">شكراً لطلبك من ${store?.name || 'متجرنا'}! نقدر ثقتك.</div>
+            </div>
+          `;
+          // hook barcode/qr
+          setTimeout(()=>{ try{ createBarcode(order.id, document.getElementById(`bc-${order.id}`)); createQRCode(window.location.origin + '/admin?order=' + encodeURIComponent(order.id), document.getElementById(`qr-bc-${order.id}`)); }catch(e){} },50);
+          return doc;
+        }
+
+        function buildLabel(order, store){
+          const doc = document.createElement('article'); doc.className='doc';
+          doc.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:800">${store?.name||'متجرك'}</div><div style="font-weight:900;font-size:1.35rem">${order.id}</div></div>
+            <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center"><div><strong>العميل:</strong> ${order.customer||'-'}</div><div><strong>الهاتف:</strong> ${order.phone||'-'}</div></div>
+            <div style="margin-top:8px"><strong>المنطقة:</strong> ${order.zoneName||order.zone||'-'}</div>
+            <div style="margin-top:8px;font-weight:700;font-size:1rem">العنوان: ${order.address||'-'}</div>
+            <div style="margin-top:8px"><strong>ملاحظات:</strong> ${order.notes && order.notes.length ? order.notes.join(' | ') : '-'}</div>
+            <div style="margin-top:8px"><strong>عدد القطع:</strong> ${(order.items||[]).reduce((s,i)=>s+(i.qty||1),0)}</div>
+            <div style="margin-top:12px;text-align:center"><svg id="bc-l-${order.id}"></svg><div id="qr-l-${order.id}"></div></div>
+            <div class="shipping-label" style="margin-top:12px">مساحة خاصة لشركة التوصيل: ضع هنا ملصق الشركة أو ختمها</div>
+          `;
+          setTimeout(()=>{ try{ createBarcode(order.id, document.getElementById(`bc-l-${order.id}`)); createQRCode(order.id, document.getElementById(`qr-l-${order.id}`)); }catch(e){} },50);
+          return doc;
+        }
+
+        function buildPackingSlip(order, store){
+          const doc = document.createElement('article'); doc.className='doc packing';
+          doc.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:800">Packing Slip</div><div style="font-weight:700">${order.id}</div></div>
+            <div style="margin-top:8px"><strong>العميل:</strong> ${order.customer||'-'} • ${order.phone||'-'}</div>
+            <table class="items" style="margin-top:12px"><thead><tr><th></th><th>المنتج</th><th>SKU</th><th>الكمية</th></tr></thead><tbody>
+            ${ (order.items||[]).map((it,idx)=>{
+              return `<tr><td><span class="check" data-idx="${idx}"></span></td><td>${it.name||''}</td><td>${it.sku||''}</td><td>${it.qty||1}</td></tr>`
+            }).join('') }
+            </tbody></table>
+            <div style="margin-top:12px"><strong>ملاحظات:</strong> ${order.notes && order.notes.length ? order.notes.join(' | ') : '-'}</div>
+            <div style="margin-top:12px;display:flex;gap:18px"><div>تم التجهيز بواسطة: ________</div><div>تم الفحص بواسطة: ________</div></div>
+          `;
+          return doc;
+        }
+
+        async function init(){
+          const root = document.getElementById('print-root');
+          const store = await fetchStore();
+          if (!store) {
+            root.innerHTML = `<div class="doc">خطأ: فشل تحميل إعدادات المتجر.</div>`; return;
+          }
+          if (!ids || ids.length === 0){ root.innerHTML = `<div class="doc">لم يتم تحديد أي طلب للطباعة.</div>`; return; }
+          for (const id of ids){
+            const order = await fetchOrder(id);
+            if (!order){ const missing = document.createElement('div'); missing.className='doc'; missing.innerHTML = `<strong>الطلب ${id} غير موجود.</strong>`; root.appendChild(missing); continue; }
+            // choose builder
+            let node;
+            const mode = (qParam('type') || document.getElementById('print-mode')?.value || 'invoice');
+            if (mode === 'label') node = buildLabel(order, store);
+            else if (mode === 'packing') node = buildPackingSlip(order, store);
+            else node = buildInvoice(order, store);
+            root.appendChild(node);
+          }
+
+          // Auto-print if requested
+          if (ids.length === 1 && document.getElementById('auto-print')?.checked) {
+            setTimeout(()=> window.print(), 400);
+          }
+        }
+
+        function onModeChange(){ const m = document.getElementById('print-mode').value; const u = new URL(window.location.href); u.searchParams.set('type', m); window.location.replace(u.toString()); }
+
+        // init
+        (async ()=>{
+          // keep the toolbar's mode synced to query
+          const mode = qParam('type') || 'invoice'; document.getElementById('print-mode').value = mode;
+          await init();
+        })();
+      </script>
+    </body>
+    </html>

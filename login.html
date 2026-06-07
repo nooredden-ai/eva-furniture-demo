@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>تسجيل الدخول | نور لابز NoorLabs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --saas-bg: #f8fafc;
+      --saas-surface: #ffffff;
+      --saas-border: #e2e8f0;
+      --saas-text: #0f172a;
+      --saas-text-muted: #64748b;
+      --saas-primary: #0f172a; /* Dark sleek aesthetic */
+      --saas-primary-hover: #334155;
+      --saas-accent: #6366f1; /* Blurple accent */
+      --saas-danger: #ef4444;
+      --saas-danger-bg: #fef2f2;
+      --font: 'Cairo', sans-serif;
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--saas-bg);
+      color: var(--saas-text);
+      min-height: 100vh;
+      display: flex;
+      direction: rtl;
+    }
+
+    /* Layout */
+    .split-layout {
+      display: flex;
+      width: 100%;
+      min-height: 100vh;
+    }
+
+    /* Left Branding Area */
+    .branding-side {
+      flex: 1;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px;
+      position: relative;
+      overflow: hidden;
+    }
+    .branding-side::before {
+      content: '';
+      position: absolute;
+      top: -20%; right: -10%; width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(99,102,241,0) 70%);
+      border-radius: 50%; pointer-events: none;
+    }
+    .brand-content {
+      position: relative;
+      z-index: 10;
+      max-width: 500px;
+    }
+    .brand-logo {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 2.4rem; font-weight: 900; letter-spacing: -0.02em; margin-bottom: 24px;
+    }
+    .brand-logo svg { color: var(--saas-accent); width: 42px; height: 42px; }
+    .brand-subtitle {
+      font-size: 1.4rem; font-weight: 600; color: #f8fafc; margin-bottom: 16px; line-height: 1.4;
+    }
+    .brand-tagline {
+      font-size: 1.05rem; color: #94a3b8; line-height: 1.8;
+    }
+
+    /* Right Login Area */
+    .login-side {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px 24px;
+      background: var(--saas-bg);
+    }
+    .login-card {
+      width: 100%;
+      max-width: 440px;
+    }
+    .login-header { text-align: center; margin-bottom: 36px; }
+    .login-header h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; color: var(--saas-text); }
+    .login-header p { color: var(--saas-text-muted); font-size: 0.95rem; }
+
+    /* Form UI */
+    .form-group { position: relative; margin-bottom: 24px; }
+    
+    .floating-input {
+      width: 100%; padding: 16px 16px 12px;
+      background: var(--saas-surface); border: 1px solid var(--saas-border);
+      border-radius: 12px; font-family: var(--font); font-size: 1rem; color: var(--saas-text);
+      transition: all 0.2s ease; direction: ltr; text-align: left;
+      box-shadow: var(--shadow-sm);
+    }
+    .floating-input:focus {
+      outline: none; border-color: var(--saas-accent);
+      box-shadow: 0 0 0 4px rgba(99,102,241,0.1);
+    }
+    .floating-label {
+      position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+      font-size: 0.95rem; color: var(--saas-text-muted); pointer-events: none;
+      transition: all 0.2s ease; background: var(--saas-surface); padding: 0 4px;
+    }
+    
+    .floating-input:focus ~ .floating-label,
+    .floating-input:not(:placeholder-shown) ~ .floating-label {
+      top: 0; font-size: 0.8rem; color: var(--saas-accent); font-weight: 600;
+    }
+
+    .password-toggle {
+      position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+      color: var(--saas-text-muted); cursor: pointer; transition: 0.2s;
+    }
+    .password-toggle:hover { color: var(--saas-text); }
+
+    .form-options {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px;
+    }
+    .remember-me { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; color: var(--saas-text-muted); }
+    .remember-me input { width: 16px; height: 16px; accent-color: var(--saas-accent); cursor: pointer; }
+
+    /* Button */
+    .btn-primary {
+      width: 100%; padding: 14px; background: var(--saas-primary); color: #fff;
+      border: none; border-radius: 12px; font-family: var(--font); font-size: 1.05rem; font-weight: 700;
+      cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-primary:hover {
+      background: var(--saas-primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md);
+    }
+    .btn-primary:active { transform: translateY(0); }
+    
+    .loader {
+      width: 20px; height: 20px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: #fff;
+      border-radius: 50%; animation: spin 0.8s linear infinite; display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-loading .loader { display: block; }
+    .btn-loading .btn-text { display: none; }
+
+    /* Error Message */
+    .error-msg {
+      background: var(--saas-danger-bg); color: var(--saas-danger); padding: 12px 16px;
+      border-radius: 10px; font-size: 0.9rem; margin-bottom: 24px; font-weight: 600;
+      display: none; align-items: center; gap: 8px; border: 1px solid rgba(239,68,68,0.2);
+      animation: slideDown 0.3s ease;
+    }
+    @keyframes slideDown { from{opacity:0; transform:translateY(-10px)} to{opacity:1; transform:translateY(0)} }
+
+    /* Security Hint */
+    .security-hint {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      margin-top: 24px; color: var(--saas-text-muted); font-size: 0.85rem;
+    }
+
+    /* Support Note */
+    .support-note {
+      margin-top: 32px; border-top: 1px solid var(--saas-border); padding-top: 20px;
+      text-align: center; color: var(--saas-text-muted); font-size: 0.85rem;
+    }
+    .support-note a { color: var(--saas-accent); text-decoration: none; font-weight: 600; }
+    .support-note a:hover { text-decoration: underline; }
+
+    /* Mobile Responsive */
+    @media (max-width: 900px) {
+      .split-layout { flex-direction: column; }
+      .branding-side { padding: 40px 24px; flex: none; text-align: center; }
+      .brand-logo { justify-content: center; }
+      .login-side { padding: 32px 20px; align-items: flex-start; }
+      .login-card { max-width: 100%; }
+      .demo-content { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="split-layout">
+  <!-- Left Side: Branding (Visually Right due to RTL text direction? Wait, in RTL flex direction is row-reverse. So the first element in DOM is on the right. Thus .branding-side is on the RIGHT visually, and .login-side is on the LEFT. This is perfectly matching Arabic aesthetics) -->
+  <div class="branding-side">
+    <div class="brand-content">
+      <div class="brand-logo">
+        <i data-lucide="layers"></i> NoorLabs
+      </div>
+      <h2 class="brand-subtitle">منصة التجارة الإلكترونية المتعددة (Multi-Tenant)</h2>
+      <p class="brand-tagline">ندعم المتاجر الحديثة ببنية تحتية قوية وأحدث تقنيات الـ SaaS السحابية.</p>
+    </div>
+  </div>
+
+  <!-- Right Side: Login Form (Visually Left due to RTL) -->
+  <div class="login-side">
+    <div class="login-card">
+      <div class="login-header">
+        <h1>تسجيل الدخول</h1>
+        <p>مرحباً بعودتك! يرجى إدخال بياناتك للدخول</p>
+      </div>
+
+      <div class="error-msg" id="error-msg">
+        <i data-lucide="alert-circle" style="width:18px;height:18px"></i>
+        <span id="error-text"></span>
+      </div>
+
+      <form id="login-form" onsubmit="handleLogin(event)">
+        
+        <div class="form-group">
+          <input type="text" id="username" class="floating-input" required placeholder=" " autocomplete="username" />
+          <label class="floating-label">اسم المستخدم</label>
+        </div>
+
+        <div class="form-group">
+          <input type="password" id="password" class="floating-input" required placeholder=" " autocomplete="current-password" />
+          <label class="floating-label">كلمة المرور</label>
+          <i data-lucide="eye" class="password-toggle" id="toggle-password" onclick="togglePassword()"></i>
+        </div>
+
+        <div class="form-options">
+          <label class="remember-me">
+            <input type="checkbox" id="remember" />
+            تذكرني
+          </label>
+        </div>
+
+        <button type="submit" class="btn-primary" id="submit-btn">
+          <span class="btn-text">دخول للنظام</span>
+          <div class="loader"></div>
+        </button>
+
+        <div class="security-hint">
+          <i data-lucide="lock" style="width:14px;height:14px"></i>
+          اتصال آمن ومشفر بالكامل
+        </div>
+
+      </form>
+
+      <!-- Support Note -->
+      <div class="support-note">
+        <i data-lucide="help-circle" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>
+        تواصل مع مسؤول النظام للحصول على بيانات تسجيل الدخول
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script src="auth.js"></script>
+<script>
+  lucide.createIcons();
+
+  function togglePassword() {
+    const passInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('toggle-password');
+    
+    if (passInput.type === 'password') {
+      passInput.type = 'text';
+      toggleIcon.setAttribute('data-lucide', 'eye-off');
+    } else {
+      passInput.type = 'password';
+      toggleIcon.setAttribute('data-lucide', 'eye');
+    }
+    lucide.createIcons();
+  }
+
+  async function handleLogin(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value;
+    const pass = document.getElementById('password').value;
+    const errPanel = document.getElementById('error-msg');
+    const errText = document.getElementById('error-text');
+    const submitBtn = document.getElementById('submit-btn');
+    
+    errPanel.style.display = 'none';
+    submitBtn.classList.add('btn-loading');
+    submitBtn.disabled = true;
+    
+    try {
+      const res = await Auth.login(username, pass);
+      if (res.ok) {
+        window.location.href = 'admin.html';
+      } else {
+        errText.textContent = res.error;
+        errPanel.style.display = 'flex';
+        submitBtn.classList.remove('btn-loading');
+        submitBtn.disabled = false;
+      }
+    } catch (err2) {
+      console.error(err2);
+      errText.textContent = 'حدث خطأ أثناء الاتصال بالخادم';
+      errPanel.style.display = 'flex';
+      submitBtn.classList.remove('btn-loading');
+      submitBtn.disabled = false;
+    }
+  }
+
+  if (Auth.getSession()) {
+    window.location.href = 'admin.html';
+  }
+</script>
+</body>
+</html>

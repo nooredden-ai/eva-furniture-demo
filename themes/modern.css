@@ -1,0 +1,39 @@
+:root {
+  --primary: #111827;
+  --secondary: #6366f1;
+  --accent: #22c55e;
+  --gold: #f59e0b;
+  --bg: #f7f8fb;
+  --glass: rgba(255,255,255,0.85);
+  --glass-strong: rgba(255,255,255,0.98);
+  --surface: #ffffff;
+  --surface-strong: #f3f4f6;
+  --surface-soft: #eef2ff;
+  --text: #111827;
+  --text-strong: #0f172a;
+  --text-light: #6b7280;
+  --border: rgba(17, 24, 39, 0.08);
+  --shadow-sm: 0 12px 32px rgba(17, 24, 39, 0.07);
+  --shadow: 0 20px 60px rgba(17, 24, 39, 0.1);
+  --shadow-lg: 0 30px 90px rgba(15, 23, 42, 0.12);
+}
+
+body {
+  background: var(--bg);
+}
+
+.hero {
+  background: linear-gradient(180deg, rgba(248,250,252,0.96), rgba(248,250,252,0.88));
+}
+
+.hero-badge {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4338ca;
+}
+
+.cart-sidebar,
+.quick-link-modal,
+.promo-modal,
+.confirmation-page {
+  background: rgba(255,255,255,0.96);
+}

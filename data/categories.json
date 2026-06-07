@@ -1,0 +1,43 @@
+[
+  {
+    "id": "all",
+    "name": "الكل",
+    "emoji": "🛍️"
+  },
+  {
+    "id": "face",
+    "name": "العناية بالوجه",
+    "emoji": "",
+    "image": "/images/categories/1779565055273-H7f2d.jpg"
+  },
+  {
+    "id": "perfume",
+    "name": "العطور",
+    "emoji": "",
+    "image": "/images/categories/1779561221002-JX2Zx.jpg"
+  },
+  {
+    "id": "makeup",
+    "name": "المكياج",
+    "emoji": "",
+    "image": "/images/categories/1779561321725-X0Gma.jpg"
+  },
+  {
+    "id": "hair",
+    "name": "العناية بالشعر",
+    "emoji": "",
+    "image": "/images/categories/1779561542459-Xe43T.jpg"
+  },
+  {
+    "id": "body",
+    "name": "العناية بالجسم",
+    "emoji": "",
+    "image": "/images/categories/1779561533610-HP0Fu.jpg"
+  },
+  {
+    "id": "accessories",
+    "name": "الإكسسوارات",
+    "emoji": "",
+    "image": "/images/categories/1779561603500-l4ujG.jpg"
+  }
+]

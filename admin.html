@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>لوحة التحكم</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="admin.css"/>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="admin-layout">
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="icon-gem" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.54 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> <span id="sidebar-store-name">لوحة التحكم</span>
+      <small>لوحة إدارة المتجر</small>
+    </div>
+  </div>
+
+  <div style="padding: 16px 20px; border-bottom: 1px solid var(--admin-border); display: flex; align-items: center; gap: 12px;">
+      <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--admin-surface2); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;" id="user-emoji"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="icon-user" viewBox="0 0 24 24"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z"/></svg></div>
+    <div>
+      <div style="font-size: 0.9rem; font-weight: 700; color: var(--admin-text);" id="user-name">...</div>
+      <div style="font-size: 0.75rem; color: var(--admin-text2);" id="user-role">...</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">القائمة الرئيسية</div>
+    <div class="nav-item active" data-page="dashboard" id="nav-dashboard">
+       <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-bar-chart-2" viewBox="0 0 24 24"><path d="M3 3v18h18v-2H5V3H3z"/></svg></span> لوحة المعلومات
+    </div>
+    <div class="nav-item" data-page="products" id="nav-products">
+       <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-box" viewBox="0 0 24 24"><path d="M21 16V8l-9-5-9 5v8l9 5 9-5zM12 3.23l7 3.89-7 3.89-7-3.89 7-3.89zM5 10.11l5 2.78v5.5l-5-2.78v-5.5zM14 18.39v-5.5l5-2.78v5.5l-5 2.78z"/></svg></span> المنتجات
+    </div>
+    <div class="nav-item" data-page="categories" id="nav-categories">
+       <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-tag" viewBox="0 0 24 24"><path d="M20 12.41V5a1 1 0 0 0-1-1h-7.41l-9 9 9 9 7.41-7.41zm-9 5.59L5.59 12 12 5.59V18zm0 0h5.59L12 16.41V18z"/></svg></span> التصنيفات
+    </div>
+    <div class="nav-item" data-page="orders" id="nav-orders">
+       <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-file-text" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg></span> الطلبات
+      <span class="nav-badge" id="orders-badge" style="display:none">0</span>
+    </div>
+    <div class="nav-item" data-page="users" id="nav-users">
+       <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2c0-2.21-1.79-4-4-4H11c-2.21 0-4 1.79-4 4v2h10zm-5-9c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/></svg></span> المستخدمين
+    </div>
+    <div class="nav-item" data-page="coupons" id="nav-coupons">
+       <span class="nav-icon"><i data-lucide="gift" style="width:20px;height:20px"></i></span> الكوبونات
+    </div>
+    <div class="nav-item" data-page="settings" id="nav-settings">
+       <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-settings" viewBox="0 0 24 24"><path d="M19.14 12.936a7.5 7.5 0 0 0 .06-.936 7.5 7.5 0 0 0-.06-.936l2.03-1.58a.5.5 0 0 0 .12-.63l-1.91-3.3a.5.5 0 0 0-.6-.22l-2.4.96a7.014 7.014 0 0 0-1.62-.936l-.36-2.54a.5.5 0 0 0-.5-.42h-3.82a.5.5 0 0 0-.5.42l-.36 2.54c-.58.22-1.12.51-1.62.936l-2.4-.96a.5.5 0 0 0-.6.22l-1.91 3.3a.5.5 0 0 0 .12.63l2.03 1.58c-.04.31-.06.63-.06.96s.02.65.06.96l-2.03 1.58a.5.5 0 0 0-.12.63l1.91 3.3c.14.24.44.33.68.22l2.4-.96c.5.426 1.04.716 1.62.936l.36 2.54c.02.24.24.42.5.42h3.82c.26 0 .48-.18.5-.42l.36-2.54c.58-.22 1.12-.51 1.62-.936l2.4.96c.24.11.54.02.68-.22l1.91-3.3a.5.5 0 0 0-.12-.63l-2.03-1.58zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg></span> إعدادات المتجر
+    </div>
+
+    <div class="nav-section" style="margin-top:20px">روابط سريعة</div>
+    <a class="nav-item" href="index.html?store=loulo-beauty" target="_blank" id="nav-open-store">
+       <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-globe" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm6.93 7H16a16.13 16.13 0 0 0-1.55-4.68A8.03 8.03 0 0 1 18.93 9zM12 5c.83 0 1.65.13 2.43.38A13.97 13.97 0 0 0 12 8c-.84 0-1.66-.07-2.43-.32A8.08 8.08 0 0 1 12 5zm-6.93 2h5.55c-.57.92-1.05 1.99-1.42 3.2A13.97 13.97 0 0 0 5.07 7zM5.07 15c.68-1.54 1.43-2.9 2.23-4.1C7.88 12 9 12.69 10.33 13.1A13.94 13.94 0 0 1 5.07 15zm1.44 3.68c-.8-1.2-1.55-2.56-2.23-4.09A13.94 13.94 0 0 0 10.33 13.9c-1.33-.41-2.45-1.1-3.36-2H5.07zM12 19c-.83 0-1.65-.13-2.43-.38A13.97 13.97 0 0 0 12 16c.84 0 1.66.07 2.43.32A8.08 8.08 0 0 1 12 19zm6.93-2h-5.55c.57-.92 1.05-1.99 1.42-3.2A13.97 13.97 0 0 0 18.93 17zM19.43 9c-.68 1.54-1.43 2.9-2.23 4.1-1.24-.71-2.36-1.4-3.69-1.81A13.94 13.94 0 0 1 19.43 9z"/></svg></span> فتح المتجر
+    </a>
+    <div class="nav-item" onclick="Auth.logout()" style="color: var(--admin-danger);">
+       <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-log-out" viewBox="0 0 24 24"><path d="M16 13v-2H7V8l-5 4 5 4v-3h9zM20 3h-8v2h8v14h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg></span> تسجيل خروج
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <p><span id="sidebar-store-name">متجرك</span></p>
+  </div>
+</aside>
+
+<!-- ===== MAIN ===== -->
+<div class="main-content">
+
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title"><i data-lucide="bar-chart" style="width:20px;height:20px;vertical-align:middle;margin-left:8px"></i>لوحة المعلومات</div>
+    <div class="topbar-actions">
+      <button class="topbar-btn btn-outline" onclick="location.reload()"><i data-lucide="refresh-cw" style="width:14px;height:14px;vertical-align:middle;margin-left:6px"></i>تحديث البيانات</button>
+    </div>
+  </div>
+
+  <div class="page-content">
+
+    <!-- ==================== DASHBOARD ==================== -->
+    <div class="admin-page active" id="admin-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card purple">
+          <div class="stat-icon"><i data-lucide="package" style="width:28px;height:28px"></i></div>
+          <div class="stat-value" id="stat-orders">0</div>
+          <div class="stat-label">إجمالي الطلبات</div>
+          <div class="stat-trend up"><i data-lucide="trending-up" style="width:14px;height:14px"></i> +12% هذا الأسبوع</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon"><i data-lucide="banknote" style="width:28px;height:28px"></i></div>
+          <div class="stat-value" id="stat-revenue">0</div>
+          <div class="stat-label">إجمالي الإيرادات</div>
+          <div class="stat-trend up"><i data-lucide="trending-up" style="width:14px;height:14px"></i> +8.5% هذا الأسبوع</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-icon"><i data-lucide="shopping-bag" style="width:28px;height:28px"></i></div>
+          <div class="stat-value" id="stat-products">0</div>
+          <div class="stat-label">المنتجات النشطة</div>
+          <div class="stat-trend up"><i data-lucide="trending-up" style="width:14px;height:14px"></i> +3 منتجات جديدة</div>
+        </div>
+        <div class="stat-card pink">
+          <div class="stat-icon"><i data-lucide="users" style="width:28px;height:28px"></i></div>
+          <div class="stat-value" id="stat-users">0</div>
+          <div class="stat-label">العملاء النشطين</div>
+          <div class="stat-trend up"><i data-lucide="trending-up" style="width:14px;height:14px"></i> +22 عميل جديد</div>
+        </div>
+      </div>
+
+      <!-- Quick Actions Section (NoorLabs Admin 2.0) -->
+      <div class="quick-actions-card">
+        <h3><i data-lucide="zap" style="width:18px;height:18px;vertical-align:middle;margin-left:6px;color:var(--admin-primary)"></i>إجراءات سريعة</h3>
+        <div class="quick-actions-grid">
+          <button type="button" class="qa-btn action-add_products" onclick="navigateTo('products'); openAddProduct();">
+            <i data-lucide="plus-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i>
+            <span>إضافة منتج</span>
+          </button>
+          <button type="button" class="qa-btn action-manage_coupons" onclick="navigateTo('coupons'); openAddCoupon();">
+            <i data-lucide="gift" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i>
+            <span>إنشاء كوبون</span>
+          </button>
+          <button type="button" class="qa-btn action-add_users" onclick="navigateTo('users'); openAddUser();">
+            <i data-lucide="user-plus" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i>
+            <span>إضافة مستخدم</span>
+          </button>
+          <button type="button" class="qa-btn" onclick="window.open('index.html?store=' + STORE_ID, '_blank');">
+            <i data-lucide="external-link" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i>
+            <span>معاينة المتجر</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <h3>الإيرادات والأداء (آخر 6 أشهر)</h3>
+          <div class="chart-wrapper">
+            <canvas id="revenueChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <h3>توزيع حالة الطلبات</h3>
+          <div class="chart-wrapper">
+            <canvas id="ordersChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Orders -->
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <h3><i data-lucide="clock" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>أحدث الطلبات</h3>
+        </div>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>رقم الطلب</th><th>العميل</th><th>المنتجات</th><th>المبلغ</th><th>الحالة</th><th>التاريخ</th>
+            </tr>
+          </thead>
+          <tbody id="recent-orders-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==================== PRODUCTS ==================== -->
+    <div class="admin-page" id="admin-products">
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <h3><i data-lucide="package" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>قائمة المنتجات</h3>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="text" class="table-search" id="product-search" placeholder="بحث عن منتج..."/>
+            <button class="topbar-btn btn-primary" onclick="openAddProduct()"><i data-lucide="plus" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>إضافة منتج</button>
+          </div>
+        </div>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>المنتج</th><th>الفئة</th><th>السعر</th><th>التقييم</th><th>الحالة</th><th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="products-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==================== CATEGORIES ==================== -->
+    <div class="admin-page" id="admin-categories">
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <h3><i data-lucide="tag" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>تصنيفات المتجر</h3>
+          <button class="topbar-btn btn-primary" onclick="openAddCategory()"><i data-lucide="plus" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>إضافة تصنيف</button>
+        </div>
+        <div class="categories-grid" id="categories-container"></div>
+      </div>
+    </div>
+
+    <!-- ==================== ORDERS ==================== -->
+    <div class="admin-page" id="admin-orders">
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <h3><i data-lucide="receipt" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>جميع الطلبات</h3>
+          <div style="display:flex;gap:10px;align-items:center">
+            <input type="text" class="table-search" id="order-search" placeholder="بحث برقم الطلب أو اسم العميل..."/>
+              <button class="topbar-btn btn-primary" id="bulk-print-btn" onclick="bulkDownloadPdf()"><i data-lucide="download" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>تحميل فاتورة PDF جماعي</button>
+          </div>
+        </div>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width:36px"><input type="checkbox" id="orders-select-all" onclick="toggleSelectAllOrders(this)"></th>
+              <th>رقم الطلب</th><th>العميل</th><th>المنتجات</th><th>المبلغ</th><th>الحالة</th><th>التاريخ</th>
+            </tr>
+          </thead>
+          <tbody id="orders-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==================== USERS ==================== -->
+    <div class="admin-page" id="admin-users">
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <h3><i data-lucide="users" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>إدارة المستخدمين</h3>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button class="topbar-btn btn-primary action-add_users" onclick="openAddUser()"><i data-lucide="plus" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>إضافة مستخدم</button>
+          </div>
+        </div>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>الاسم</th><th>اسم المستخدم</th><th>البريد الإلكتروني</th><th>الدور</th><th>تاريخ الانضمام</th><th>الحالة</th>
+            </tr>
+          </thead>
+          <tbody id="users-table-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Roles & Permissions Matrix Card -->
+      <div class="admin-table-wrap action-manage_roles_permissions" style="margin-top:24px;" id="roles-permissions-card">
+        <div class="table-header" style="flex-wrap: wrap; gap: 15px;">
+          <div>
+            <h3><i data-lucide="shield-check" style="width:18px;height:18px;vertical-align:middle;margin-left:6px;color:var(--admin-primary)"></i>صلاحيات الأدوار والمسؤوليات</h3>
+            <p style="color:var(--admin-text2);font-size:12px;margin-top:4px">تحكم في الصلاحيات المتاحة لكل دور في لوحة التحكم (متاح للمسؤولين فقط)</p>
+          </div>
+          <button class="topbar-btn btn-primary btn-active-scale" onclick="savePermissionsMatrix(this)">
+            <i data-lucide="save" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>حفظ صلاحيات الأدوار
+          </button>
+        </div>
+        
+        <table class="admin-table" id="permissions-matrix-table">
+          <thead>
+            <tr>
+              <th style="width:250px">مجموعة الصلاحيات</th>
+              <th style="text-align:center">مدير عام المنصة (Super Admin)</th>
+              <th style="text-align:center">مالك متجر (Store Owner)</th>
+              <th style="text-align:center">مدير متجر (Manager)</th>
+              <th style="text-align:center">موظف (Employee)</th>
+              <th style="text-align:center">دعم فني (Support Agent)</th>
+            </tr>
+          </thead>
+          <tbody id="permissions-matrix-body">
+            <!-- Dynamically Rendered via admin.js -->
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- ==================== COUPONS ==================== -->
+    <div class="admin-page" id="admin-coupons">
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <h3><i data-lucide="gift" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>إدارة الكوبونات</h3>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button class="topbar-btn btn-primary" onclick="openAddCoupon()"><i data-lucide="plus" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>إضافة كوبون</button>
+          </div>
+        </div>
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>كود الخصم</th><th>نسبة الخصم</th><th>الحالة</th><th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="coupons-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ==================== SETTINGS ==================== -->
+    <div class="admin-page" id="admin-settings">
+      <div class="settings-wrap">
+
+        <!-- Settings Header -->
+        <div class="settings-header-banner">
+          <div>
+            <h2><i data-lucide="settings" style="width:24px;height:24px;color:var(--admin-primary);vertical-align:middle;margin-left:8px"></i>إعدادات المتجر</h2>
+            <p>خصّص هوية متجرك، ألوانه، عملته، وبياناته</p>
+          </div>
+          <div id="settings-live-badge" class="live-badge">معاينة مباشرة</div>
+        </div>
+
+        <!-- Settings Tabs -->
+        <div class="settings-tabs" id="settings-tabs">
+          <button class="stab active" data-tab="identity" onclick="switchSettingsTab('identity')"><i data-lucide="tag" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>الهوية</button>
+          <button class="stab" data-tab="branding" onclick="switchSettingsTab('branding')"><i data-lucide="palette" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>التصميم</button>
+          <button class="stab" data-tab="regional" onclick="switchSettingsTab('regional')"><i data-lucide="globe" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>الدولة والعملة</button>
+          <button class="stab" data-tab="content" onclick="switchSettingsTab('content')"><i data-lucide="file-text" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>المحتوى</button>
+          <button class="stab" data-tab="contact" onclick="switchSettingsTab('contact')"><i data-lucide="phone" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>التواصل</button>
+          <button class="stab" data-tab="media" onclick="switchSettingsTab('media')"><i data-lucide="image" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>الوسائط</button>
+          <button class="stab" data-tab="payments" onclick="switchSettingsTab('payments')"><i data-lucide="credit-card" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>بوابات الدفع</button>
+        </div>
+
+        <!-- ---- TAB: Identity ---- -->
+        <div class="settings-tab-content active" id="stab-identity">
+          <div class="settings-section">
+            <h3><i data-lucide="tag" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>هوية المتجر</h3>
+            <div class="settings-grid">
+              <div class="form-row">
+                <label>اسم المتجر *</label>
+                <input type="text" id="st-name" placeholder="مثال: متجرك" oninput="livePreviewText()"/>
+              </div>
+              <div class="form-row">
+                <label>الوصف الفرعي (slogan)</label>
+                <input type="text" id="st-subtitle" placeholder="متجر التجميل والعناية"/>
+              </div>
+              <div class="form-row" style="grid-column:1/-1">
+                <label>وصف المتجر</label>
+                <textarea id="st-description" rows="3" placeholder="وصف مفصّل عن المتجر يظهر في الصفحة الرئيسية..."></textarea>
+              </div>
+              <div class="form-row" style="grid-column:1/-1">
+                <label>وصف SEO (للمحركات البحثية)</label>
+                <input type="text" id="st-seo-desc" placeholder="وصف قصير يظهر في نتائج البحث..."/>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---- TAB: Branding ---- -->
+        <div class="settings-tab-content" id="stab-branding">
+          <div class="settings-section">
+            <h3><i data-lucide="palette" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>ألوان التصميم</h3>
+            <p class="settings-hint">التغيير يُطبَّق فورياً كمعاينة حية — احفظ لتثبيت التغييرات</p>
+
+            <div class="color-preview-bar" id="color-preview-bar">
+              <div class="cpb-swatch" id="cpb-primary" title="Primary"></div>
+              <div class="cpb-swatch" id="cpb-secondary" title="Secondary"></div>
+              <div class="cpb-swatch" id="cpb-text" title="Text"></div>
+              <div class="cpb-swatch" id="cpb-subtext" title="Subtext"></div>
+              <div class="cpb-gradient" id="cpb-gradient"></div>
+            </div>
+
+            <div class="settings-grid">
+              <div class="form-row">
+                <label>اللون الرئيسي</label>
+                <div class="color-input-group">
+                  <input type="color" id="st-primary" oninput="onPrimaryChange(this.value)"/>
+                  <input type="text" id="st-primary-hex" placeholder="#6C3CE1" oninput="onPrimaryHexChange(this.value)"/>
+                </div>
+              </div>
+              <div class="form-row">
+                <label>اللون الثانوي</label>
+                <div class="color-input-group">
+                  <input type="color" id="st-secondary" oninput="onSecondaryChange(this.value)"/>
+                  <input type="text" id="st-secondary-hex" placeholder="#E84393" oninput="onSecondaryHexChange(this.value)"/>
+                </div>
+              </div>
+              <div class="form-row">
+                <label>لون النص الرئيسي</label>
+                <div class="color-input-group">
+                  <input type="color" id="st-text-color" oninput="onTextColorChange(this.value)"/>
+                  <input type="text" id="st-text-color-hex" placeholder="#0F172A" oninput="onTextColorHexChange(this.value)"/>
+                </div>
+              </div>
+              <div class="form-row">
+                <label>لون النص الثانوي</label>
+                <div class="color-input-group">
+                  <input type="color" id="st-subtext-color" oninput="onSubtextColorChange(this.value)"/>
+                  <input type="text" id="st-subtext-color-hex" placeholder="#475569" oninput="onSubtextColorHexChange(this.value)"/>
+                </div>
+              </div>
+            </div>
+
+            <!-- Preset Themes -->
+            <div style="margin-top:20px">
+              <label style="font-size:0.85rem;font-weight:600;color:var(--admin-text2);display:block;margin-bottom:12px">ثيمات جاهزة</label>
+              <div class="theme-presets" id="theme-presets">
+                <div class="theme-preset" onclick="applyPreset('#6C3CE1','#E84393')" title="بنفسجي وردي">
+                  <div style="background:#6C3CE1"></div><div style="background:#E84393"></div>
+                </div>
+                <div class="theme-preset" onclick="applyPreset('#0D47A1','#FF6F00')" title="أزرق برتقالي">
+                  <div style="background:#0D47A1"></div><div style="background:#FF6F00"></div>
+                </div>
+                <div class="theme-preset" onclick="applyPreset('#1B5E20','#C9A96E')" title="أخضر ذهبي">
+                  <div style="background:#1B5E20"></div><div style="background:#C9A96E"></div>
+                </div>
+                <div class="theme-preset" onclick="applyPreset('#B71C1C','#F57F17')" title="أحمر أصفر">
+                  <div style="background:#B71C1C"></div><div style="background:#F57F17"></div>
+                </div>
+                <div class="theme-preset" onclick="applyPreset('#004D40','#80DEEA')" title="أخضر داكن سماوي">
+                  <div style="background:#004D40"></div><div style="background:#80DEEA"></div>
+                </div>
+                <div class="theme-preset" onclick="applyPreset('#311B92','#F48FB1')" title="بنفسجي داكن زهري">
+                  <div style="background:#311B92"></div><div style="background:#F48FB1"></div>
+                </div>
+                <div class="theme-preset" onclick="applyPreset('#1A237E','#FFD54F')" title="كحلي ذهبي">
+                  <div style="background:#1A237E"></div><div style="background:#FFD54F"></div>
+                </div>
+                <div class="theme-preset" onclick="applyPreset('#37474F','#80CBC4')" title="رمادي فيروزي">
+                  <div style="background:#37474F"></div><div style="background:#80CBC4"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---- TAB: Regional ---- -->
+        <div class="settings-tab-content" id="stab-regional">
+          <div class="settings-section">
+            <h3><i data-lucide="globe" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>إعدادات الدولة والعملة</h3>
+            <p class="settings-hint">هذه الإعدادات تتحكم في رمز العملة وتنسيق الأسعار في جميع أنحاء المتجر</p>
+
+            <div class="settings-grid">
+              <div class="form-row">
+                <label><i data-lucide="map" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>الدولة</label>
+                <select id="st-country" onchange="onCountryChange()">
+                  <!-- Populated by JS -->
+                </select>
+              </div>
+              <div class="form-row">
+                <label><i data-lucide="dollar-sign" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>رمز العملة</label>
+                <div class="currency-display" id="currency-display">
+                  <span class="currency-symbol-big" id="currency-symbol-preview">₪</span>
+                  <div>
+                    <div class="currency-code" id="currency-code-preview">ILS</div>
+                    <div class="currency-name" id="currency-name-preview">شيكل إسرائيلي جديد</div>
+                  </div>
+                </div>
+              </div>
+              <div class="form-row">
+                <label>رمز مخصص (اختياري)</label>
+                <input type="text" id="st-currency-symbol-override" placeholder="اتركه فارغاً لاستخدام الرمز الافتراضي للدولة" maxlength="10"/>
+                <small style="color:var(--admin-text2);font-size:0.78rem;margin-top:4px;display:block">إذا أردت رمزاً مختلفاً عن الافتراضي، مثل: ر.س بدلاً من SAR</small>
+              </div>
+            </div>
+
+            <!-- Price Preview -->
+            <div class="price-preview-box">
+              <div class="ppb-label">معاينة تنسيق الأسعار</div>
+              <div class="ppb-examples">
+                <div class="ppb-item"><span class="ppb-amount" id="ppb-1">99 ₪</span><span class="ppb-desc">سعر عادي</span></div>
+                <div class="ppb-item"><span class="ppb-amount" id="ppb-2">1,250 ₪</span><span class="ppb-desc">سعر مرتفع</span></div>
+                <div class="ppb-item"><span class="ppb-amount" id="ppb-3">15 ₪</span><span class="ppb-desc">رسوم شحن</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---- TAB: Content ---- -->
+        <div class="settings-tab-content" id="stab-content">
+          <div class="settings-section">
+            <h3><i data-lucide="file-text" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>محتوى الواجهة الرئيسية</h3>
+            <div class="settings-grid">
+              <!-- Visual Theme Gallery (NoorLabs Admin 2.0) -->
+              <div class="form-row theme-gallery-row" style="grid-column:1/-1;">
+                <h4 class="theme-gallery-title"><i data-lucide="palette" style="width:20px;height:20px;vertical-align:middle;margin-left:6px;color:var(--admin-primary)"></i>تخصيص مظهر المتجر (معرض الثيمات)</h4>
+                <p class="theme-gallery-subtitle">اختر وعاين وجرّب من بين باقة ثيمات تم تصميمها بعناية لتناسب هوية متجرك.</p>
+                
+                <!-- Hidden select to keep existing JS logic intact -->
+                <select id="st-theme-select" style="display:none">
+                  <option value="calm">هادئ (Calm)</option>
+                  <option value="modern">حديث (Modern)</option>
+                  <option value="luxury">فاخر (Luxury)</option>
+                  <option value="minimal">بسيط (Minimal)</option>
+                  <option value="signature">Signature - بتوقيع لويلو</option>
+                  <option value="noorlabs-signature">NoorLabs Signature - بتوقيع نور لابس</option>
+                </select>
+
+                <div class="theme-gallery-grid">
+                  <!-- Card 1: Calm -->
+                  <div class="theme-gallery-card" data-theme-id="calm">
+                    <div class="theme-card-preview calm-preview">
+                      <div class="preview-palette">
+                        <span style="background:#335c7d"></span>
+                        <span style="background:#5d7b94"></span>
+                        <span style="background:#f5f7f9"></span>
+                      </div>
+                    </div>
+                    <div class="theme-card-info">
+                      <div class="theme-card-header">
+                        <h5>هادئ (Calm)</h5>
+                        <span class="theme-active-badge"><i data-lucide="check" style="width:12px;height:12px;margin-left:4px"></i>مفعّل حالياً</span>
+                      </div>
+                      <p>تصميم متوازن وناعم بألوان مريحة ومثالي للمتاجر العامة والمنوعة.</p>
+                      <div class="theme-card-actions">
+                        <button type="button" class="btn-theme-action btn-preview-theme" onclick="previewTheme('calm')">معاينة</button>
+                        <button type="button" class="btn-theme-action btn-select-theme" onclick="selectThemeCard('calm')">تفعيل الثيم</button>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Card 2: Modern -->
+                  <div class="theme-gallery-card" data-theme-id="modern">
+                    <div class="theme-card-preview modern-preview">
+                      <div class="preview-palette">
+                        <span style="background:#111827"></span>
+                        <span style="background:#4b5563"></span>
+                        <span style="background:#f9fafb"></span>
+                      </div>
+                    </div>
+                    <div class="theme-card-info">
+                      <div class="theme-card-header">
+                        <h5>حديث (Modern)</h5>
+                        <span class="theme-active-badge"><i data-lucide="check" style="width:12px;height:12px;margin-left:4px"></i>مفعّل حالياً</span>
+                      </div>
+                      <p>خطوط عصرية حادة ومظهر تقني متميز للأجهزة الذكية والألبسة.</p>
+                      <div class="theme-card-actions">
+                        <button type="button" class="btn-theme-action btn-preview-theme" onclick="previewTheme('modern')">معاينة</button>
+                        <button type="button" class="btn-theme-action btn-select-theme" onclick="selectThemeCard('modern')">تفعيل الثيم</button>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Card 3: Luxury -->
+                  <div class="theme-gallery-card" data-theme-id="luxury">
+                    <div class="theme-card-preview luxury-preview">
+                      <div class="preview-palette">
+                        <span style="background:#78350f"></span>
+                        <span style="background:#b45309"></span>
+                        <span style="background:#fffbeb"></span>
+                      </div>
+                    </div>
+                    <div class="theme-card-info">
+                      <div class="theme-card-header">
+                        <h5>فاخر (Luxury)</h5>
+                        <span class="theme-active-badge"><i data-lucide="check" style="width:12px;height:12px;margin-left:4px"></i>مفعّل حالياً</span>
+                      </div>
+                      <p>مظهر ثري بلمسات ذهبية دافئة وراقية للعطور ومستحضرات التجميل.</p>
+                      <div class="theme-card-actions">
+                        <button type="button" class="btn-theme-action btn-preview-theme" onclick="previewTheme('luxury')">معاينة</button>
+                        <button type="button" class="btn-theme-action btn-select-theme" onclick="selectThemeCard('luxury')">تفعيل الثيم</button>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Card 4: Minimal -->
+                  <div class="theme-gallery-card" data-theme-id="minimal">
+                    <div class="theme-card-preview minimal-preview">
+                      <div class="preview-palette">
+                        <span style="background:#0f172a"></span>
+                        <span style="background:#64748b"></span>
+                        <span style="background:#ffffff"></span>
+                      </div>
+                    </div>
+                    <div class="theme-card-info">
+                      <div class="theme-card-header">
+                        <h5>بسيط (Minimal)</h5>
+                        <span class="theme-active-badge"><i data-lucide="check" style="width:12px;height:12px;margin-left:4px"></i>مفعّل حالياً</span>
+                      </div>
+                      <p>تصميم خام يركز بالكامل على المنتجات خالي من التعقيدات والتشتيت البصري.</p>
+                      <div class="theme-card-actions">
+                        <button type="button" class="btn-theme-action btn-preview-theme" onclick="previewTheme('minimal')">معاينة</button>
+                        <button type="button" class="btn-theme-action btn-select-theme" onclick="selectThemeCard('minimal')">تفعيل الثيم</button>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Card 5: Signature -->
+                  <div class="theme-gallery-card" data-theme-id="signature">
+                    <div class="theme-card-preview signature-preview">
+                      <div class="preview-palette">
+                        <span style="background:#6c3ce1"></span>
+                        <span style="background:#e84393"></span>
+                        <span style="background:#f8fafc"></span>
+                      </div>
+                    </div>
+                    <div class="theme-card-info">
+                      <div class="theme-card-header">
+                        <h5>Signature (لويلو)</h5>
+                        <span class="theme-active-badge"><i data-lucide="check" style="width:12px;height:12px;margin-left:4px"></i>مفعّل حالياً</span>
+                      </div>
+                      <p>التصميم الكلاسيكي الأصلي لمنصة لويلو بتدرجات ألوان وردية وبنفسجية زاهية.</p>
+                      <div class="theme-card-actions">
+                        <button type="button" class="btn-theme-action btn-preview-theme" onclick="previewTheme('signature')">معاينة</button>
+                        <button type="button" class="btn-theme-action btn-select-theme" onclick="selectThemeCard('signature')">تفعيل الثيم</button>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Card 6: NoorLabs Signature -->
+                  <div class="theme-gallery-card" data-theme-id="noorlabs-signature">
+                    <div class="theme-card-preview noorlabs-preview">
+                      <div class="preview-palette">
+                        <span style="background:#6d28d9"></span>
+                        <span style="background:#7c3aed"></span>
+                        <span style="background:#fafafa"></span>
+                      </div>
+                    </div>
+                    <div class="theme-card-info">
+                      <div class="theme-card-header">
+                        <h5>NoorLabs Signature</h5>
+                        <span class="theme-active-badge"><i data-lucide="check" style="width:12px;height:12px;margin-left:4px"></i>مفعّل حالياً</span>
+                      </div>
+                      <p>ثيم نور لابس الحصري باللون البنفسجي، Cairo، ومساحات بيضاء وتجربة مستخدم فاخرة.</p>
+                      <div class="theme-card-actions">
+                        <button type="button" class="btn-theme-action btn-preview-theme" onclick="previewTheme('noorlabs-signature')">معاينة</button>
+                        <button type="button" class="btn-theme-action btn-select-theme" onclick="selectThemeCard('noorlabs-signature')">تفعيل الثيم</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="form-row">
+                <label>عنوان البانر الرئيسي</label>
+                <input type="text" id="st-hero-title" placeholder="جمالك يستحق"/>
+              </div>
+              <div class="form-row">
+                <label>الكلمة البارزة (Highlight)</label>
+                <input type="text" id="st-hero-hl" placeholder="الأفضل دائماً"/>
+              </div>
+              <div class="form-row" style="grid-column:1/-1">
+                <label>وصف البانر</label>
+                <textarea id="st-hero-text" rows="3" placeholder="نص ترحيبي يظهر أسفل عنوان البانر..."></textarea>
+              </div>
+              <div class="form-row" style="grid-column:1/-1">
+                <label>محتوى صفحة من نحن</label>
+                <textarea id="st-about-text" rows="4" placeholder="هذا النص سيظهر في نافذة من نحن..."></textarea>
+              </div>
+              <div class="form-row" style="grid-column:1/-1">
+                <label>محتوى صفحة سياسة الخصوصية</label>
+                <textarea id="st-privacy-text" rows="4" placeholder="هذا النص سيظهر في نافذة سياسة الخصوصية..."></textarea>
+              </div>
+              <div class="form-row" style="grid-column:1/-1">
+                <label>محتوى صفحة الشروط والأحكام</label>
+                <textarea id="st-terms-text" rows="4" placeholder="هذا النص سيظهر في نافذة الشروط والأحكام..."></textarea>
+              </div>
+              <div class="form-row" style="grid-column:1/-1;padding:18px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.18);border-radius:18px;margin-bottom:16px">
+                <h4 style="margin:0 0 8px 0;color:#111827;font-size:1rem;font-weight:700">البطاقات التعريفية في الصفحة الرئيسية</h4>
+                <p style="margin:0 0 12px 0;color:var(--admin-text2);font-size:0.95rem;line-height:1.5;">يمكنك تعديل أو حذف أي بطاقة من بطاقات المزايا الرئيسية في الواجهة.</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <div>
+                    <label>بطاقة 1 - العنوان</label>
+                    <input type="text" id="st-feature-1-title" placeholder="توصيل سريع" />
+                  </div>
+                  <div>
+                    <label>بطاقة 1 - الوصف</label>
+                    <input type="text" id="st-feature-1-text" placeholder="خلال 24-48 ساعة لجميع مناطق المملكة" />
+                  </div>
+                  <div>
+                    <label>بطاقة 2 - العنوان</label>
+                    <input type="text" id="st-feature-2-title" placeholder="دفع آمن" />
+                  </div>
+                  <div>
+                    <label>بطاقة 2 - الوصف</label>
+                    <input type="text" id="st-feature-2-text" placeholder="جميع وسائل الدفع الإلكتروني مقبولة" />
+                  </div>
+                  <div>
+                    <label>بطاقة 3 - العنوان</label>
+                    <input type="text" id="st-feature-3-title" placeholder="إرجاع مجاني" />
+                  </div>
+                  <div>
+                    <label>بطاقة 3 - الوصف</label>
+                    <input type="text" id="st-feature-3-text" placeholder="سياسة إرجاع مرنة خلال 14 يوم" />
+                  </div>
+                  <div>
+                    <label>بطاقة 4 - العنوان</label>
+                    <input type="text" id="st-feature-4-title" placeholder="منتجات أصلية" />
+                  </div>
+                  <div>
+                    <label>بطاقة 4 - الوصف</label>
+                    <input type="text" id="st-feature-4-text" placeholder="100% منتجات أصلية مع ضمان الجودة" />
+                  </div>
+                </div>
+              </div>
+              <div class="form-row" style="grid-column:1/-1">
+                <label>عرض مميز يظهر عند فتح المتجر</label>
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                  <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="st-promo-active"/> تفعيل العرض</label>
+                  <select id="st-promo-type" style="width:160px">
+                    <option value="banner">شريط علوي</option>
+                    <option value="badge">شارة مميزة</option>
+                    <option value="modal">نافذة منبثقة</option>
+                  </select>
+                </div>
+                <input type="text" id="st-promo-title" placeholder="عنوان العرض (مثال: تخفيض الصيف)" style="margin-bottom:8px" />
+                <input type="text" id="st-promo" placeholder="نص العرض القصير" style="margin-bottom:8px" />
+                <input type="text" id="st-promo-value" placeholder="قيمة العرض (مثال: 20% أو خصم 50 ر.س)" />
+                <small style="color:var(--admin-text2);display:block;margin-top:8px">يمكنك تفعيل هذا العرض ليظهر تلقائياً أمام الزبائن عند زيارة المتجر.</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---- TAB: Contact ---- -->
+        <div class="settings-tab-content" id="stab-contact">
+          <div class="settings-section">
+            <h3><i data-lucide="phone" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>معلومات التواصل</h3>
+            <div class="settings-grid">
+              <div class="form-row">
+                <label>رقم الهاتف</label>
+                <input type="text" id="st-phone" placeholder="059-000-0000"/>
+              </div>
+              <div class="form-row">
+                <label>البريد الإلكتروني</label>
+                <input type="email" id="st-email" placeholder="hello@store.ps"/>
+              </div>
+              <div class="form-row">
+                <label>واتساب (الرقم الكامل بالكود الدولي)</label>
+                <input type="text" id="st-whatsapp" placeholder="970599000000"/>
+              </div>
+              <div class="form-row">
+                <label>العنوان</label>
+                <input type="text" id="st-address" placeholder="رام الله، فلسطين"/>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---- TAB: Media ---- -->
+        <div class="settings-tab-content" id="stab-media">
+          <div class="settings-header-banner" style="background:var(--admin-surface2);margin-bottom:20px;border-radius:12px;padding:20px">
+            <div>
+              <h3 style="margin:0"><i data-lucide="image" style="width:20px;height:20px;color:var(--admin-primary);vertical-align:middle;margin-left:8px"></i>إدارة هوية المتجر المرئية</h3>
+              <p style="margin:5px 0 0 0;font-size:0.9rem;color:var(--admin-text2)">أضف الشعار، الأيقونة، البانرات الرئيسية والترويجية</p>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <!-- Logo -->
+            <div class="settings-section">
+              <h4>شعار المتجر (Logo)</h4>
+              <div id="dropZone-logo" class="image-drop-zone" onclick="document.getElementById('brand-logo-file').click()">
+                <input type="file" id="brand-logo-file" accept="image/*" hidden onchange="uploadBrandingImage(this, 'logo')" />
+                <div id="msg-logo" class="drop-message">
+                  <i data-lucide="upload-cloud" style="width:36px;height:36px;opacity:0.45"></i>
+                  <p>اسحب الشعار هنا أو <span style="color:var(--admin-primary);font-weight:600">اضغط للرفع</span></p>
+                </div>
+                <div id="previewWrap-logo" class="image-preview-wrap" style="display:none">
+                  <img id="previewImg-logo" alt="الشعار" style="max-height:100px" />
+                  <div class="image-preview-actions">
+                    <button type="button" class="image-action-btn image-remove-btn" onclick="removeBrandingImage(event, 'logo')"><i data-lucide="trash-2" style="width:14px;height:14px"></i> إزالة</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Favicon -->
+            <div class="settings-section">
+              <h4>أيقونة المتصفح (Favicon)</h4>
+              <div id="dropZone-favicon" class="image-drop-zone" onclick="document.getElementById('brand-favicon-file').click()">
+                <input type="file" id="brand-favicon-file" accept="image/*" hidden onchange="uploadBrandingImage(this, 'favicon')" />
+                <div id="msg-favicon" class="drop-message">
+                  <i data-lucide="upload-cloud" style="width:36px;height:36px;opacity:0.45"></i>
+                  <p>اسحب الأيقونة أو <span style="color:var(--admin-primary);font-weight:600">اضغط للرفع</span></p>
+                </div>
+                <div id="previewWrap-favicon" class="image-preview-wrap" style="display:none">
+                  <img id="previewImg-favicon" alt="الأيقونة" style="max-height:60px;width:60px;border-radius:8px;object-fit:contain;background:#fff;padding:4px" />
+                  <div class="image-preview-actions">
+                    <button type="button" class="image-action-btn image-remove-btn" onclick="removeBrandingImage(event, 'favicon')"><i data-lucide="trash-2" style="width:14px;height:14px"></i> إزالة</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hero Banners -->
+          <div class="settings-section" style="margin-top:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+              <h4>البانرات الرئيسية (Hero Banners)</h4>
+              <div>
+                <button class="topbar-btn btn-outline btn-sm" onclick="document.getElementById('brand-hero-file').click()"><i data-lucide="upload" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>رفع بانر رئيسي</button>
+                <input type="file" id="brand-hero-file" accept="image/*" hidden onchange="uploadBrandingImage(this, 'hero')" />
+              </div>
+            </div>
+            <div id="hero-banners-list" style="display:flex;flex-direction:column;gap:15px"></div>
+          </div>
+
+          <!-- Promo Banners -->
+          <div class="settings-section" style="margin-top:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px">
+              <h4>البانرات الترويجية (Promo Banners)</h4>
+              <div>
+                <button class="topbar-btn btn-outline btn-sm" onclick="document.getElementById('brand-promo-file').click()"><i data-lucide="upload" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>رفع بانر ترويجي</button>
+                <input type="file" id="brand-promo-file" accept="image/*" hidden onchange="uploadBrandingImage(this, 'promo')" />
+              </div>
+            </div>
+            <div id="promo-banners-list" style="display:flex;flex-direction:column;gap:15px"></div>
+          </div>
+
+        </div>
+
+        <!-- ---- TAB: Payments ---- -->
+        <div class="settings-tab-content" id="stab-payments">
+          <div class="settings-section">
+            <h3><i data-lucide="credit-card" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>بوابات الدفع الإلكتروني</h3>
+            <p style="color:var(--admin-text2); margin-bottom:20px; font-size:0.95rem">قم بتفعيل وإدارة طرق الدفع المتاحة في المتجر.</p>
+            <div class="settings-grid">
+              <div class="form-row" style="grid-column:1/-1; padding:20px; border:1px solid rgba(0,0,0,0.08); border-radius:16px; background:#f9fafb;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                  <h4 style="margin:0"><i data-lucide="banknote" style="width:20px; vertical-align:middle; margin-left:8px; color:var(--admin-primary)"></i>الدفع عند الاستلام (COD)</h4>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="st-pay-cod" checked>
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <p style="margin:0; font-size:0.9rem; color:var(--admin-text2)">السماح للزبائن بالدفع نقداً عند استلام الشحنة.</p>
+              </div>
+
+              <div class="form-row" style="grid-column:1/-1; padding:20px; border:1px solid rgba(0,0,0,0.08); border-radius:16px; background:#f9fafb; margin-top:10px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                  <h4 style="margin:0"><i data-lucide="credit-card" style="width:20px; vertical-align:middle; margin-left:8px; color:var(--admin-primary)"></i>البطاقات الائتمانية (فيزا / ماستركارد)</h4>
+                  <label class="toggle-switch">
+                    <input type="checkbox" id="st-pay-visa" onchange="document.getElementById('visa-settings').style.display = this.checked ? 'block' : 'none'">
+                    <span class="slider"></span>
+                  </label>
+                </div>
+                <p style="margin:0 0 16px 0; font-size:0.9rem; color:var(--admin-text2)">تفعيل الدفع الإلكتروني واستقبال الأموال عبر بوابة الدفع.</p>
+                
+                <div id="visa-settings" style="display:none; padding-top:16px; border-top:1px solid rgba(0,0,0,0.08);">
+                  <div class="settings-grid">
+                    <div class="form-row" style="grid-column:1/-1">
+                      <label>بوابة الدفع المفضلة</label>
+                      <select id="st-pay-gateway">
+                        <option value="stripe">Stripe</option>
+                        <option value="moyasar">مُيسّر (Moyasar)</option>
+                        <option value="paytabs">PayTabs</option>
+                        <option value="tap">Tap Payments</option>
+                      </select>
+                    </div>
+                    <div class="form-row" style="grid-column:1/-1">
+                      <label>Public Key (المفتاح العام)</label>
+                      <input type="text" id="st-pay-public" placeholder="pk_test_..." style="direction:ltr; text-align:left;" />
+                    </div>
+                    <div class="form-row" style="grid-column:1/-1">
+                      <label>Secret Key (المفتاح السري)</label>
+                      <input type="password" id="st-pay-secret" placeholder="sk_test_..." style="direction:ltr; text-align:left;" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save Bar -->
+        <div class="settings-save-bar">
+          <div class="settings-save-left">
+            <div class="save-status" id="save-status"></div>
+          </div>
+          <div style="display:flex;gap:12px">
+            <button class="topbar-btn btn-outline" onclick="loadStoreSettings()"><i data-lucide="undo" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>تراجع</button>
+            <button class="topbar-btn btn-primary" onclick="saveStoreSettings()">
+              <i data-lucide="save" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>حفظ الإعدادات
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /settings-wrap -->
+    </div>
+
+    <!-- ==================== ACCESS DENIED ==================== -->
+    <div class="admin-page" id="admin-access-denied">
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 20px; text-align:center;">
+        <div style="width:80px; height:80px; border-radius:50%; background: #fef2f2; color: #ef4444; display:flex; align-items:center; justify-content:center; margin-bottom:24px; box-shadow:0 4px 12px rgba(239,68,68,0.1)">
+          <i data-lucide="shield-alert" style="width:40px; height:40px"></i>
+        </div>
+        <h2 style="font-size:24px; font-weight:800; color:var(--admin-text); margin-bottom:12px">ليس لديك صلاحية للوصول إلى هذا القسم</h2>
+        <p style="color:var(--admin-text2); max-width:400px; line-height:1.6; margin-bottom:24px">يرجى التواصل مع مسؤول المنصة لتعديل صلاحيات دورك إذا كنت بحاجة للوصول إلى هذه الصفحة.</p>
+        <button class="topbar-btn btn-primary" onclick="navigateTo('dashboard')">العودة للرئيسية</button>
+      </div>
+    </div>
+
+  </div><!-- /page-content -->
+</div><!-- /main-content -->
+</div><!-- /admin-layout -->
+
+<!-- ===== Product Modal ===== -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="product-modal-title"><i data-lucide="plus-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة منتج جديد</h3>
+      <button class="modal-close" onclick="closeModal('product-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>الفئة</label>
+        <select id="pm-category"></select>
+      </div>
+      <div class="form-row">
+        <label>اسم المنتج *</label>
+        <input type="text" id="pm-name" placeholder="مثال: كريم مرطب للبشرة"/>
+      </div>
+      <div class="form-row-inline">
+        <div class="form-row">
+          <label>السعر الحالي *</label>
+          <input type="number" id="pm-price" placeholder="89"/>
+        </div>
+        <div class="form-row">
+          <label>السعر القديم (اختياري)</label>
+          <input type="number" id="pm-oldprice" placeholder="120"/>
+        </div>
+      </div>
+      <div class="form-row-inline">
+        <div class="form-row">
+          <label>شارة (جديد/تخفيض/حصري)</label>
+          <input type="text" id="pm-badge" placeholder="اتركه فارغ أو اكتب: جديد"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>صورة المنتج</label>
+        <div id="imageDropZone" class="image-drop-zone">
+          <input type="file" id="productImageFile" accept="image/*" hidden />
+          <div id="dropMessage" class="drop-message">
+            <i data-lucide="upload-cloud" style="width:36px;height:36px;opacity:0.45"></i>
+            <p>اسحب الصورة هنا أو <span style="color:var(--admin-primary);font-weight:600">اضغط للرفع</span></p>
+            <small style="opacity:0.5;font-size:0.75rem">PNG, JPG, WEBP — بحد أقصى 5 ميجا</small>
+          </div>
+          <div id="imagePreviewWrap" class="image-preview-wrap" style="display:none">
+            <img id="imagePreview" alt="معاينة الصورة" />
+            <div class="image-preview-actions">
+              <button type="button" class="image-action-btn image-replace-btn" onclick="triggerImageReplace()" title="تغيير الصورة">
+                <i data-lucide="refresh-cw" style="width:14px;height:14px"></i> تغيير
+              </button>
+              <button type="button" class="image-action-btn image-remove-btn" onclick="removeProductImage()" title="إزالة الصورة">
+                <i data-lucide="trash-2" style="width:14px;height:14px"></i> إزالة
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>ألوان الخلفية (لونين بفاصلة)</label>
+        <input type="text" id="pm-bg" placeholder="#FFE8F0,#FFB3D1"/>
+      </div>
+      <div class="form-row-inline">
+        <div class="form-row">
+          <label>التقييم</label>
+          <input type="number" id="pm-rating" value="4.5" step="0.1" min="1" max="5"/>
+        </div>
+        <div class="form-row">
+          <label>عدد المراجعات</label>
+          <input type="number" id="pm-reviews" value="0"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="topbar-btn btn-primary btn-active-scale" onclick="saveProduct(this)"><i data-lucide="save" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> حفظ المنتج</button>
+      <button class="topbar-btn btn-outline" onclick="closeModal('product-modal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Coupon Modal ===== -->
+<div class="modal-overlay" id="coupon-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h3 id="coupon-modal-title"><i data-lucide="plus-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة كوبون جديد</h3>
+      <button class="modal-close" onclick="closeModal('coupon-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>كود الخصم *</label>
+        <input type="text" id="com-code" placeholder="مثال: SALE20" style="text-transform:uppercase" />
+      </div>
+      <div class="form-row">
+        <label>نسبة الخصم (%) *</label>
+        <input type="number" id="com-discount" placeholder="20" min="1" max="100"/>
+      </div>
+      <div class="form-row" style="flex-direction:row;align-items:center;gap:10px;margin-top:10px;">
+        <input type="checkbox" id="com-active" checked style="width:18px;height:18px;cursor:pointer"/>
+        <label style="margin:0;cursor:pointer" for="com-active">تفعيل الكوبون</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="topbar-btn btn-primary btn-active-scale" onclick="saveCoupon(this)"><i data-lucide="save" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> حفظ الكوبون</button>
+      <button class="topbar-btn btn-outline" onclick="closeModal('coupon-modal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== User Modal ===== -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3 id="user-modal-title"><i data-lucide="user-plus" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة مستخدم جديد</h3>
+      <button class="modal-close" onclick="closeModal('user-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>الاسم *</label>
+        <input type="text" id="um-name" placeholder="مثال: أحمد خالد"/>
+      </div>
+      <div class="form-row">
+        <label>اسم المستخدم *</label>
+        <input type="text" id="um-username" placeholder="مثال: admin" autocomplete="username"/>
+      </div>
+      <div class="form-row">
+        <label>البريد الإلكتروني *</label>
+        <input type="email" id="um-email" placeholder="admin@example.com" autocomplete="email"/>
+      </div>
+      <div class="form-row">
+        <label>كلمة المرور *</label>
+        <input type="password" id="um-password" placeholder="*****" autocomplete="new-password"/>
+      </div>
+      <div class="form-row">
+        <label>الصلاحية (الدور) *</label>
+        <select id="um-role">
+          <option value="super_admin">مدير عام المنصة (Super Admin)</option>
+          <option value="store_owner">مالك متجر (Store Owner)</option>
+          <option value="manager">مدير متجر (Manager)</option>
+          <option value="employee">موظف (Employee)</option>
+          <option value="support_agent">دعم فني (Support Agent)</option>
+        </select>
+      </div>
+      <div class="form-row" style="flex-direction:row;align-items:center;gap:10px;margin-top:10px;">
+        <input type="checkbox" id="um-active" checked style="width:18px;height:18px;cursor:pointer"/>
+        <label style="margin:0;cursor:pointer" for="um-active">الحساب نشط (Active)</label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="topbar-btn btn-primary btn-active-scale" onclick="saveUser(this)"><i data-lucide="save" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> حفظ المستخدم</button>
+      <button class="topbar-btn btn-outline" onclick="closeModal('user-modal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Category Modal ===== -->
+<div class="modal-overlay" id="category-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3 id="category-modal-title"><i data-lucide="plus-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة تصنيف جديد</h3>
+      <button class="modal-close" onclick="closeModal('category-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>اسم التصنيف *</label>
+        <input type="text" id="cm-name" placeholder="مثال: العناية بالبشرة"/>
+      </div>
+      <div class="form-row">
+        <label>صورة التصنيف (اختياري)</label>
+        <div id="cmImageDropZone" class="image-drop-zone" onclick="triggerCategoryImageReplace()">
+          <input type="file" id="cm-image-file" accept="image/*" hidden onchange="handleCategoryImageFile(this.files[0])" />
+          <div id="cmDropMessage" class="drop-message">
+            <i data-lucide="upload-cloud" style="width:32px;height:32px;opacity:0.45"></i>
+            <p>اسحب صورة التصنيف هنا أو <span style="color:var(--admin-primary);font-weight:600">اضغط للرفع</span></p>
+            <small style="opacity:0.5;font-size:0.75rem">PNG, JPG, WEBP — بحد أقصى 5 ميجا</small>
+          </div>
+          <div id="cmImagePreviewWrap" class="image-preview-wrap" style="display:none">
+            <img id="cmImagePreview" alt="معاينة صورة التصنيف" />
+            <div class="image-preview-actions">
+              <button type="button" class="image-action-btn image-replace-btn" onclick="triggerCategoryImageReplace()" title="تغيير الصورة">
+                <i data-lucide="refresh-cw" style="width:14px;height:14px"></i> تغيير
+              </button>
+              <button type="button" class="image-action-btn image-remove-btn" onclick="removeCategoryImage()" title="إزالة الصورة">
+                <i data-lucide="trash-2" style="width:14px;height:14px"></i> إزالة
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="topbar-btn btn-primary btn-active-scale" onclick="saveCategory(this)"><i data-lucide="save" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> حفظ التصنيف</button>
+      <button class="topbar-btn btn-outline" onclick="closeModal('category-modal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Order Modal ===== -->
+<div class="modal-overlay" id="order-modal">
+  <div class="modal" style="max-width:800px; max-height: 90vh; overflow-y: auto;">
+    <div class="modal-header">
+      <h3 id="order-modal-title"><i data-lucide="receipt" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> تفاصيل الطلب</h3>
+      <button class="modal-close" onclick="closeModal('order-modal')">✕</button>
+    </div>
+    <div class="modal-body" style="display:flex;gap:20px;flex-direction:row;align-items:flex-start;">
+      <!-- Right Side: Details -->
+      <div style="flex:2">
+        <div style="margin-bottom:15px;background:var(--admin-surface2);padding:15px;border-radius:8px">
+          <h4 style="margin-top:0;margin-bottom:10px">معلومات العميل</h4>
+          <div id="om-customer-name" style="font-weight:bold;font-size:1.1rem;"></div>
+          <div id="om-customer-phone" style="font-size:0.9rem;color:var(--admin-text2)"></div>
+          <div id="om-customer-address" style="font-size:0.9rem;color:var(--admin-text2);margin-top:5px"></div>
+        </div>
+        <div style="margin-bottom:15px">
+          <h4 style="margin-bottom:10px">المنتجات</h4>
+          <div id="om-items" style="background:var(--admin-surface2);padding:10px;border-radius:8px;font-size:0.9rem"></div>
+          <div style="text-align:left;font-weight:bold;margin-top:10px;font-size:1.1rem;" id="om-total"></div>
+        </div>
+        <div style="margin-bottom:15px">
+          <h4 style="margin-bottom:10px">ملاحظات داخلية</h4>
+          <div id="om-notes-list" style="max-height:200px;overflow-y:auto;background:var(--admin-surface2);padding:10px;border-radius:8px;margin-bottom:10px"></div>
+          <div style="display:flex;gap:5px" class="action-add_order_notes">
+            <input type="text" id="om-new-note" placeholder="أضف ملاحظة (للمشرفين والموظفين فقط)..." style="flex:1"/>
+            <button class="topbar-btn btn-primary" onclick="addOrderNote()"><i data-lucide="plus" style="width:14px;height:14px"></i> إضافة</button>
+          </div>
+        </div>
+      </div>
+      <!-- Left Side: Timeline & Status -->
+      <div style="flex:1;background:var(--admin-surface2);padding:15px;border-radius:8px;">
+        <div style="margin-bottom:20px" class="action-update_orders">
+          <label style="font-weight:600;display:block;margin-bottom:6px">تعيين إلى موظف</label>
+          <select id="om-assignee" onchange="assignOrderToUser(this.value)" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text)"></select>
+        </div>
+        <div style="margin-bottom:20px" class="action-update_orders">
+          <label style="font-weight:600;display:block;margin-bottom:6px">تحديث الحالة</label>
+          <select id="om-status" onchange="updateOrderStatus(this.value)" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text)">
+            <option value="pending">قيد الانتظار</option>
+            <option value="confirmed">تم التأكيد</option>
+            <option value="processing">جاري التجهيز</option>
+            <option value="shipped">تم الشحن</option>
+            <option value="delivered">تم التوصيل</option>
+            <option value="cancelled">ملغي</option>
+          </select>
+        </div>
+        <div style="margin-bottom:20px" class="action-delete_orders">
+          <button class="topbar-btn btn-danger" onclick="confirmDeleteOrder()"><i data-lucide="trash-2" style="width:14px;height:14px;vertical-align:middle;margin-left:2px"></i> حذف الطلب</button>
+        </div>
+        <div>
+          <h4 style="margin-bottom:10px">الجدول الزمني (Timeline)</h4>
+          <div id="om-timeline" style="font-size:0.85rem;display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Admin Toast ===== -->
+<div class="admin-toast" id="admin-toast"></div>
+
+<script src="api.js"></script>
+<script src="auth.js"></script>
+<script src="admin.js"></script>
+<script>
+  lucide.createIcons();
+</script>
+</body>
+</html>
