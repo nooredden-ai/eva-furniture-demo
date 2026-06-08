@@ -582,6 +582,187 @@ async function saveAccountingSupplier(btnElement) {
   }
 }
 
+// ===== Accounting Accounts Integration =====
+let accountingAccounts = [];
+
+const accountTypeLabels = {
+  'ASSET': 'أصول',
+  'LIABILITY': 'التزامات',
+  'EQUITY': 'حقوق ملكية',
+  'REVENUE': 'إيرادات',
+  'EXPENSE': 'مصروفات'
+};
+
+async function fetchAccountingAccounts(url, options = {}) {
+  const finalHeaders = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {})
+  };
+  
+  const sessionStr = sessionStorage.getItem('louloSession');
+  if (sessionStr) {
+    try {
+      const session = JSON.parse(sessionStr);
+      finalHeaders['x-user-role'] = session.role;
+      finalHeaders['x-user-id'] = session.id;
+    } catch(e) {}
+  }
+  
+  const response = await fetch(url, { ...options, headers: finalHeaders });
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.message || `HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+}
+
+async function loadAccountingAccounts() {
+  const body = $a('accounting-table-body');
+  const empty = $a('accounting-empty-state');
+  
+  try {
+    const data = await fetchAccountingAccounts('/api/accounting/accounts');
+    accountingAccounts = Array.isArray(data) ? data : (data.data || []);
+    
+    const searchInput = $a('accounting-account-search');
+    if (searchInput) searchInput.value = '';
+    
+    renderAccountingAccountsTable(accountingAccounts);
+  } catch (error) {
+    console.error('Error loading accounting accounts:', error);
+    if (body) {
+      body.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--admin-danger);padding:20px;">فشل تحميل دليل الحسابات: ${escapeHtml(error.message)}</td></tr>`;
+    }
+    if (empty) empty.style.display = 'none';
+    showAdminToast('خطأ أثناء تحميل دليل الحسابات', 'error');
+  }
+}
+
+function renderAccountingAccountsTable(accounts) {
+  const body = $a('accounting-table-body');
+  const empty = $a('accounting-empty-state');
+  
+  if (!body) return;
+  
+  if (accounts.length === 0) {
+    body.innerHTML = '';
+    if (empty) {
+      const h4 = empty.querySelector('h4');
+      const p = empty.querySelector('p');
+      if (h4) h4.textContent = 'لا توجد حسابات بعد';
+      if (p) p.textContent = 'أضف أول حساب للبدء.';
+      empty.style.display = 'flex';
+    }
+    return;
+  }
+  
+  if (empty) empty.style.display = 'none';
+  
+  body.innerHTML = accounts.map(a => `
+    <tr>
+      <td style="direction:ltr;text-align:center;font-family:monospace;font-weight:600">${escapeHtml(a.accountCode)}</td>
+      <td>${escapeHtml(a.accountName)}</td>
+      <td>${accountTypeLabels[a.accountType] || escapeHtml(a.accountType)}</td>
+      <td style="text-align:center">
+        <span class="status-badge ${a.isActive ? 'status-active' : 'status-inactive'}">${a.isActive ? 'مفعّل' : 'غير مفعّل'}</span>
+      </td>
+      <td style="text-align:center">
+        <button class="topbar-btn btn-outline btn-sm" onclick="openEditAccountingAccount('${escapeHtml(a.id)}')">
+          <i data-lucide="edit" style="width:14px;height:14px;vertical-align:middle;margin-left:2px"></i> تعديل
+        </button>
+      </td>
+    </tr>
+  `).join('');
+  
+  if (window.lucide) lucide.createIcons();
+}
+
+function filterAccountingAccounts() {
+  const query = ($a('accounting-account-search')?.value || '').toLowerCase().trim();
+  const filtered = accountingAccounts.filter(a => {
+    return (a.accountCode || '').toLowerCase().includes(query) || (a.accountName || '').toLowerCase().includes(query);
+  });
+  renderAccountingAccountsTable(filtered);
+}
+
+function openAddAccountingAccount() {
+  $a('accounting-account-modal-title').innerHTML = '<i data-lucide="plus-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة حساب جديد';
+  $a('aac-id').value = '';
+  $a('aac-code').value = '';
+  $a('aac-name').value = '';
+  $a('aac-type').value = 'ASSET';
+  $a('aac-active').checked = true;
+  
+  $a('accounting-account-modal').classList.add('open');
+  if (window.lucide) lucide.createIcons();
+}
+
+function openEditAccountingAccount(id) {
+  const account = accountingAccounts.find(a => String(a.id) === String(id));
+  if (!account) {
+    showAdminToast('لم يتم العثور على بيانات الحساب', 'error');
+    return;
+  }
+  
+  $a('accounting-account-modal-title').innerHTML = '<i data-lucide="edit" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> تعديل بيانات الحساب';
+  $a('aac-id').value = account.id;
+  $a('aac-code').value = account.accountCode || '';
+  $a('aac-name').value = account.accountName || '';
+  $a('aac-type').value = account.accountType || 'ASSET';
+  $a('aac-active').checked = account.isActive !== false;
+  
+  $a('accounting-account-modal').classList.add('open');
+  if (window.lucide) lucide.createIcons();
+}
+
+async function saveAccountingAccount(btnElement) {
+  const id = $a('aac-id').value;
+  const accountCode = $a('aac-code').value.trim();
+  const accountName = $a('aac-name').value.trim();
+  const accountType = $a('aac-type').value;
+  const isActive = $a('aac-active').checked;
+  
+  if (!accountCode) {
+    showAdminToast('الرجاء إدخال رمز الحساب', 'error');
+    return;
+  }
+  if (!accountName) {
+    showAdminToast('الرجاء إدخال اسم الحساب', 'error');
+    return;
+  }
+  
+  const payload = { accountCode, accountName, accountType, isActive };
+  
+  const originalHtml = btnElement.innerHTML;
+  btnElement.classList.add('btn-loading');
+  btnElement.innerHTML = 'جاري الحفظ...';
+  
+  try {
+    let url = '/api/accounting/accounts';
+    let method = 'POST';
+    
+    if (id) {
+      url = `/api/accounting/accounts/${encodeURIComponent(id)}`;
+      method = 'PUT';
+    }
+    
+    const result = await fetchAccountingAccounts(url, {
+      method: method,
+      body: JSON.stringify(payload)
+    });
+    
+    closeModal('accounting-account-modal');
+    showAdminToast(id ? 'تم تعديل بيانات الحساب بنجاح' : 'تم إضافة الحساب بنجاح');
+    await loadAccountingAccounts();
+  } catch (error) {
+    console.error('Error saving account:', error);
+    showAdminToast(error.message || 'حدث خطأ أثناء حفظ بيانات الحساب', 'error');
+  } finally {
+    btnElement.classList.remove('btn-loading');
+    btnElement.innerHTML = originalHtml;
+  }
+}
+
 async function showAccountingTable(type) {
   const home = $a('accounting-home');
   const panel = $a('accounting-table-panel');
@@ -599,6 +780,8 @@ async function showAccountingTable(type) {
   // Hide actions panels by default
   if (custActions) custActions.style.display = 'none';
   if (suppActions) suppActions.style.display = 'none';
+  const acctActions = $a('accounting-accounts-actions');
+  if (acctActions) acctActions.style.display = 'none';
 
   if (type === 'customers') {
     if (title) title.textContent = 'العملاء';
@@ -632,6 +815,20 @@ async function showAccountingTable(type) {
     
     // Load and render suppliers
     await loadAccountingSuppliers();
+  } else if (type === 'accounts') {
+    if (title) title.textContent = 'دليل الحسابات';
+    if (subtitle) subtitle.textContent = 'عرض فئات الحسابات الرئيسية';
+    if (headers) {
+      headers.innerHTML = '<th style="width:120px;text-align:center">الرمز</th><th>اسم الحساب</th><th>نوع الحساب</th><th style="width:100px;text-align:center">الحالة</th><th style="width:120px;text-align:center">إجراءات</th>';
+    }
+    if (acctActions) acctActions.style.display = 'flex';
+    
+    if (body) {
+      body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;">جاري تحميل دليل الحسابات...</td></tr>`;
+    }
+    if (empty) empty.style.display = 'none';
+    
+    await loadAccountingAccounts();
   } else {
     // Standard static rendering for other types
     const data = accountingFixtures[type];

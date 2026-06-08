@@ -1045,6 +1045,165 @@ app.put('/api/accounting/suppliers/:id', async (req, res) => {
 });
 
 /* =========================
+   API: ACCOUNTING ACCOUNTS
+========================= */
+app.get('/api/accounting/accounts', async (req, res) => {
+  console.log('[ACCOUNTING ACCOUNTS] GET route hit');
+  try {
+    const company = await prisma.company.findFirst();
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'No company found in the database.' });
+    }
+
+    const accounts = await prisma.accountingAccount.findMany({
+      where: {
+        companyId: company.id,
+        deletedAt: null,
+      },
+      orderBy: { accountCode: 'asc' },
+    });
+
+    res.json(accounts.map((a) => ({
+      id: a.id,
+      accountCode: a.accountCode,
+      accountName: a.name,
+      accountType: a.accountType,
+      isActive: a.isActive,
+    })));
+  } catch (error) {
+    console.error('[ACCOUNTING ACCOUNTS GET]', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve accounts.' });
+  }
+});
+
+app.post('/api/accounting/accounts', async (req, res) => {
+  try {
+    const company = await prisma.company.findFirst();
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'No company found in the database.' });
+    }
+
+    const { accountCode, accountName, accountType, isActive } = req.body;
+    if (!accountCode || typeof accountCode !== 'string' || !accountCode.trim()) {
+      return res.status(400).json({ success: false, message: 'Account code is required.' });
+    }
+    if (!accountName || typeof accountName !== 'string' || !accountName.trim()) {
+      return res.status(400).json({ success: false, message: 'Account name is required.' });
+    }
+
+    const validTypes = ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE'];
+    if (!accountType || !validTypes.includes(accountType)) {
+      return res.status(400).json({ success: false, message: `Account type must be one of: ${validTypes.join(', ')}` });
+    }
+
+    // Check for duplicate accountCode within the same company
+    const existing = await prisma.accountingAccount.findFirst({
+      where: {
+        companyId: company.id,
+        accountCode: accountCode.trim(),
+        deletedAt: null,
+      },
+    });
+    if (existing) {
+      return res.status(409).json({ success: false, message: 'رمز الحساب مستخدم بالفعل.' });
+    }
+
+    const account = await prisma.accountingAccount.create({
+      data: {
+        companyId: company.id,
+        accountCode: accountCode.trim(),
+        name: accountName.trim(),
+        accountType: accountType,
+        isActive: typeof isActive === 'boolean' ? isActive : true,
+      },
+    });
+
+    res.status(201).json({ success: true, data: {
+      id: account.id,
+      accountCode: account.accountCode,
+      accountName: account.name,
+      accountType: account.accountType,
+      isActive: account.isActive,
+    }});
+  } catch (error) {
+    console.error('[ACCOUNTING ACCOUNTS POST]', error);
+    if (error.code === 'P2002') {
+      return res.status(409).json({ success: false, message: 'رمز الحساب مستخدم بالفعل.' });
+    }
+    res.status(500).json({ success: false, message: 'Failed to create account.' });
+  }
+});
+
+app.put('/api/accounting/accounts/:id', async (req, res) => {
+  try {
+    const company = await prisma.company.findFirst();
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'No company found in the database.' });
+    }
+
+    const { id } = req.params;
+    const { accountCode, accountName, accountType, isActive } = req.body;
+
+    const existingAccount = await prisma.accountingAccount.findFirst({
+      where: {
+        id,
+        companyId: company.id,
+        deletedAt: null,
+      },
+    });
+
+    if (!existingAccount) {
+      return res.status(404).json({ success: false, message: 'Account not found.' });
+    }
+
+    const validTypes = ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE'];
+    if (accountType && !validTypes.includes(accountType)) {
+      return res.status(400).json({ success: false, message: `Account type must be one of: ${validTypes.join(', ')}` });
+    }
+
+    // If accountCode is changing, check for duplicates
+    const newCode = accountCode !== undefined ? accountCode.trim() : existingAccount.accountCode;
+    if (newCode !== existingAccount.accountCode) {
+      const duplicate = await prisma.accountingAccount.findFirst({
+        where: {
+          companyId: company.id,
+          accountCode: newCode,
+          deletedAt: null,
+          id: { not: id },
+        },
+      });
+      if (duplicate) {
+        return res.status(409).json({ success: false, message: 'رمز الحساب مستخدم بالفعل.' });
+      }
+    }
+
+    const updatedAccount = await prisma.accountingAccount.update({
+      where: { id },
+      data: {
+        accountCode: newCode,
+        name: typeof accountName === 'string' ? accountName.trim() : existingAccount.name,
+        accountType: accountType || existingAccount.accountType,
+        isActive: typeof isActive === 'boolean' ? isActive : existingAccount.isActive,
+      },
+    });
+
+    res.json({ success: true, data: {
+      id: updatedAccount.id,
+      accountCode: updatedAccount.accountCode,
+      accountName: updatedAccount.name,
+      accountType: updatedAccount.accountType,
+      isActive: updatedAccount.isActive,
+    }});
+  } catch (error) {
+    console.error('[ACCOUNTING ACCOUNTS PUT]', error);
+    if (error.code === 'P2002') {
+      return res.status(409).json({ success: false, message: 'رمز الحساب مستخدم بالفعل.' });
+    }
+    res.status(500).json({ success: false, message: 'Failed to update account.' });
+  }
+});
+
+/* =========================
    API: PING
 ========================= */
 app.get('/api/ping', (req, res) => {
