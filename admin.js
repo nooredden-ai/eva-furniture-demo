@@ -128,6 +128,7 @@ function refreshPage(page) {
 const accountingFixtures = {
   customers: {
     title: 'العملاء',
+    subtitle: 'قائمة العملاء وأرصدة الحسابات',
     headers: ['الاسم', 'الهاتف', 'العنوان'],
     rows: [
       ['محمد أحمد', '0590000000', 'نابلس'],
@@ -136,6 +137,7 @@ const accountingFixtures = {
   },
   suppliers: {
     title: 'الموردون',
+    subtitle: 'تفاصيل الموردين والمستحقات',
     headers: ['الاسم', 'الهاتف', 'العنوان'],
     rows: [
       ['مورد المفروشات الأول', '0591111111', 'الخليل'],
@@ -144,6 +146,7 @@ const accountingFixtures = {
   },
   accounts: {
     title: 'دليل الحسابات',
+    subtitle: 'عرض فئات الحسابات الرئيسية',
     headers: ['الرمز', 'الاسم', 'نوع الحساب'],
     rows: [
       ['1000', 'الصندوق', 'أصول'],
@@ -157,6 +160,7 @@ const accountingFixtures = {
 // Extended fixtures for UI-only service cards
 accountingFixtures.cash = {
   title: 'الصندوق',
+  subtitle: 'ملخص عمليات الصندوق الحالية',
   headers: ['النوع', 'المبلغ', 'البيان'],
   rows: [
     ['قبض', '1,200 ₪', 'بيع نقدي'],
@@ -167,6 +171,7 @@ accountingFixtures.cash = {
 
 accountingFixtures.bank = {
   title: 'البنك',
+  subtitle: 'الحركات البنكية وبيان الأرصدة',
   headers: ['العملية', 'المبلغ', 'البيان'],
   rows: [
     ['إيداع', '25,000 ₪', 'تحويل من مبيعات'],
@@ -177,6 +182,7 @@ accountingFixtures.bank = {
 
 accountingFixtures.invoices = {
   title: 'الفواتير',
+  subtitle: 'استعراض حالة الفواتير الحالية',
   headers: ['رقم', 'العميل', 'إجمالي', 'حالة'],
   rows: [
     ['INV-001', 'شركة النور', '3,200 ₪', 'مدفوعة'],
@@ -187,6 +193,7 @@ accountingFixtures.invoices = {
 
 accountingFixtures.reports = {
   title: 'التقارير',
+  subtitle: 'ملخصات مالية جاهزة للتصفّح',
   headers: ['اسم التقرير', 'وصف مختصر'],
   rows: [
     ['تقرير المبيعات الشهري', 'موجز إجمالي المبيعات لهذا الشهر'],
@@ -207,6 +214,19 @@ function renderAccountingPage() {
   const panel = $a('accounting-table-panel');
   if (home) home.style.display = 'block';
   if (panel) panel.style.display = 'none';
+
+  const currentDate = $a('accounting-current-date');
+  const lastUpdate = $a('accounting-last-update');
+  const now = new Date();
+  if (currentDate) {
+    currentDate.textContent = now.toLocaleDateString('ar-EG', {
+      day: 'numeric', month: 'long', year: 'numeric'
+    });
+  }
+  if (lastUpdate) {
+    lastUpdate.textContent = 'قبل لحظات';
+  }
+
   if (window.lucide) lucide.createIcons();
 }
 
@@ -221,14 +241,24 @@ function showAccountingTable(type) {
   const home = $a('accounting-home');
   const panel = $a('accounting-table-panel');
   const title = $a('accounting-table-title');
+  const subtitle = $a('accounting-table-subtitle');
   const headers = $a('accounting-table-headers');
   const body = $a('accounting-table-body');
+  const empty = $a('accounting-empty-state');
 
   if (home) home.style.display = 'none';
   if (panel) panel.style.display = 'block';
   if (title) title.textContent = data.title;
+  if (subtitle) subtitle.textContent = data.subtitle || '';
   if (headers) headers.innerHTML = data.headers.map(h => `<th>${h}</th>`).join('');
-  if (body) body.innerHTML = data.rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('');
+
+  if (body) {
+    body.innerHTML = data.rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('');
+  }
+
+  if (empty) {
+    empty.style.display = data.rows.length === 0 ? 'flex' : 'none';
+  }
 }
 
 // Ensure summary KPIs are present (static values) when page loads
@@ -237,6 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const kpiSales = $a('kpi-sales'); if (kpiSales) kpiSales.textContent = '48,300 ₪';
   const kpiReceiv = $a('kpi-receivables'); if (kpiReceiv) kpiReceiv.textContent = '9,200 ₪';
   const kpiExp = $a('kpi-expenses'); if (kpiExp) kpiExp.textContent = '6,750 ₪';
+  renderAccountingPage();
 });
 
 // ===== Pending Badge =====
