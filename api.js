@@ -16,21 +16,32 @@ const Logger = {
 };
 
 // API Wrapper with Timeout & Retry
+function getAuthHeaders() {
+  const headers = {};
+  const token = sessionStorage.getItem('louloToken');
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  // TODO: remove legacy x-user-role/x-user-id after full JWT migration
+  const sessionStr = sessionStorage.getItem('louloSession');
+  if (sessionStr) {
+    try {
+      const session = JSON.parse(sessionStr);
+      headers['x-user-role'] = session.role;
+      headers['x-user-id'] = session.id;
+    } catch (e) {}
+  }
+  return headers;
+}
+
+// API Wrapper with Timeout & Retry
 async function fetchWithStability(url, options = {}, retries = 2, timeoutMs = 8000) {
   for (let i = 0; i <= retries; i++) {
     try {
       const controller = new AbortController();
       const id = setTimeout(() => controller.abort(), timeoutMs);
       
-      const finalHeaders = { ...(options.headers || {}) };
-      const sessionStr = sessionStorage.getItem('louloSession');
-      if (sessionStr) {
-        try {
-          const session = JSON.parse(sessionStr);
-          finalHeaders['x-user-role'] = session.role;
-          finalHeaders['x-user-id'] = session.id;
-        } catch(e) {}
-      }
+      const finalHeaders = { ...(options.headers || {}), ...getAuthHeaders() };
       
       const response = await fetch(url, { ...options, headers: finalHeaders, signal: controller.signal });
       clearTimeout(id);
