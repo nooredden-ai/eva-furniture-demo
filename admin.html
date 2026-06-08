@@ -443,6 +443,10 @@
               <h3 id="accounting-table-title"></h3>
               <p id="accounting-table-subtitle" class="table-subtitle"></p>
             </div>
+            <div id="accounting-customers-actions" style="display:none; gap:10px; align-items:center;">
+              <input type="text" class="table-search" id="accounting-customer-search" placeholder="بحث بالاسم أو الهاتف..." style="margin:0;" oninput="filterAccountingCustomers()"/>
+              <button class="topbar-btn btn-primary" onclick="openAddAccountingCustomer()"><i data-lucide="user-plus" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>إضافة عميل</button>
+            </div>
             <button class="topbar-btn btn-outline" onclick="showAccountingHome()">العودة للنظام المالي</button>
           </div>
           <div class="accounting-table-inner">
@@ -1315,6 +1319,39 @@
           <div id="om-timeline" style="font-size:0.85rem;display:flex;flex-direction:column;gap:10px;"></div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Accounting Customer Modal ===== -->
+<div class="modal-overlay" id="accounting-customer-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3 id="accounting-customer-modal-title"><i data-lucide="user-plus" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة عميل جديد</h3>
+      <button class="modal-close" onclick="closeModal('accounting-customer-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="acm-id" />
+      <div class="form-row">
+        <label>الاسم *</label>
+        <input type="text" id="acm-name" placeholder="اسم العميل الكامل"/>
+      </div>
+      <div class="form-row">
+        <label>الهاتف</label>
+        <input type="text" id="acm-phone" placeholder="رقم الهاتف"/>
+      </div>
+      <div class="form-row">
+        <label>البريد الإلكتروني</label>
+        <input type="email" id="acm-email" placeholder="البريد الإلكتروني"/>
+      </div>
+      <div class="form-row">
+        <label>العنوان</label>
+        <input type="text" id="acm-address" placeholder="العنوان"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="topbar-btn btn-primary btn-active-scale" onclick="saveAccountingCustomer(this)"><i data-lucide="save" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> حفظ العميل</button>
+      <button class="topbar-btn btn-outline" onclick="closeModal('accounting-customer-modal')">إلغاء</button>
     </div>
   </div>
 </div>

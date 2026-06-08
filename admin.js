@@ -234,10 +234,186 @@ function showAccountingHome() {
   renderAccountingPage();
 }
 
-function showAccountingTable(type) {
-  const data = accountingFixtures[type];
-  if (!data) return;
+// ===== Accounting Customers Integration =====
+let accountingCustomers = [];
 
+function escapeHtml(str) {
+  if (typeof str !== 'string') return str || '';
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+async function fetchAccountingCustomers(url, options = {}) {
+  const finalHeaders = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {})
+  };
+  
+  // Temporary header injection matching current session
+  const sessionStr = sessionStorage.getItem('louloSession');
+  if (sessionStr) {
+    try {
+      const session = JSON.parse(sessionStr);
+      finalHeaders['x-user-role'] = session.role;
+      finalHeaders['x-user-id'] = session.id;
+    } catch(e) {}
+  }
+  
+  const response = await fetch(url, { ...options, headers: finalHeaders });
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.message || `HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+}
+
+async function loadAccountingCustomers() {
+  const body = $a('accounting-table-body');
+  const empty = $a('accounting-empty-state');
+  
+  try {
+    const data = await fetchAccountingCustomers('/api/accounting/customers');
+    accountingCustomers = Array.isArray(data) ? data : (data.data || []);
+    
+    // reset search input
+    const searchInput = $a('accounting-customer-search');
+    if (searchInput) searchInput.value = '';
+    
+    renderAccountingCustomersTable(accountingCustomers);
+  } catch (error) {
+    console.error('Error loading accounting customers:', error);
+    if (body) {
+      body.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--admin-danger);padding:20px;">فشل تحميل قائمة العملاء: ${escapeHtml(error.message)}</td></tr>`;
+    }
+    if (empty) empty.style.display = 'none';
+    showAdminToast('خطأ أثناء تحميل العملاء', 'error');
+  }
+}
+
+function renderAccountingCustomersTable(customers) {
+  const body = $a('accounting-table-body');
+  const empty = $a('accounting-empty-state');
+  
+  if (!body) return;
+  
+  if (customers.length === 0) {
+    body.innerHTML = '';
+    if (empty) {
+      const h4 = empty.querySelector('h4');
+      const p = empty.querySelector('p');
+      if (h4) h4.textContent = 'لا يوجد عملاء بعد';
+      if (p) p.textContent = 'أضف أول عميل للبدء.';
+      empty.style.display = 'flex';
+    }
+    return;
+  }
+  
+  if (empty) empty.style.display = 'none';
+  
+  body.innerHTML = customers.map(c => `
+    <tr>
+      <td>${escapeHtml(c.name)}</td>
+      <td>${escapeHtml(c.phone || '-')}</td>
+      <td>${escapeHtml(c.email || '-')}</td>
+      <td>${escapeHtml(c.address || '-')}</td>
+      <td style="text-align:center">
+        <button class="topbar-btn btn-outline btn-sm" onclick="openEditAccountingCustomer('${escapeHtml(c.id)}')">
+          <i data-lucide="edit" style="width:14px;height:14px;vertical-align:middle;margin-left:2px"></i> تعديل
+        </button>
+      </td>
+    </tr>
+  `).join('');
+  
+  if (window.lucide) lucide.createIcons();
+}
+
+function filterAccountingCustomers() {
+  const query = ($a('accounting-customer-search')?.value || '').toLowerCase().trim();
+  const filtered = accountingCustomers.filter(c => {
+    return (c.name || '').toLowerCase().includes(query) || (c.phone || '').toLowerCase().includes(query);
+  });
+  renderAccountingCustomersTable(filtered);
+}
+
+function openAddAccountingCustomer() {
+  $a('accounting-customer-modal-title').innerHTML = '<i data-lucide="user-plus" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة عميل جديد';
+  $a('acm-id').value = '';
+  $a('acm-name').value = '';
+  $a('acm-phone').value = '';
+  $a('acm-email').value = '';
+  $a('acm-address').value = '';
+  
+  $a('accounting-customer-modal').classList.add('open');
+  if (window.lucide) lucide.createIcons();
+}
+
+function openEditAccountingCustomer(id) {
+  const customer = accountingCustomers.find(c => String(c.id) === String(id));
+  if (!customer) {
+    showAdminToast('لم يتم العثور على بيانات العميل', 'error');
+    return;
+  }
+  
+  $a('accounting-customer-modal-title').innerHTML = '<i data-lucide="edit" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> تعديل بيانات العميل';
+  $a('acm-id').value = customer.id;
+  $a('acm-name').value = customer.name || '';
+  $a('acm-phone').value = customer.phone || '';
+  $a('acm-email').value = customer.email || '';
+  $a('acm-address').value = customer.address || '';
+  
+  $a('accounting-customer-modal').classList.add('open');
+  if (window.lucide) lucide.createIcons();
+}
+
+async function saveAccountingCustomer(btnElement) {
+  const id = $a('acm-id').value;
+  const name = $a('acm-name').value.trim();
+  const phone = $a('acm-phone').value.trim();
+  const email = $a('acm-email').value.trim();
+  const address = $a('acm-address').value.trim();
+  
+  if (!name) {
+    showAdminToast('الرجاء إدخال اسم العميل', 'error');
+    return;
+  }
+  
+  const payload = { name, phone, email, address };
+  
+  const originalHtml = btnElement.innerHTML;
+  btnElement.classList.add('btn-loading');
+  btnElement.innerHTML = 'جاري الحفظ...';
+  
+  try {
+    let url = '/api/accounting/customers';
+    let method = 'POST';
+    
+    if (id) {
+      url = `/api/accounting/customers/${encodeURIComponent(id)}`;
+      method = 'PUT';
+    }
+    
+    const result = await fetchAccountingCustomers(url, {
+      method: method,
+      body: JSON.stringify(payload)
+    });
+    
+    closeModal('accounting-customer-modal');
+    showAdminToast(id ? 'تم تعديل بيانات العميل بنجاح' : 'تم إضافة العميل بنجاح');
+    await loadAccountingCustomers();
+  } catch (error) {
+    console.error('Error saving customer:', error);
+    showAdminToast(error.message || 'حدث خطأ أثناء حفظ بيانات العميل', 'error');
+  } finally {
+    btnElement.classList.remove('btn-loading');
+    btnElement.innerHTML = originalHtml;
+  }
+}
+
+async function showAccountingTable(type) {
   const home = $a('accounting-home');
   const panel = $a('accounting-table-panel');
   const title = $a('accounting-table-title');
@@ -245,20 +421,54 @@ function showAccountingTable(type) {
   const headers = $a('accounting-table-headers');
   const body = $a('accounting-table-body');
   const empty = $a('accounting-empty-state');
+  const custActions = $a('accounting-customers-actions');
 
   if (home) home.style.display = 'none';
   if (panel) panel.style.display = 'block';
-  if (title) title.textContent = data.title;
-  if (subtitle) subtitle.textContent = data.subtitle || '';
-  if (headers) headers.innerHTML = data.headers.map(h => `<th>${h}</th>`).join('');
 
-  if (body) {
-    body.innerHTML = data.rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('');
+  // Hide customers actions by default
+  if (custActions) custActions.style.display = 'none';
+
+  if (type === 'customers') {
+    if (title) title.textContent = 'العملاء';
+    if (subtitle) subtitle.textContent = 'قائمة العملاء وأرصدة الحسابات';
+    if (headers) {
+      headers.innerHTML = '<th>الاسم</th><th>الهاتف</th><th>البريد الإلكتروني</th><th>العنوان</th><th style="width:120px;text-align:center">إجراءات</th>';
+    }
+    if (custActions) custActions.style.display = 'flex';
+    
+    // Clear table body first & show loading
+    if (body) {
+      body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;">جاري تحميل العملاء...</td></tr>`;
+    }
+    if (empty) empty.style.display = 'none';
+    
+    // Load and render customers
+    await loadAccountingCustomers();
+  } else {
+    // Standard static rendering for other types
+    const data = accountingFixtures[type];
+    if (!data) return;
+    
+    if (title) title.textContent = data.title;
+    if (subtitle) subtitle.textContent = data.subtitle || '';
+    if (headers) headers.innerHTML = data.headers.map(h => `<th>${h}</th>`).join('');
+
+    if (body) {
+      body.innerHTML = data.rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('');
+    }
+
+    if (empty) {
+      // Restore standard empty state texts
+      const h4 = empty.querySelector('h4');
+      const p = empty.querySelector('p');
+      if (h4) h4.textContent = 'لا توجد بيانات هنا بعد';
+      if (p) p.textContent = 'اختر بطاقة من الأعلى لعرض المعلومات المالية المتوفرة.';
+      empty.style.display = data.rows.length === 0 ? 'flex' : 'none';
+    }
   }
 
-  if (empty) {
-    empty.style.display = data.rows.length === 0 ? 'flex' : 'none';
-  }
+  if (window.lucide) lucide.createIcons();
 }
 
 // Ensure summary KPIs are present (static values) when page loads
