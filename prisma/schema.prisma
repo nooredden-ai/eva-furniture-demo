@@ -93,20 +93,21 @@ model Company {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
-  users          User[]
-  products       Product[]
-  categories     ProductCategory[]
-  customers      Customer[]
-  suppliers      Supplier[]
-  salesOrders    SalesOrder[]
-  salesInvoices  SalesInvoice[]
-  payments       Payment[]
-  accounts       AccountingAccount[]
-  journalEntries JournalEntry[]
-  settings       CompanySetting[]
-  themes         Theme[]
-  brandingAssets BrandingAsset[]
-  auditLogs      AuditLog[]
+  users              User[]
+  products           Product[]
+  categories         ProductCategory[]
+  customers          Customer[]
+  suppliers          Supplier[]
+  salesOrders        SalesOrder[]
+  salesInvoices      SalesInvoice[]
+  payments           Payment[]
+  accounts           AccountingAccount[]
+  journalEntries     JournalEntry[]
+  settings           CompanySetting[]
+  themes             Theme[]
+  brandingAssets     BrandingAsset[]
+  auditLogs          AuditLog[]
+  accountingSettings AccountingSettings?
 }
 
 model Role {
@@ -508,4 +509,18 @@ model AuditLog {
 
   @@index([companyId])
   @@index([companyId, createdAt])
+}
+
+model AccountingSettings {
+  id                        String   @id @default(cuid())
+  companyId                 String   @unique
+  defaultCashAccountId      String?
+  defaultBankAccountId      String?
+  defaultSalesAccountId     String?
+  defaultPurchasesAccountId String?
+  defaultInventoryAccountId String?
+  defaultCOGSAccountId      String?
+  updatedAt                 DateTime @updatedAt
+  updatedBy                 String?
+  company                   Company  @relation(fields: [companyId], references: [id])
 }
