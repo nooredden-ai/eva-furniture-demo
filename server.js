@@ -14,6 +14,7 @@ const settingsRepository = require('./backend/src/repositories/settingsRepositor
 const permissionRepository = require('./backend/src/repositories/permissionRepository');
 const jsonStore = require('./backend/src/core/jsonStore');
 const { PrismaClient } = require('@prisma/client');
+const jwt = require('jsonwebtoken');
 
 const prisma = new PrismaClient();
 
@@ -72,7 +73,46 @@ app.use((req, res, next) => {
   if (req.path.endsWith('.js'))   res.type('application/javascript; charset=utf-8');
   if (req.path.endsWith('.json')) res.type('application/json; charset=utf-8');
   next();
+});// ===== Hybrid JWT Authentication Middleware =====
+app.use(async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key';
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      req.user = {
+        userId: decoded.userId,
+        role: decoded.role,
+        companyId: decoded.companyId
+      };
+      return next();
+    } catch (err) {
+      console.error('JWT verification failed:', err.message);
+      return res.status(401).json({ success: false, message: 'Unauthorized: Invalid token' });
+    }
+  }
+
+  // TODO: remove x-user-role fallback after frontend migration.
+  const oldRole = req.headers['x-user-role'];
+  if (oldRole) {
+    let companyId = null;
+    try {
+      const company = await prisma.company.findFirst();
+      if (company) companyId = company.id;
+    } catch (e) {}
+
+    req.user = {
+      userId: null,
+      role: oldRole,
+      companyId: companyId
+    };
+  }
+
+  next();
 });
+
 
 // ===== Ensure upload folders exist (SAFE) =====
 const UPLOAD_DIR_PRODUCTS = path.join(__dirname, 'images', 'products');
@@ -299,7 +339,7 @@ function getActivePermissions() {
 
 function requirePerm(perm) {
   return (req, res, next) => {
-    const role = req.headers['x-user-role'];
+    const role = req.user ? req.user.role : null;
     if (!role) {
       return res.status(403).json({ success: false, message: 'Forbidden' });
     }
