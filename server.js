@@ -5,6 +5,15 @@ const cors = require('cors');
 const fs = require('fs');
 const multer = require('multer');
 
+const productRepository = require('./backend/src/repositories/productRepository');
+const categoryRepository = require('./backend/src/repositories/categoryRepository');
+const orderRepository = require('./backend/src/repositories/orderRepository');
+const userRepository = require('./backend/src/repositories/userRepository');
+const couponRepository = require('./backend/src/repositories/couponRepository');
+const settingsRepository = require('./backend/src/repositories/settingsRepository');
+const permissionRepository = require('./backend/src/repositories/permissionRepository');
+const jsonStore = require('./backend/src/core/jsonStore');
+
 let puppeteer = null;
 try {
   puppeteer = require('puppeteer');
@@ -92,23 +101,16 @@ function ensureDirectory(dir) {
 ensureDirectory(PDF_STORAGE_DIR);
 
 function readJSON(filename) {
-  const filepath = path.join(DATA_DIR, filename);
-  try {
-    return JSON.parse(fs.readFileSync(filepath, 'utf8'));
-  } catch (e) {
-    console.error(`Error reading ${filename}:`, e.message);
-    return [];
-  }
+  return jsonStore.readJsonFile(filename);
 }
 
 function writeJSON(filename, data) {
-  const filepath = path.join(DATA_DIR, filename);
-  fs.writeFileSync(filepath, JSON.stringify(data, null, 2), 'utf8');
+  return jsonStore.writeJsonFile(filename, data);
 }
 
 function findOrderByIdOrNumber(orders, identifier) {
-  const key = String(identifier || '').trim();
-  return orders.find(o => String(o.id || '').trim() === key || String(o.orderNumber || '').trim() === key);
+  const key = identifier !== undefined ? identifier : orders;
+  return orderRepository.findByIdOrNumber(key);
 }
 
 async function createPdfFromPrintPage({ ids, type = 'invoice', saveToDisk = false, filename = null, port }) {
@@ -173,7 +175,7 @@ async function createPdfFromPrintPage({ ids, type = 'invoice', saveToDisk = fals
 }
 
 function ensureBrandingFilesExist() {
-  const settings = readJSON('settings.json');
+  const settings = settingsRepository.findAll();
   const store = Array.isArray(settings) ? settings[0] : settings;
   if (!store || !store.branding) return;
   const assets = [];
@@ -229,7 +231,6 @@ const upload = multer({
 });
 
 // ===== Backend RBAC (Safe Perm Enforcement) =====
-const PERMISSIONS_FILE = path.join(DATA_DIR, 'permissions.json');
 
 const DEFAULT_PERMISSIONS = {
   super_admin: [
@@ -280,22 +281,17 @@ const DEFAULT_PERMISSIONS = {
 
 function getActivePermissions() {
   try {
-    if (fs.existsSync(PERMISSIONS_FILE)) {
-      const data = JSON.parse(fs.readFileSync(PERMISSIONS_FILE, 'utf8'));
-      // Ensure super_admin always has all permissions to prevent locking out
-      data.super_admin = [...DEFAULT_PERMISSIONS.super_admin];
-      return data;
+    let data = permissionRepository.findAll();
+    if (!data || Object.keys(data).length === 0) {
+      data = { ...DEFAULT_PERMISSIONS };
+      permissionRepository.saveAll(data);
     }
+    data.super_admin = [...DEFAULT_PERMISSIONS.super_admin];
+    return data;
   } catch (e) {
-    console.error("Error reading permissions file:", e);
+    console.error('Error reading permissions file:', e);
+    return DEFAULT_PERMISSIONS;
   }
-  // Initialize file if not present
-  try {
-    fs.writeFileSync(PERMISSIONS_FILE, JSON.stringify(DEFAULT_PERMISSIONS, null, 2), 'utf8');
-  } catch (e) {
-    console.error("Error writing default permissions file:", e);
-  }
-  return DEFAULT_PERMISSIONS;
 }
 
 function requirePerm(perm) {
@@ -370,31 +366,23 @@ if (!fs.existsSync(path.join(DATA_DIR, 'coupons.json'))) {
    API: PRODUCTS
 ========================= */
 app.get('/api/products', (req, res) => {
-  res.json(readJSON('products.json'));
+  res.json(productRepository.findAll());
 });
 
 app.post('/api/products', requirePerm('add_products'), (req, res) => {
-  const products = readJSON('products.json');
-  const maxId = products.reduce((m, p) => Math.max(m, p.id || 0), 0);
-  const newProduct = { id: maxId + 1, ...req.body, active: req.body.active !== false };
-  products.push(newProduct);
-  writeJSON('products.json', products);
+  const newProduct = productRepository.create(req.body);
   res.json(newProduct);
 });
 
 app.put('/api/products/:id', requirePerm('edit_products'), (req, res) => {
-  const products = readJSON('products.json');
-  const idx = products.findIndex(p => p.id == req.params.id);
-  if (idx === -1) return res.status(404).json({ error: 'Product not found' });
-  products[idx] = { ...products[idx], ...req.body };
-  writeJSON('products.json', products);
-  res.json(products[idx]);
+  const updated = productRepository.update(req.params.id, req.body);
+  if (!updated) return res.status(404).json({ error: 'Product not found' });
+  res.json(updated);
 });
 
 app.delete('/api/products/:id', requirePerm('delete_products'), (req, res) => {
-  let products = readJSON('products.json');
-  products = products.filter(p => p.id != req.params.id);
-  writeJSON('products.json', products);
+  const deleted = productRepository.delete(req.params.id);
+  if (!deleted) return res.status(404).json({ error: 'Product not found' });
   res.json({ ok: true });
 });
 
@@ -402,36 +390,23 @@ app.delete('/api/products/:id', requirePerm('delete_products'), (req, res) => {
    API: CATEGORIES
 ========================= */
 app.get('/api/categories', (req, res) => {
-  res.json(readJSON('categories.json'));
+  res.json(categoryRepository.findAll());
 });
 
 app.post('/api/categories', requirePerm('manage_categories'), (req, res) => {
-  const categories = readJSON('categories.json');
-  const id = (req.body.name || 'cat').replace(/\s+/g, '-').toLowerCase() + '-' + Date.now().toString(36);
-  const newCat = {
-    id,
-    name: req.body.name,
-    emoji: req.body.emoji || '🛍️',
-    image: req.body.image || ''
-  };
-  categories.push(newCat);
-  writeJSON('categories.json', categories);
-  res.json(newCat);
+  const newCategory = categoryRepository.create(req.body);
+  res.json(newCategory);
 });
 
 app.put('/api/categories/:id', requirePerm('manage_categories'), (req, res) => {
-  const categories = readJSON('categories.json');
-  const idx = categories.findIndex(c => c.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ error: 'Category not found' });
-  categories[idx] = { ...categories[idx], ...req.body };
-  writeJSON('categories.json', categories);
-  res.json(categories[idx]);
+  const updated = categoryRepository.update(req.params.id, req.body);
+  if (!updated) return res.status(404).json({ error: 'Category not found' });
+  res.json(updated);
 });
 
 app.delete('/api/categories/:id', requirePerm('manage_categories'), (req, res) => {
-  let categories = readJSON('categories.json');
-  categories = categories.filter(c => c.id !== req.params.id);
-  writeJSON('categories.json', categories);
+  const deleted = categoryRepository.delete(req.params.id);
+  if (!deleted) return res.status(404).json({ error: 'Category not found' });
   res.json({ ok: true });
 });
 
@@ -439,34 +414,25 @@ app.delete('/api/categories/:id', requirePerm('manage_categories'), (req, res) =
    API: ORDERS
 ========================= */
 app.get('/api/orders', (req, res) => {
-  res.json(readJSON('orders.json'));
+  res.json(orderRepository.findAll());
 });
 
 // Get single order by ID
 app.get('/api/orders/:id', (req, res) => {
-  const orders = readJSON('orders.json');
-  const order = findOrderByIdOrNumber(orders, req.params.id);
+  const order = orderRepository.findByIdOrNumber(req.params.id);
   if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
   return res.json(order);
 });
 
 app.post('/api/orders', (req, res) => {
   try {
-    const orders = readJSON('orders.json');
     const { customer, phone, address, zone, zoneName, items, subtotal, shipping, total, notes, paymentMethod, couponCode, discount } = req.body;
 
     if (!customer || !phone || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ success: false, message: 'بيانات الطلب غير مكتملة' });
     }
 
-    const maxNum = orders.reduce((max, o) => {
-      const match = String(o.id).match(/ORD-(\d+)/);
-      return match ? Math.max(max, parseInt(match[1])) : max;
-    }, 0);
-    const newId = `ORD-${String(maxNum + 1).padStart(3, '0')}`;
-
-    const newOrder = {
-      id: newId,
+    const newOrderPayload = {
       customer,
       phone,
       address: address || '',
@@ -488,17 +454,15 @@ app.post('/api/orders', (req, res) => {
     };
 
     if (couponCode) {
-      const coupons = readJSON('coupons.json');
-      const coupon = coupons.find(c => c.code.toUpperCase() === couponCode.toUpperCase());
+      const coupon = couponRepository.findByCode(couponCode);
       if (coupon && coupon.maxUses !== 0) {
         if (coupon.maxUses > 0) coupon.usedCount = (coupon.usedCount || 0) + 1;
-        writeJSON('coupons.json', coupons);
+        couponRepository.saveAll(couponRepository.findAll());
       }
     }
 
-    orders.push(newOrder);
-    writeJSON('orders.json', orders);
-    console.log(`[ORDER] New order created: ${newId}`);
+    const newOrder = orderRepository.create(newOrderPayload);
+    console.log(`[ORDER] New order created: ${newOrder.id}`);
     res.json({ success: true, data: newOrder, message: 'تم إنشاء الطلب بنجاح' });
   } catch (err) {
     console.error('[ORDER ERROR]', err);
@@ -517,8 +481,7 @@ app.get('/api/orders/:id/pdf', async (req, res) => {
     const orderId = String(req.params.id).trim();
     if (!orderId) return res.status(400).json({ success: false, message: 'Order id required' });
 
-    const orders = readJSON('orders.json');
-    const order = findOrderByIdOrNumber(orders, orderId);
+    const order = orderRepository.findByIdOrNumber(orderId);
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
     const type = String(req.query.type || 'invoice').toLowerCase();
@@ -552,8 +515,7 @@ app.post('/api/orders/bulk-pdf', async (req, res) => {
     const saveToDisk = Boolean(req.body.save);
     if (!ids.length) return res.status(400).json({ success: false, message: 'Order ids required' });
 
-    const orders = readJSON('orders.json');
-    const validIds = ids.filter(id => Boolean(findOrderByIdOrNumber(orders, id)));
+    const validIds = ids.filter(id => Boolean(orderRepository.findByIdOrNumber(id)));
     if (!validIds.length) return res.status(404).json({ success: false, message: 'No valid orders found' });
 
     const filename = `bulk-${type}-orders.pdf`;
@@ -572,73 +534,34 @@ app.post('/api/orders/bulk-pdf', async (req, res) => {
 });
 
 app.put('/api/orders/:id/status', requirePerm('update_orders'), (req, res) => {
-  const orders = readJSON('orders.json');
-  const idx = orders.findIndex(o => String(o.id) === String(req.params.id));
-  if (idx === -1) return res.status(404).json({ success: false, message: 'Order not found' });
-  
-  const order = orders[idx];
-  const newStatus = req.body.status;
-  
-  order.status = newStatus;
-  order.lastUpdated = new Date().toISOString();
-  
-  if (!Array.isArray(order.statusHistory)) order.statusHistory = [];
-  
-  order.statusHistory.push({
-    status: newStatus,
-    changedBy: req.headers['x-user-role'] || 'system',
-    date: order.lastUpdated
-  });
-  
-  writeJSON('orders.json', orders);
-  res.json({ success: true, order });
+  const updatedOrder = orderRepository.updateStatus(req.params.id, req.body.status, req.headers['x-user-role'] || 'system');
+  if (!updatedOrder) return res.status(404).json({ success: false, message: 'Order not found' });
+  res.json({ success: true, order: updatedOrder });
 });
 
 app.put('/api/orders/:id/assign', requirePerm('update_orders'), (req, res) => {
-  const orders = readJSON('orders.json');
-  const idx = orders.findIndex(o => String(o.id) === String(req.params.id));
-  if (idx === -1) return res.status(404).json({ success: false, message: 'Order not found' });
-  
-  orders[idx].assignedTo = req.body.userId;
-  orders[idx].lastUpdated = new Date().toISOString();
-  
-  writeJSON('orders.json', orders);
-  res.json({ success: true, order: orders[idx] });
+  const updatedOrder = orderRepository.assign(req.params.id, req.body.userId);
+  if (!updatedOrder) return res.status(404).json({ success: false, message: 'Order not found' });
+  res.json({ success: true, order: updatedOrder });
 });
 
 app.delete('/api/orders/:id', requirePerm('delete_orders'), (req, res) => {
-  let orders = readJSON('orders.json');
-  const exists = orders.some(o => String(o.id) === String(req.params.id));
-  if (!exists) return res.status(404).json({ success: false, message: 'Order not found' });
-  orders = orders.filter(o => String(o.id) !== String(req.params.id));
-  writeJSON('orders.json', orders);
+  const deleted = orderRepository.delete(req.params.id);
+  if (!deleted) return res.status(404).json({ success: false, message: 'Order not found' });
   res.json({ success: true, message: 'Order deleted successfully' });
 });
 
 app.post('/api/orders/:id/note', requirePerm('add_order_notes'), (req, res) => {
-  const orders = readJSON('orders.json');
-  const idx = orders.findIndex(o => String(o.id) === String(req.params.id));
-  if (idx === -1) return res.status(404).json({ success: false, message: 'Order not found' });
-  
-  const order = orders[idx];
-  if (!Array.isArray(order.internalComments)) order.internalComments = [];
-  
-  order.internalComments.push({
-    text: req.body.note,
-    addedBy: req.headers['x-user-role'] || 'system',
-    date: new Date().toISOString()
-  });
-  order.lastUpdated = new Date().toISOString();
-  
-  writeJSON('orders.json', orders);
-  res.json({ success: true, order });
+  const updatedOrder = orderRepository.addNote(req.params.id, req.body.note, req.headers['x-user-role'] || 'system');
+  if (!updatedOrder) return res.status(404).json({ success: false, message: 'Order not found' });
+  res.json({ success: true, order: updatedOrder });
 });
 
 /* =========================
    API: COUPONS
 ========================= */
 app.get('/api/coupons', requirePerm('view_coupons'), (req, res) => {
-  res.json(readJSON('coupons.json'));
+  res.json(couponRepository.findAll());
 });
 
 app.post('/api/coupons/validate', (req, res) => {
@@ -648,8 +571,7 @@ app.post('/api/coupons/validate', (req, res) => {
       return res.status(400).json({ success: false, message: 'رمز الخصم غير صحيح' });
     }
 
-    const coupons = readJSON('coupons.json');
-    const coupon = coupons.find(c => c.code.toUpperCase() === code.toUpperCase());
+    const coupon = couponRepository.findByCode(code);
 
     if (!coupon) {
       return res.json({ success: false, message: 'رمز الخصم غير موجود' });
@@ -681,21 +603,16 @@ app.post('/api/coupons', requirePerm('manage_coupons'), (req, res) => {
       return res.status(400).json({ success: false, message: 'بيانات الخصم غير مكتملة' });
     }
 
-    const coupons = readJSON('coupons.json');
-    if (coupons.find(c => c.code.toUpperCase() === code.toUpperCase())) {
+    if (couponRepository.findByCode(code)) {
       return res.status(400).json({ success: false, message: 'رمز الخصم موجود بالفعل' });
     }
 
-    const newCoupon = {
-      code: code.toUpperCase(),
+    const newCoupon = couponRepository.create({
+      code,
       discountPercent,
-      maxUses: maxUses || -1,
-      usedCount: 0,
-      active: true,
-      expiryDate: expiryDate || '2099-12-31'
-    };
-    coupons.push(newCoupon);
-    writeJSON('coupons.json', coupons);
+      maxUses,
+      expiryDate
+    });
     res.json({ success: true, data: newCoupon });
   } catch (err) {
     console.error('[COUPON CREATE ERROR]', err);
@@ -705,15 +622,11 @@ app.post('/api/coupons', requirePerm('manage_coupons'), (req, res) => {
 
 app.put('/api/coupons/:code', requirePerm('manage_coupons'), (req, res) => {
   try {
-    const coupons = readJSON('coupons.json');
-    const idx = coupons.findIndex(c => c.code.toUpperCase() === req.params.code.toUpperCase());
-    if (idx === -1) {
+    const updated = couponRepository.update(req.params.code, req.body);
+    if (!updated) {
       return res.status(404).json({ success: false, message: 'الخصم غير موجود' });
     }
-
-    coupons[idx] = { ...coupons[idx], ...req.body };
-    writeJSON('coupons.json', coupons);
-    res.json({ success: true, data: coupons[idx] });
+    res.json({ success: true, data: updated });
   } catch (err) {
     console.error('[COUPON UPDATE ERROR]', err);
     res.status(500).json({ success: false, message: 'فشل تحديث الخصم' });
@@ -722,9 +635,10 @@ app.put('/api/coupons/:code', requirePerm('manage_coupons'), (req, res) => {
 
 app.delete('/api/coupons/:code', requirePerm('manage_coupons'), (req, res) => {
   try {
-    let coupons = readJSON('coupons.json');
-    coupons = coupons.filter(c => c.code.toUpperCase() !== req.params.code.toUpperCase());
-    writeJSON('coupons.json', coupons);
+    const deleted = couponRepository.delete(req.params.code);
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'الخصم غير موجود' });
+    }
     res.json({ success: true, message: 'تم حذف الخصم' });
   } catch (err) {
     console.error('[COUPON DELETE ERROR]', err);
@@ -742,12 +656,7 @@ app.post('/api/login', (req, res) => {
     return res.status(400).json({ success: false, message: 'اسم المستخدم وكلمة المرور مطلوبان' });
   }
   
-  const users = readJSON('users.json');
-  const normalized = String(username).trim().toLowerCase();
-  const user = users.find(u => 
-    String(u.username || '').toLowerCase() === normalized || 
-    String(u.email || '').toLowerCase() === normalized
-  );
+  const user = userRepository.findByUsername(username);
   
   if (!user) {
     return res.status(401).json({ success: false, message: 'اسم المستخدم غير موجود' });
@@ -770,29 +679,19 @@ app.post('/api/login', (req, res) => {
    API: USERS
 ========================= */
 app.get('/api/users', requirePerm('view_users'), (req, res) => {
-  res.json(readJSON('users.json'));
+  res.json(userRepository.findAll());
 });
 
 app.post('/api/users', requirePerm('add_users'), (req, res) => {
-  const users = readJSON('users.json');
-  const newUser = { 
-    id: 'u' + Date.now().toString(36), 
-    ...req.body, 
-    active: req.body.active !== false,
-    createdAt: new Date().toISOString().split('T')[0]
-  };
-  users.push(newUser);
-  writeJSON('users.json', users);
+  const newUser = userRepository.create(req.body);
   res.json(newUser);
 });
 
 app.put('/api/users/:id', requirePerm('edit_users'), (req, res) => {
-  const users = readJSON('users.json');
-  const idx = users.findIndex(u => String(u.id) === String(req.params.id));
-  if (idx === -1) return res.status(404).json({ success: false, message: 'User not found' });
+  const users = userRepository.findAll();
+  const targetUser = users.find(u => String(u.id) === String(req.params.id));
+  if (!targetUser) return res.status(404).json({ success: false, message: 'User not found' });
   
-  const targetUser = users[idx];
-  // Check if we are deactivating or changing role of the last active super_admin
   const isSuperAdmin = targetUser.role === 'super_admin';
   const isDeactivating = req.body.active === false || (req.body.role && req.body.role !== 'super_admin');
   
@@ -803,17 +702,15 @@ app.put('/api/users/:id', requirePerm('edit_users'), (req, res) => {
     }
   }
 
-  users[idx] = { ...users[idx], ...req.body };
-  writeJSON('users.json', users);
-  res.json(users[idx]);
+  const updated = userRepository.update(req.params.id, req.body);
+  res.json(updated);
 });
 
 app.delete('/api/users/:id', requirePerm('delete_users'), (req, res) => {
-  const users = readJSON('users.json');
-  const idx = users.findIndex(u => String(u.id) === String(req.params.id));
-  if (idx === -1) return res.status(404).json({ success: false, message: 'User not found' });
+  const users = userRepository.findAll();
+  const targetUser = users.find(u => String(u.id) === String(req.params.id));
+  if (!targetUser) return res.status(404).json({ success: false, message: 'User not found' });
 
-  const targetUser = users[idx];
   if (targetUser.role === 'super_admin') {
     const superAdmins = users.filter(u => u.role === 'super_admin');
     if (superAdmins.length <= 1) {
@@ -821,8 +718,8 @@ app.delete('/api/users/:id', requirePerm('delete_users'), (req, res) => {
     }
   }
 
-  const filtered = users.filter(u => String(u.id) !== String(req.params.id));
-  writeJSON('users.json', filtered);
+  const deleted = userRepository.delete(req.params.id);
+  if (!deleted) return res.status(404).json({ success: false, message: 'User not found' });
   res.json({ success: true });
 });
 
@@ -837,7 +734,7 @@ app.put('/api/permissions', requirePerm('manage_roles_permissions'), (req, res) 
   const newPerms = req.body;
   // Ensure super_admin always has all permissions
   newPerms.super_admin = [...DEFAULT_PERMISSIONS.super_admin];
-  writeJSON('permissions.json', newPerms);
+  permissionRepository.saveAll(newPerms);
   res.json({ success: true, permissions: newPerms });
 });
 
@@ -845,8 +742,7 @@ app.put('/api/permissions', requirePerm('manage_roles_permissions'), (req, res) 
    API: STORE SETTINGS
 ========================= */
 app.get('/api/settings', (req, res) => {
-  const settings = readJSON('settings.json');
-  res.json(settings[0] || {});
+  res.json(settingsRepository.findFirst() || {});
 });
 
 app.put('/api/settings', requirePerm('view_settings'), (req, res) => {
@@ -881,14 +777,8 @@ app.put('/api/settings', requirePerm('view_settings'), (req, res) => {
     }
   }
 
-  const settings = readJSON('settings.json');
-  if (settings.length > 0) {
-    settings[0] = { ...settings[0], ...req.body };
-  } else {
-    settings.push({ id: 'loulo-beauty', ...req.body });
-  }
-  writeJSON('settings.json', settings);
-  res.json(settings[0]);
+  const updatedSettings = settingsRepository.update(req.body);
+  res.json(updatedSettings);
 });
 
 /* =========================
@@ -941,9 +831,8 @@ app.get('/print-order', (req, res) => {
     const id = req.query.id;
     const ids = req.query.ids;
     if (id || ids) {
-      const orders = readJSON('orders.json');
       const list = ids ? String(ids).split(',').map(s => s.trim()).filter(Boolean) : [String(id)];
-      const missing = list.filter(i => !findOrderByIdOrNumber(orders, i));
+      const missing = list.filter(i => !orderRepository.findByIdOrNumber(i));
       if (missing.length === list.length) {
         res.status(404);
         return res.send(`<html><head><meta charset="utf-8"><title>Not Found</title></head><body style="font-family:Arial,Helvetica,sans-serif;padding:24px;direction:rtl"><h2>الطلب/الطلبات غير موجودة</h2><p>الطلبات التالية لم يتم العثور عليها: ${list.join(', ')}</p></body></html>`);
