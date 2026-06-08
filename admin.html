@@ -279,25 +279,96 @@
         <div class="table-header">
           <h3><i data-lucide="credit-card" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>النظام المالي</h3>
         </div>
+
+        <!-- Summary KPIs -->
         <div id="accounting-home">
-          <div class="accounting-grid">
-            <div class="accounting-card">
-              <div class="accounting-card-icon">👥</div>
-              <h3>العملاء</h3>
-              <p>إدارة بيانات العملاء بشكل بسيط</p>
-              <button class="topbar-btn btn-primary" onclick="showAccountingTable('customers')">عرض العملاء</button>
+          <div class="accounting-summary-grid" style="padding:12px 18px 6px 18px;">
+            <div class="accounting-summary-card" data-theme="cash">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <div class="summary-label">رصيد الصندوق</div>
+                  <div class="summary-value" id="kpi-cash">12,500 ₪</div>
+                  <div class="summary-sub">آخر تحديث: اليوم</div>
+                </div>
+                <i data-lucide="wallet" class="summary-icon"></i>
+              </div>
             </div>
-            <div class="accounting-card">
-              <div class="accounting-card-icon">🏢</div>
-              <h3>الموردون</h3>
-              <p>حفظ بيانات الموردين وجهات الشراء</p>
-              <button class="topbar-btn btn-primary" onclick="showAccountingTable('suppliers')">عرض الموردين</button>
+            <div class="accounting-summary-card" data-theme="sales">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <div class="summary-label">مبيعات الشهر</div>
+                  <div class="summary-value" id="kpi-sales">48,300 ₪</div>
+                  <div class="summary-sub">زيادة 12% عن الشهر الماضي</div>
+                </div>
+                <i data-lucide="shopping-bag" class="summary-icon"></i>
+              </div>
             </div>
-            <div class="accounting-card">
-              <div class="accounting-card-icon">📘</div>
-              <h3>دليل الحسابات</h3>
-              <p>الحسابات الأساسية مثل الصندوق والبنك والمبيعات والمصاريف</p>
-              <button class="topbar-btn btn-primary" onclick="showAccountingTable('accounts')">عرض الحسابات</button>
+            <div class="accounting-summary-card" data-theme="receivables">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <div class="summary-label">مستحقات العملاء</div>
+                  <div class="summary-value" id="kpi-receivables">9,200 ₪</div>
+                  <div class="summary-sub">8 عملاء لديهم أرصدة</div>
+                </div>
+                <i data-lucide="users" class="summary-icon"></i>
+              </div>
+            </div>
+            <div class="accounting-summary-card" data-theme="expenses">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                  <div class="summary-label">مصروفات الشهر</div>
+                  <div class="summary-value" id="kpi-expenses">6,750 ₪</div>
+                  <div class="summary-sub">ضمن المعدل الطبيعي</div>
+                </div>
+                <i data-lucide="credit-card" class="summary-icon"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Services Grid -->
+          <div class="service-grid" style="padding:8px 18px 18px 18px;">
+            <div class="service-card" onclick="showAccountingTable('cash')" data-icon="wallet" data-color="cash">
+              <div class="service-icon"><i data-lucide="wallet"></i></div>
+              <div class="service-title">الصندوق</div>
+              <div class="service-desc">عمليات القبض والصرف والرصيد</div>
+            </div>
+            <div class="service-card" onclick="showAccountingTable('bank')" data-icon="bank" data-color="bank">
+              <div class="service-icon"><i data-lucide="bank"></i></div>
+              <div class="service-title">البنك</div>
+              <div class="service-desc">إيداع، سحب، وملخّص الأرصدة</div>
+            </div>
+            <div class="service-card" onclick="showAccountingTable('customers')" data-icon="users" data-color="customers">
+              <div class="service-icon"><i data-lucide="users"></i></div>
+              <div class="service-title">العملاء</div>
+              <div class="service-desc">قائمة العملاء وموجز أرصدتهم</div>
+            </div>
+            <div class="service-card" onclick="showAccountingTable('suppliers')" data-icon="truck" data-color="suppliers">
+              <div class="service-icon"><i data-lucide="truck"></i></div>
+              <div class="service-title">الموردون</div>
+              <div class="service-desc">بيانات الموردين والمستحقات</div>
+            </div>
+            <div class="service-card" onclick="showAccountingTable('invoices')" data-icon="file-text" data-color="invoices">
+              <div class="service-icon"><i data-lucide="file-text"></i></div>
+              <div class="service-title">الفواتير</div>
+              <div class="service-desc">عرض الفواتير وحالتها</div>
+            </div>
+            <div class="service-card" onclick="showAccountingTable('reports')" data-icon="bar-chart-2" data-color="reports">
+              <div class="service-icon"><i data-lucide="bar-chart-2"></i></div>
+              <div class="service-title">التقارير</div>
+              <div class="service-desc">تقارير مالية جاهزة للتصفّح</div>
+            </div>
+          </div>
+
+          <!-- Quick Glance -->
+          <div style="padding:0 18px 18px 18px;">
+            <div class="quick-glance">
+              <h4>نظرة سريعة</h4>
+              <div class="quick-glance-grid">
+                <div class="qg-item"><div class="qg-label">آخر حركة مالية</div><div class="qg-value">قبض 1,200 ₪</div></div>
+                <div class="qg-item"><div class="qg-label">آخر فاتورة</div><div class="qg-value">فاتورة #1008</div></div>
+                <div class="qg-item"><div class="qg-label">عدد العملاء</div><div class="qg-value">24</div></div>
+                <div class="qg-item"><div class="qg-label">عدد الموردين</div><div class="qg-value">7</div></div>
+              </div>
             </div>
           </div>
         </div>
@@ -305,7 +376,7 @@
         <div class="accounting-table-panel" id="accounting-table-panel" style="display:none; margin-top:24px;">
           <div class="table-header" style="justify-content: space-between; gap: 12px;">
             <h3 id="accounting-table-title"></h3>
-            <button class="topbar-btn btn-outline" onclick="showAccountingHome()">رجوع</button>
+            <button class="topbar-btn btn-outline" onclick="showAccountingHome()">العودة للنظام المالي</button>
           </div>
           <table class="admin-table">
             <thead>

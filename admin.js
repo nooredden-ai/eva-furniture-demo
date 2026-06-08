@@ -154,6 +154,54 @@ const accountingFixtures = {
   }
 };
 
+// Extended fixtures for UI-only service cards
+accountingFixtures.cash = {
+  title: 'الصندوق',
+  headers: ['النوع', 'المبلغ', 'البيان'],
+  rows: [
+    ['قبض', '1,200 ₪', 'بيع نقدي'],
+    ['صرف', '300 ₪', 'سداد مصروفات'],
+    ['رصيد', '12,500 ₪', 'الرصيد الحالي']
+  ]
+};
+
+accountingFixtures.bank = {
+  title: 'البنك',
+  headers: ['العملية', 'المبلغ', 'البيان'],
+  rows: [
+    ['إيداع', '25,000 ₪', 'تحويل من مبيعات'],
+    ['سحب', '5,000 ₪', 'سحب نقدي'],
+    ['رصيد', '40,200 ₪', 'الرصيد البنكي']
+  ]
+};
+
+accountingFixtures.invoices = {
+  title: 'الفواتير',
+  headers: ['رقم', 'العميل', 'إجمالي', 'حالة'],
+  rows: [
+    ['INV-001', 'شركة النور', '3,200 ₪', 'مدفوعة'],
+    ['INV-002', 'محمد أحمد', '450 ₪', 'مستحقة'],
+    ['INV-003', 'مورد المفروشات الأول', '1,250 ₪', 'مستحقة']
+  ]
+};
+
+accountingFixtures.reports = {
+  title: 'التقارير',
+  headers: ['اسم التقرير', 'وصف مختصر'],
+  rows: [
+    ['تقرير المبيعات الشهري', 'موجز إجمالي المبيعات لهذا الشهر'],
+    ['تقرير العملاء الدائنين', 'عملاء لديهم أرصدة مستحقة'],
+    ['تقرير المصروفات', 'تفاصيل المصروفات الشهرية']
+  ]
+};
+
+// Map legacy terminology replacements
+const accountingTerms = {
+  'قيود يومية': 'الحركات المالية',
+  'الذمم المدينة': 'مستحقات العملاء',
+  'الدائنون': 'مستحقات الموردين'
+};
+
 function renderAccountingPage() {
   const home = $a('accounting-home');
   const panel = $a('accounting-table-panel');
@@ -182,6 +230,14 @@ function showAccountingTable(type) {
   if (headers) headers.innerHTML = data.headers.map(h => `<th>${h}</th>`).join('');
   if (body) body.innerHTML = data.rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('');
 }
+
+// Ensure summary KPIs are present (static values) when page loads
+document.addEventListener('DOMContentLoaded', () => {
+  const kpiCash = $a('kpi-cash'); if (kpiCash) kpiCash.textContent = '12,500 ₪';
+  const kpiSales = $a('kpi-sales'); if (kpiSales) kpiSales.textContent = '48,300 ₪';
+  const kpiReceiv = $a('kpi-receivables'); if (kpiReceiv) kpiReceiv.textContent = '9,200 ₪';
+  const kpiExp = $a('kpi-expenses'); if (kpiExp) kpiExp.textContent = '6,750 ₪';
+});
 
 // ===== Pending Badge =====
 async function updatePendingBadge() {
