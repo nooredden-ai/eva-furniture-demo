@@ -93,6 +93,10 @@ const Auth = {
       // Store session (exclude password if present)
       const session = { id: user.id, username: user.username || '', name: user.name, email: user.email, role: user.role, storeId: user.storeId };
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      // Persist JWT token for Authorization header usage
+      if (result && result.token) {
+        sessionStorage.setItem('louloToken', result.token);
+      }
       return { ok: true, user: session };
     } catch (err) {
       console.error('[AUTH ERROR]', err);

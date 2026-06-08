@@ -692,30 +692,40 @@ app.delete('/api/coupons/:code', requirePerm('manage_coupons'), (req, res) => {
 /* =========================
    API: AUTHENTICATION (NO AUTH REQUIRED)
 ========================= */
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
-  
+
   if (!username || !password) {
     return res.status(400).json({ success: false, message: 'اسم المستخدم وكلمة المرور مطلوبان' });
   }
-  
+
   const user = userRepository.findByUsername(username);
-  
+
   if (!user) {
     return res.status(401).json({ success: false, message: 'اسم المستخدم غير موجود' });
   }
-  
+
   if (user.password !== password) {
     return res.status(401).json({ success: false, message: 'كلمة المرور غير صحيحة' });
   }
-  
+
   if (!user.active) {
     return res.status(403).json({ success: false, message: 'الحساب موقوف. تواصل مع المسؤول' });
   }
-  
-  // Return user without password
+
+  // --- JWT issuance ---
+  // TODO: replace with authenticated user's companyId later.
+  const company = await prisma.company.findFirst();
+  const payload = {
+    userId: user.id,
+    role: user.role,
+    companyId: company ? company.id : null,
+  };
+  const token = jwt.sign(payload, process.env.JWT_SECRET || 'fallback-secret-key', { expiresIn: '24h' });
+
+  // Return user without password and include JWT
   const { password: _, ...userWithoutPassword } = user;
-  res.json({ success: true, data: userWithoutPassword });
+  res.json({ success: true, data: userWithoutPassword, token });
 });
 
 /* =========================
