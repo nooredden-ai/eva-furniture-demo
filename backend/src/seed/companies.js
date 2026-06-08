@@ -3,15 +3,24 @@ const prisma = require('./prismaClient');
 async function seedCompany() {
   const companyName = 'EVA Furniture';
 
-  const company = await prisma.company.upsert({
+  const existingCompany = await prisma.company.findFirst({
     where: { name: companyName },
-    update: {
-      currencyCode: 'ILS',
-      timezone: 'Asia/Jerusalem',
-      locale: 'ar-IL',
-      isActive: true,
-    },
-    create: {
+  });
+
+  if (existingCompany) {
+    return prisma.company.update({
+      where: { id: existingCompany.id },
+      data: {
+        currencyCode: 'ILS',
+        timezone: 'Asia/Jerusalem',
+        locale: 'ar-IL',
+        isActive: true,
+      },
+    });
+  }
+
+  return prisma.company.create({
+    data: {
       name: companyName,
       currencyCode: 'ILS',
       timezone: 'Asia/Jerusalem',
@@ -19,8 +28,6 @@ async function seedCompany() {
       isActive: true,
     },
   });
-
-  return company;
 }
 
 module.exports = {
