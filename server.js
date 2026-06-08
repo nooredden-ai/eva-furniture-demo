@@ -1353,6 +1353,135 @@ app.patch('/api/accounting/settings', async (req, res) => {
   }
 });
 
+// =========================
+// API: BANK DEPOSIT (Phase 12A)
+// =========================
+app.post('/api/accounting/bank-deposit', async (req, res) => {
+  try {
+    const company = await prisma.company.findFirst();
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'لا توجد شركة في قاعدة البيانات.' });
+    }
+
+    // Get AccountingSettings
+    const settings = await prisma.accountingSettings.findUnique({
+      where: { companyId: company.id },
+    });
+
+    if (!settings || !settings.defaultCashAccountId || !settings.defaultBankAccountId) {
+      return res.status(400).json({
+        success: false,
+        message: 'يرجى ضبط الحساب النقدي والحساب البنكي الافتراضي من إعدادات المحاسبة.'
+      });
+    }
+
+    // Validate input
+    const { amount, description, date } = req.body;
+
+    if (!amount || typeof amount !== 'number' || amount <= 0) {
+      return res.status(400).json({ success: false, message: 'المبلغ يجب أن يكون رقماً موجباً.' });
+    }
+
+    if (typeof description !== 'string' || !description.trim()) {
+      return res.status(400).json({ success: false, message: 'البيان مطلوب.' });
+    }
+
+    const entryDate = date ? new Date(date) : new Date();
+    if (isNaN(entryDate.getTime())) {
+      return res.status(400).json({ success: false, message: 'التاريخ غير صحيح.' });
+    }
+
+    // Verify both accounts exist
+    const [cashAccount, bankAccount] = await Promise.all([
+      prisma.accountingAccount.findUnique({ where: { id: settings.defaultCashAccountId } }),
+      prisma.accountingAccount.findUnique({ where: { id: settings.defaultBankAccountId } }),
+    ]);
+
+    if (!cashAccount) {
+      return res.status(400).json({ success: false, message: 'الحساب النقدي الافتراضي غير موجود.' });
+    }
+    if (!bankAccount) {
+      return res.status(400).json({ success: false, message: 'الحساب البنكي الافتراضي غير موجود.' });
+    }
+
+    // Generate journal entry number
+    const lastEntry = await prisma.journalEntry.findFirst({
+      where: { companyId: company.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    const nextNumber = lastEntry ? parseInt(lastEntry.entryNumber.split('-').pop() || '0') + 1 : 1;
+    const entryNumber = `JE-${company.id.substring(0, 6)}-${String(nextNumber).padStart(4, '0')}`;
+
+    // Create JournalEntry
+    const journalEntry = await prisma.journalEntry.create({
+      data: {
+        companyId: company.id,
+        entryNumber,
+        entryDate,
+        description: description.trim(),
+        sourceType: 'PAYMENT',
+        sourceId: 'BANK_DEPOSIT',
+        isPosted: true,
+        createdById: req.user?.userId || null,
+      },
+    });
+
+    // Create JournalEntryLines (Debit: Bank, Credit: Cash)
+    const [debitLine, creditLine] = await Promise.all([
+      prisma.journalEntryLine.create({
+        data: {
+          journalEntryId: journalEntry.id,
+          accountId: settings.defaultBankAccountId,
+          debit: amount,
+          credit: 0,
+          description: `إيداع بنكي: ${description.trim()}`,
+        },
+      }),
+      prisma.journalEntryLine.create({
+        data: {
+          journalEntryId: journalEntry.id,
+          accountId: settings.defaultCashAccountId,
+          debit: 0,
+          credit: amount,
+          description: `إيداع بنكي: ${description.trim()}`,
+        },
+      }),
+    ]);
+
+    // Fetch the complete entry with lines
+    const completeEntry = await prisma.journalEntry.findUnique({
+      where: { id: journalEntry.id },
+      include: { lines: true },
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'تم تسجيل الإيداع البنكي بنجاح.',
+      data: {
+        journalEntry: {
+          id: completeEntry.id,
+          entryNumber: completeEntry.entryNumber,
+          entryDate: completeEntry.entryDate,
+          description: completeEntry.description,
+          isPosted: completeEntry.isPosted,
+        },
+        lines: completeEntry.lines.map((line) => ({
+          id: line.id,
+          accountId: line.accountId,
+          accountCode: line.accountId === settings.defaultBankAccountId ? bankAccount.accountCode : cashAccount.accountCode,
+          accountName: line.accountId === settings.defaultBankAccountId ? bankAccount.name : cashAccount.name,
+          debit: parseFloat(line.debit),
+          credit: parseFloat(line.credit),
+          description: line.description,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error('[BANK DEPOSIT]', error);
+    res.status(500).json({ success: false, message: 'فشل تسجيل الإيداع البنكي.' });
+  }
+});
+
 /* =========================
    API: PING
 ========================= */
