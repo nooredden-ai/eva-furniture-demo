@@ -1,0 +1,508 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CurrencyCode {
+  ILS
+  USD
+  EUR
+  SAR
+  AED
+  JOD
+  QAR
+  BHD
+  OMR
+  DZD
+  TND
+  TRY
+  GBP
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum OrderStatus {
+  DRAFT
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  RETURNED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  PARTIALLY_PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CREDIT_CARD
+  DEBIT_CARD
+  MOBILE_WALLET
+  OTHER
+}
+
+enum PaymentDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  INCOME
+  EXPENSE
+}
+
+enum JournalSourceType {
+  SALES_INVOICE
+  PAYMENT
+  MANUAL_ADJUSTMENT
+}
+
+model Company {
+  id            String              @id @default(uuid())
+  name          String
+  legalName     String?
+  taxId         String?
+  currencyCode  CurrencyCode        @default(ILS)
+  timezone      String?             @default("UTC")
+  locale        String?             @default("en-IL")
+  address       String?
+  phone         String?
+  email         String?
+  website       String?
+  isActive      Boolean             @default(true)
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  users          User[]
+  products       Product[]
+  categories     ProductCategory[]
+  customers      Customer[]
+  suppliers      Supplier[]
+  salesOrders    SalesOrder[]
+  salesInvoices  SalesInvoice[]
+  payments       Payment[]
+  accounts       AccountingAccount[]
+  journalEntries JournalEntry[]
+  settings       CompanySetting[]
+  themes         Theme[]
+  brandingAssets BrandingAsset[]
+  auditLogs      AuditLog[]
+}
+
+model Role {
+  id           String            @id @default(uuid())
+  name         String            @unique
+  description  String?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  users        User[]
+  permissions  RolePermission[]
+}
+
+model Permission {
+  id          String            @id @default(uuid())
+  slug        String            @unique
+  name        String
+  description String?
+
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  role         Role       @relation(fields: [roleId], references: [id])
+  roleId       String
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  permissionId String
+
+  @@unique([roleId, permissionId])
+}
+
+model User {
+  id           String      @id @default(uuid())
+  company      Company     @relation(fields: [companyId], references: [id])
+  companyId    String
+  role         Role        @relation(fields: [roleId], references: [id])
+  roleId       String
+  username     String
+  email        String
+  passwordHash String
+  fullName     String?
+  phone        String?
+  status       UserStatus  @default(ACTIVE)
+  active       Boolean     @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  salesOrders   SalesOrder[]
+  salesInvoices SalesInvoice[]
+  payments      Payment[]
+  journalEntries JournalEntry[]
+  auditLogs     AuditLog[]
+
+  @@unique([companyId, username])
+  @@unique([companyId, email])
+  @@index([companyId])
+}
+
+model ProductCategory {
+  id               String           @id @default(uuid())
+  company          Company          @relation(fields: [companyId], references: [id])
+  companyId        String
+  name             String
+  slug             String
+  description      String?
+  parentCategory   ProductCategory? @relation("CategoryParent", fields: [parentCategoryId], references: [id])
+  parentCategoryId String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  products         Product[]
+
+  @@unique([companyId, slug])
+  @@index([companyId])
+}
+
+model Product {
+  id               String      @id @default(uuid())
+  company          Company     @relation(fields: [companyId], references: [id])
+  companyId        String
+  category         ProductCategory? @relation(fields: [categoryId], references: [id])
+  categoryId       String?
+  sku              String
+  name             String
+  description      String?
+  unitPrice        Decimal     @db.Decimal(18, 4)
+  costPrice        Decimal     @db.Decimal(18, 4)
+  currencyCode     CurrencyCode @default(ILS)
+  imageUrl         String?
+  active           Boolean     @default(true)
+  taxRate          Decimal?    @db.Decimal(5, 2)
+  inventoryTracked Boolean     @default(false)
+  deletedAt        DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  salesOrderLines   SalesOrderLine[]
+  salesInvoiceLines SalesInvoiceLine[]
+
+  @@unique([companyId, sku])
+  @@index([companyId])
+  @@index([companyId, createdAt])
+}
+
+model Customer {
+  id             String      @id @default(uuid())
+  company        Company     @relation(fields: [companyId], references: [id])
+  companyId      String
+  name           String
+  email          String?
+  phone          String?
+  billingAddress String?
+  shippingAddress String?
+  customerCode   String?
+  creditLimit    Decimal?    @db.Decimal(18, 4)
+  active         Boolean     @default(true)
+  deletedAt      DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  salesOrders    SalesOrder[]
+  salesInvoices  SalesInvoice[]
+
+  @@unique([companyId, customerCode])
+  @@index([companyId])
+  @@index([companyId, createdAt])
+}
+
+model Supplier {
+  id             String      @id @default(uuid())
+  company        Company     @relation(fields: [companyId], references: [id])
+  companyId      String
+  name           String
+  email          String?
+  phone          String?
+  billingAddress String?
+  supplierCode   String?
+  active         Boolean     @default(true)
+  deletedAt      DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@unique([companyId, supplierCode])
+  @@index([companyId])
+  @@index([companyId, createdAt])
+}
+
+model SalesOrder {
+  id             String      @id @default(uuid())
+  company        Company     @relation(fields: [companyId], references: [id])
+  companyId      String
+  customer       Customer?   @relation(fields: [customerId], references: [id])
+  customerId     String?
+  orderNumber    String
+  status         OrderStatus @default(PENDING)
+  orderDate      DateTime    @default(now())
+  deliveryDate   DateTime?
+  subtotal       Decimal     @db.Decimal(18, 4)
+  taxTotal       Decimal     @db.Decimal(18, 4) @default("0")
+  shippingTotal  Decimal     @db.Decimal(18, 4) @default("0")
+  discountTotal  Decimal     @db.Decimal(18, 4) @default("0")
+  total          Decimal     @db.Decimal(18, 4)
+  currencyCode   CurrencyCode @default(ILS)
+  billingAddress String?
+  shippingAddress String?
+  notes          String?
+  deletedAt      DateTime?
+  createdBy      User?       @relation(fields: [createdById], references: [id])
+  createdById    String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  lines         SalesOrderLine[]
+  salesInvoice  SalesInvoice?
+
+  @@unique([companyId, orderNumber])
+  @@index([companyId])
+  @@index([companyId, status])
+  @@index([companyId, createdAt])
+  @@index([companyId, orderDate])
+}
+
+model SalesOrderLine {
+  id            String      @id @default(uuid())
+  salesOrder    SalesOrder  @relation(fields: [salesOrderId], references: [id], onDelete: Restrict)
+  salesOrderId  String
+  product       Product?    @relation(fields: [productId], references: [id])
+  productId     String?
+  description   String?
+  quantity      Decimal     @db.Decimal(18, 4)
+  unitPrice     Decimal     @db.Decimal(18, 4)
+  discount      Decimal     @db.Decimal(18, 4) @default("0")
+  taxRate       Decimal?    @db.Decimal(5, 2)
+  lineTotal     Decimal     @db.Decimal(18, 4)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model SalesInvoice {
+  id             String      @id @default(uuid())
+  company        Company     @relation(fields: [companyId], references: [id])
+  companyId      String
+  customer       Customer?   @relation(fields: [customerId], references: [id])
+  customerId     String?
+  salesOrder     SalesOrder? @relation(fields: [salesOrderId], references: [id], onDelete: Restrict)
+  salesOrderId   String?
+  invoiceNumber  String
+  invoiceDate    DateTime    @default(now())
+  dueDate        DateTime?
+  status         InvoiceStatus @default(OPEN)
+  subtotal       Decimal     @db.Decimal(18, 4)
+  taxTotal       Decimal     @db.Decimal(18, 4) @default("0")
+  shippingTotal  Decimal     @db.Decimal(18, 4) @default("0")
+  discountTotal  Decimal     @db.Decimal(18, 4) @default("0")
+  total          Decimal     @db.Decimal(18, 4)
+  balanceDue     Decimal     @db.Decimal(18, 4)
+  currencyCode   CurrencyCode @default(ILS)
+  notes          String?
+  deletedAt      DateTime?
+  createdBy      User?       @relation(fields: [createdById], references: [id])
+  createdById    String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  lines         SalesInvoiceLine[]
+  payments      Payment[]
+  journalEntry  JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: Restrict)
+  journalEntryId String?
+
+  @@unique([companyId, invoiceNumber])
+  @@index([companyId])
+  @@index([companyId, status])
+  @@index([companyId, createdAt])
+  @@index([companyId, invoiceDate])
+}
+
+model SalesInvoiceLine {
+  id             String       @id @default(uuid())
+  salesInvoice   SalesInvoice @relation(fields: [salesInvoiceId], references: [id], onDelete: Restrict)
+  salesInvoiceId String
+  product        Product?     @relation(fields: [productId], references: [id])
+  productId      String?
+  description    String?
+  quantity       Decimal      @db.Decimal(18, 4)
+  unitPrice      Decimal      @db.Decimal(18, 4)
+  discount       Decimal      @db.Decimal(18, 4) @default("0")
+  taxRate        Decimal?     @db.Decimal(5, 2)
+  lineTotal      Decimal      @db.Decimal(18, 4)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Payment {
+  id              String         @id @default(uuid())
+  company         Company        @relation(fields: [companyId], references: [id])
+  companyId       String
+  paymentNumber   String
+  paymentDate     DateTime       @default(now())
+  amount          Decimal        @db.Decimal(18, 4)
+  currencyCode    CurrencyCode   @default(ILS)
+  method          PaymentMethod
+  direction       PaymentDirection
+  reference       String?
+  salesInvoice    SalesInvoice?  @relation(fields: [salesInvoiceId], references: [id], onDelete: Restrict)
+  salesInvoiceId  String?
+  journalEntry    JournalEntry?  @relation(fields: [journalEntryId], references: [id], onDelete: Restrict)
+  journalEntryId  String?
+  bankAccount     String?
+  cashAccount     String?
+  notes           String?
+  deletedAt       DateTime?
+  createdBy       User?          @relation(fields: [createdById], references: [id])
+  createdById     String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@unique([companyId, paymentNumber])
+  @@index([companyId])
+  @@index([companyId, createdAt])
+}
+
+model AccountingAccount {
+  id              String      @id @default(uuid())
+  company         Company     @relation(fields: [companyId], references: [id])
+  companyId       String
+  accountCode     String
+  name            String
+  accountType     AccountType
+  parent          AccountingAccount? @relation("AccountParent", fields: [parentAccountId], references: [id])
+  parentAccountId String?
+  currencyCode    CurrencyCode @default(ILS)
+  isActive        Boolean     @default(true)
+  deletedAt       DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  journalLines    JournalEntryLine[]
+
+  @@unique([companyId, accountCode])
+  @@index([companyId])
+}
+
+model JournalEntry {
+  id             String      @id @default(uuid())
+  company        Company     @relation(fields: [companyId], references: [id])
+  companyId      String
+  entryNumber    String
+  entryDate      DateTime    @default(now())
+  description    String?
+  sourceType     JournalSourceType
+  sourceId       String?
+  postedAt       DateTime?
+  isPosted       Boolean     @default(false)
+  createdBy      User?       @relation(fields: [createdById], references: [id])
+  createdById    String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  lines          JournalEntryLine[]
+  payments       Payment[]
+
+  @@unique([companyId, entryNumber])
+  @@index([companyId])
+  @@index([companyId, createdAt])
+  @@index([companyId, entryDate])
+}
+
+model JournalEntryLine {
+  id             String        @id @default(uuid())
+  journalEntry   JournalEntry  @relation(fields: [journalEntryId], references: [id], onDelete: Restrict)
+  journalEntryId String
+  account        AccountingAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  accountId      String
+  debit          Decimal       @db.Decimal(18, 4) @default("0")
+  credit         Decimal       @db.Decimal(18, 4) @default("0")
+  description    String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model CompanySetting {
+  id          String   @id @default(uuid())
+  company     Company  @relation(fields: [companyId], references: [id])
+  companyId   String
+  key         String
+  value       Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([companyId, key])
+  @@index([companyId])
+}
+
+model Theme {
+  id          String   @id @default(uuid())
+  company     Company  @relation(fields: [companyId], references: [id])
+  companyId   String
+  name        String
+  description String?
+  config      Json
+  isActive    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([companyId, name])
+  @@index([companyId])
+}
+
+model BrandingAsset {
+  id          String   @id @default(uuid())
+  company     Company  @relation(fields: [companyId], references: [id])
+  companyId   String
+  type        String
+  filePath    String
+  url         String
+  meta        Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  company       Company  @relation(fields: [companyId], references: [id])
+  companyId     String
+  entity        String
+  entityId      String
+  action        String
+  performedBy   User?    @relation(fields: [performedById], references: [id])
+  performedById String?
+  changes       Json?
+  createdAt     DateTime @default(now())
+
+  @@index([companyId])
+  @@index([companyId, createdAt])
+}
