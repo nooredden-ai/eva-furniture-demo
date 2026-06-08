@@ -13,6 +13,9 @@ const couponRepository = require('./backend/src/repositories/couponRepository');
 const settingsRepository = require('./backend/src/repositories/settingsRepository');
 const permissionRepository = require('./backend/src/repositories/permissionRepository');
 const jsonStore = require('./backend/src/core/jsonStore');
+const { PrismaClient } = require('@prisma/client');
+
+const prisma = new PrismaClient();
 
 let puppeteer = null;
 try {
@@ -805,6 +808,123 @@ app.post('/api/upload', (req, res) => {
     console.log(`[UPLOAD OK] Saved: ${filePath}`);
     res.json({ success: true, data: { path: filePath } });
   });
+});
+
+/* =========================
+   API: ACCOUNTING CUSTOMERS
+========================= */
+app.get('/api/accounting/customers', async (req, res) => {
+  console.log('[ACCOUNTING CUSTOMERS] GET route hit');
+  try {
+    const company = await prisma.company.findFirst();
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'No company found in the database.' });
+    }
+
+    const customers = await prisma.customer.findMany({
+      where: {
+        companyId: company.id,
+        deletedAt: null,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json(customers.map((customer) => ({
+      id: customer.id,
+      name: customer.name,
+      phone: customer.phone,
+      email: customer.email,
+      address: customer.billingAddress,
+      isActive: customer.active,
+    })));
+  } catch (error) {
+    console.error('[ACCOUNTING CUSTOMERS GET]', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve customers.' });
+  }
+});
+
+app.post('/api/accounting/customers', async (req, res) => {
+  try {
+    const company = await prisma.company.findFirst();
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'No company found in the database.' });
+    }
+
+    const { name, phone, email, address, isActive } = req.body;
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Customer name is required.' });
+    }
+
+    const customer = await prisma.customer.create({
+      data: {
+        companyId: company.id,
+        name: name.trim(),
+        phone: phone ? String(phone).trim() : null,
+        email: email ? String(email).trim() : null,
+        billingAddress: address ? String(address).trim() : null,
+        active: typeof isActive === 'boolean' ? isActive : true,
+      },
+    });
+
+    res.status(201).json({ success: true, data: {
+      id: customer.id,
+      name: customer.name,
+      phone: customer.phone,
+      email: customer.email,
+      address: customer.billingAddress,
+      isActive: customer.active,
+    }});
+  } catch (error) {
+    console.error('[ACCOUNTING CUSTOMERS POST]', error);
+    res.status(500).json({ success: false, message: 'Failed to create customer.' });
+  }
+});
+
+app.put('/api/accounting/customers/:id', async (req, res) => {
+  try {
+    const company = await prisma.company.findFirst();
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'No company found in the database.' });
+    }
+
+    const { id } = req.params;
+    const { name, phone, email, address, isActive } = req.body;
+
+    const existingCustomer = await prisma.customer.findFirst({
+      where: {
+        id,
+        companyId: company.id,
+        deletedAt: null,
+      },
+    });
+
+    if (!existingCustomer) {
+      return res.status(404).json({ success: false, message: 'Customer not found.' });
+    }
+
+    const updatedCustomer = await prisma.customer.update({
+      where: { id },
+      data: {
+        name: typeof name === 'string' ? name.trim() : existingCustomer.name,
+        phone: phone === undefined ? existingCustomer.phone : (phone ? String(phone).trim() : null),
+        email: email === undefined ? existingCustomer.email : (email ? String(email).trim() : null),
+        billingAddress: address === undefined ? existingCustomer.billingAddress : (address ? String(address).trim() : null),
+        active: typeof isActive === 'boolean' ? isActive : existingCustomer.active,
+      },
+    });
+
+    res.json({ success: true, data: {
+      id: updatedCustomer.id,
+      name: updatedCustomer.name,
+      phone: updatedCustomer.phone,
+      email: updatedCustomer.email,
+      address: updatedCustomer.billingAddress,
+      isActive: updatedCustomer.active,
+    }});
+  } catch (error) {
+    console.error('[ACCOUNTING CUSTOMERS PUT]', error);
+    res.status(500).json({ success: false, message: 'Failed to update customer.' });
+  }
 });
 
 /* =========================
