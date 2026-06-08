@@ -589,7 +589,7 @@ const accountTypeLabels = {
   'ASSET': 'أصول',
   'LIABILITY': 'التزامات',
   'EQUITY': 'حقوق ملكية',
-  'REVENUE': 'إيرادات',
+  'INCOME': 'إيرادات',
   'EXPENSE': 'مصروفات'
 };
 

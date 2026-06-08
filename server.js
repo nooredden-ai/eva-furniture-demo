@@ -1091,7 +1091,7 @@ app.post('/api/accounting/accounts', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Account name is required.' });
     }
 
-    const validTypes = ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE'];
+    const validTypes = ['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE'];
     if (!accountType || !validTypes.includes(accountType)) {
       return res.status(400).json({ success: false, message: `Account type must be one of: ${validTypes.join(', ')}` });
     }
@@ -1156,7 +1156,7 @@ app.put('/api/accounting/accounts/:id', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Account not found.' });
     }
 
-    const validTypes = ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE'];
+    const validTypes = ['ASSET', 'LIABILITY', 'EQUITY', 'INCOME', 'EXPENSE'];
     if (accountType && !validTypes.includes(accountType)) {
       return res.status(400).json({ success: false, message: `Account type must be one of: ${validTypes.join(', ')}` });
     }
