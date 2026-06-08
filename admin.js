@@ -3041,3 +3041,149 @@ async function savePermissionsMatrix(btn) {
     if (window.lucide) lucide.createIcons();
   }
 }
+
+// ===== Accounting Settings Integration =====
+let accountingSettingsAccounts = [];
+let currentAccountingSettings = {
+  defaultCashAccountId: null,
+  defaultBankAccountId: null,
+  defaultSalesAccountId: null,
+  defaultPurchasesAccountId: null,
+  defaultInventoryAccountId: null,
+  defaultCOGSAccountId: null
+};
+
+async function loadAccountingSettingsData() {
+  const loadingEl = $a('accounting-settings-loading');
+  
+  try {
+    if (loadingEl) loadingEl.style.display = 'block';
+
+    // Fetch accounts
+    const accountsRes = await fetchWithStability('/api/accounting/accounts');
+    if (accountsRes.success) {
+      accountingSettingsAccounts = accountsRes.data || [];
+    } else {
+      accountingSettingsAccounts = Array.isArray(accountsRes) ? accountsRes : [];
+    }
+
+    // Fetch current settings
+    const settingsRes = await fetchWithStability('/api/accounting/settings');
+    if (settingsRes.success) {
+      currentAccountingSettings = settingsRes.data || currentAccountingSettings;
+    } else {
+      currentAccountingSettings = settingsRes;
+    }
+
+    // Populate dropdowns
+    populateAccountingSettingsDropdowns();
+
+    if (loadingEl) loadingEl.style.display = 'none';
+  } catch (error) {
+    console.error('Error loading accounting settings data:', error);
+    showAdminToast('فشل تحميل بيانات الإعدادات', 'error');
+    if (loadingEl) loadingEl.style.display = 'none';
+  }
+}
+
+function populateAccountingSettingsDropdowns() {
+  // Format accounts for display: accountCode - accountName
+  const accountOptions = accountingSettingsAccounts.map(acc => ({
+    id: acc.id,
+    label: `${acc.accountCode} - ${acc.accountName}`
+  }));
+
+  const selectIds = [
+    'acs-cash-account',
+    'acs-bank-account',
+    'acs-sales-account',
+    'acs-purchases-account',
+    'acs-inventory-account',
+    'acs-cogs-account'
+  ];
+
+  const settingKeys = [
+    'defaultCashAccountId',
+    'defaultBankAccountId',
+    'defaultSalesAccountId',
+    'defaultPurchasesAccountId',
+    'defaultInventoryAccountId',
+    'defaultCOGSAccountId'
+  ];
+
+  selectIds.forEach((selectId, idx) => {
+    const select = $a(selectId);
+    if (!select) return;
+
+    // Clear and rebuild options
+    select.innerHTML = '<option value="">-- اختر حساب --</option>';
+    
+    accountOptions.forEach(acc => {
+      const option = document.createElement('option');
+      option.value = acc.id;
+      option.textContent = acc.label;
+      select.appendChild(option);
+    });
+
+    // Set current value
+    const settingKey = settingKeys[idx];
+    const currentValue = currentAccountingSettings[settingKey];
+    if (currentValue) {
+      select.value = currentValue;
+    }
+  });
+}
+
+async function openAccountingSettingsModal() {
+  withLock('accounting-settings-open', async () => {
+    try {
+      await loadAccountingSettingsData();
+      $a('accounting-settings-modal').classList.add('open');
+      if (window.lucide) lucide.createIcons();
+    } catch (error) {
+      console.error('Error opening accounting settings modal:', error);
+      showAdminToast('فشل فتح إعدادات المحاسبة', 'error');
+    }
+  });
+}
+
+async function saveAccountingSettings(btnElement) {
+  withLock('accounting-settings-save', async () => {
+    let originalHtml = '';
+    try {
+      const payload = {
+        defaultCashAccountId: $a('acs-cash-account').value || null,
+        defaultBankAccountId: $a('acs-bank-account').value || null,
+        defaultSalesAccountId: $a('acs-sales-account').value || null,
+        defaultPurchasesAccountId: $a('acs-purchases-account').value || null,
+        defaultInventoryAccountId: $a('acs-inventory-account').value || null,
+        defaultCOGSAccountId: $a('acs-cogs-account').value || null
+      };
+
+      originalHtml = btnElement.innerHTML;
+      btnElement.classList.add('btn-loading');
+      btnElement.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;vertical-align:middle;margin-left:4px;animation:spin 1s linear infinite"></i> جاري الحفظ...';
+
+      const response = await fetchWithStability('/api/accounting/settings', {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.success !== false) {
+        currentAccountingSettings = response.data || response;
+        showAdminToast('تم حفظ إعدادات المحاسبة بنجاح');
+        closeModal('accounting-settings-modal');
+      } else {
+        showAdminToast(response.message || 'فشل حفظ الإعدادات', 'error');
+      }
+    } catch (error) {
+      console.error('Error saving accounting settings:', error);
+      showAdminToast('حدث خطأ أثناء حفظ الإعدادات', 'error');
+    } finally {
+      btnElement.classList.remove('btn-loading');
+      if (originalHtml) btnElement.innerHTML = originalHtml;
+      if (window.lucide) lucide.createIcons();
+    }
+  });
+}

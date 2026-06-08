@@ -420,6 +420,16 @@
               </div>
               <span class="service-action"><i data-lucide="arrow-left"></i></span>
             </button>
+            <button class="service-card" onclick="openAccountingSettingsModal()" data-color="settings">
+              <div class="service-card-head">
+                <div class="service-icon"><i data-lucide="settings"></i></div>
+                <div>
+                  <div class="service-title">إعدادات المحاسبة</div>
+                  <div class="service-desc">إدارة الحسابات الافتراضية</div>
+                </div>
+              </div>
+              <span class="service-action"><i data-lucide="arrow-left"></i></span>
+            </button>
           </div>
 
           <section class="quick-glance">
@@ -1442,6 +1452,61 @@
     <div class="modal-footer">
       <button class="topbar-btn btn-primary btn-active-scale" onclick="saveAccountingAccount(this)"><i data-lucide="save" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> حفظ الحساب</button>
       <button class="topbar-btn btn-outline" onclick="closeModal('accounting-account-modal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Accounting Settings Modal ===== -->
+<div class="modal-overlay" id="accounting-settings-modal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <h3><i data-lucide="settings" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إعدادات المحاسبة</h3>
+      <button class="modal-close" onclick="closeModal('accounting-settings-modal')">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:600px;overflow-y:auto">
+      <div class="form-row">
+        <label>الحساب النقدي الافتراضي</label>
+        <select id="acs-cash-account" style="width:100%">
+          <option value="">-- اختر حساب --</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>الحساب البنكي الافتراضي</label>
+        <select id="acs-bank-account" style="width:100%">
+          <option value="">-- اختر حساب --</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>حساب المبيعات الافتراضي</label>
+        <select id="acs-sales-account" style="width:100%">
+          <option value="">-- اختر حساب --</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>حساب المشتريات الافتراضي</label>
+        <select id="acs-purchases-account" style="width:100%">
+          <option value="">-- اختر حساب --</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>حساب المخزون الافتراضي</label>
+        <select id="acs-inventory-account" style="width:100%">
+          <option value="">-- اختر حساب --</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>حساب تكلفة البضاعة المباعة</label>
+        <select id="acs-cogs-account" style="width:100%">
+          <option value="">-- اختر حساب --</option>
+        </select>
+      </div>
+      <div id="accounting-settings-loading" style="display:none;text-align:center;padding:20px;color:var(--admin-text2)">
+        جاري التحميل...
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="topbar-btn btn-primary btn-active-scale" onclick="saveAccountingSettings(this)"><i data-lucide="save" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> حفظ الإعدادات</button>
+      <button class="topbar-btn btn-outline" onclick="closeModal('accounting-settings-modal')">إلغاء</button>
     </div>
   </div>
 </div>
