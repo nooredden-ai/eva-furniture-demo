@@ -928,6 +928,123 @@ app.put('/api/accounting/customers/:id', async (req, res) => {
 });
 
 /* =========================
+   API: ACCOUNTING SUPPLIERS
+========================= */
+app.get('/api/accounting/suppliers', async (req, res) => {
+  console.log('[ACCOUNTING SUPPLIERS] GET route hit');
+  try {
+    const company = await prisma.company.findFirst();
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'No company found in the database.' });
+    }
+
+    const suppliers = await prisma.supplier.findMany({
+      where: {
+        companyId: company.id,
+        deletedAt: null,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json(suppliers.map((supplier) => ({
+      id: supplier.id,
+      name: supplier.name,
+      phone: supplier.phone,
+      email: supplier.email,
+      address: supplier.billingAddress,
+      isActive: supplier.active,
+    })));
+  } catch (error) {
+    console.error('[ACCOUNTING SUPPLIERS GET]', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve suppliers.' });
+  }
+});
+
+app.post('/api/accounting/suppliers', async (req, res) => {
+  try {
+    const company = await prisma.company.findFirst();
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'No company found in the database.' });
+    }
+
+    const { name, phone, email, address, isActive } = req.body;
+    if (!name || typeof name !== 'string' || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Supplier name is required.' });
+    }
+
+    const supplier = await prisma.supplier.create({
+      data: {
+        companyId: company.id,
+        name: name.trim(),
+        phone: phone ? String(phone).trim() : null,
+        email: email ? String(email).trim() : null,
+        billingAddress: address ? String(address).trim() : null,
+        active: typeof isActive === 'boolean' ? isActive : true,
+      },
+    });
+
+    res.status(201).json({ success: true, data: {
+      id: supplier.id,
+      name: supplier.name,
+      phone: supplier.phone,
+      email: supplier.email,
+      address: supplier.billingAddress,
+      isActive: supplier.active,
+    }});
+  } catch (error) {
+    console.error('[ACCOUNTING SUPPLIERS POST]', error);
+    res.status(500).json({ success: false, message: 'Failed to create supplier.' });
+  }
+});
+
+app.put('/api/accounting/suppliers/:id', async (req, res) => {
+  try {
+    const company = await prisma.company.findFirst();
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'No company found in the database.' });
+    }
+
+    const { id } = req.params;
+    const { name, phone, email, address, isActive } = req.body;
+
+    const existingSupplier = await prisma.supplier.findFirst({
+      where: {
+        id,
+        companyId: company.id,
+        deletedAt: null,
+      },
+    });
+
+    if (!existingSupplier) {
+      return res.status(404).json({ success: false, message: 'Supplier not found.' });
+    }
+
+    const updatedSupplier = await prisma.supplier.update({
+      where: { id },
+      data: {
+        name: typeof name === 'string' ? name.trim() : existingSupplier.name,
+        phone: phone === undefined ? existingSupplier.phone : (phone ? String(phone).trim() : null),
+        email: email === undefined ? existingSupplier.email : (email ? String(email).trim() : null),
+        billingAddress: address === undefined ? existingSupplier.billingAddress : (address ? String(address).trim() : null),
+        active: typeof isActive === 'boolean' ? isActive : existingSupplier.active,
+      },
+    });
+
+    res.json({ success: true, data: {
+      id: updatedSupplier.id,
+      name: updatedSupplier.name,
+      phone: updatedSupplier.phone,
+      email: updatedSupplier.email,
+      address: updatedSupplier.billingAddress,
+      isActive: updatedSupplier.active,
+    }});
+  } catch (error) {
+    console.error('[ACCOUNTING SUPPLIERS PUT]', error);
+    res.status(500).json({ success: false, message: 'Failed to update supplier.' });
+  }
+});
+
+/* =========================
    API: PING
 ========================= */
 app.get('/api/ping', (req, res) => {

@@ -413,6 +413,175 @@ async function saveAccountingCustomer(btnElement) {
   }
 }
 
+// ===== Accounting Suppliers Integration =====
+let accountingSuppliers = [];
+
+async function fetchAccountingSuppliers(url, options = {}) {
+  const finalHeaders = {
+    'Content-Type': 'application/json',
+    ...(options.headers || {})
+  };
+  
+  // Temporary header injection matching current session
+  const sessionStr = sessionStorage.getItem('louloSession');
+  if (sessionStr) {
+    try {
+      const session = JSON.parse(sessionStr);
+      finalHeaders['x-user-role'] = session.role;
+      finalHeaders['x-user-id'] = session.id;
+    } catch(e) {}
+  }
+  
+  const response = await fetch(url, { ...options, headers: finalHeaders });
+  if (!response.ok) {
+    const errData = await response.json().catch(() => ({}));
+    throw new Error(errData.message || `HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+}
+
+async function loadAccountingSuppliers() {
+  const body = $a('accounting-table-body');
+  const empty = $a('accounting-empty-state');
+  
+  try {
+    const data = await fetchAccountingSuppliers('/api/accounting/suppliers');
+    accountingSuppliers = Array.isArray(data) ? data : (data.data || []);
+    
+    // reset search input
+    const searchInput = $a('accounting-supplier-search');
+    if (searchInput) searchInput.value = '';
+    
+    renderAccountingSuppliersTable(accountingSuppliers);
+  } catch (error) {
+    console.error('Error loading accounting suppliers:', error);
+    if (body) {
+      body.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--admin-danger);padding:20px;">فشل تحميل قائمة الموردين: ${escapeHtml(error.message)}</td></tr>`;
+    }
+    if (empty) empty.style.display = 'none';
+    showAdminToast('خطأ أثناء تحميل الموردين', 'error');
+  }
+}
+
+function renderAccountingSuppliersTable(suppliers) {
+  const body = $a('accounting-table-body');
+  const empty = $a('accounting-empty-state');
+  
+  if (!body) return;
+  
+  if (suppliers.length === 0) {
+    body.innerHTML = '';
+    if (empty) {
+      const h4 = empty.querySelector('h4');
+      const p = empty.querySelector('p');
+      if (h4) h4.textContent = 'لا يوجد موردون بعد';
+      if (p) p.textContent = 'أضف أول مورد للبدء.';
+      empty.style.display = 'flex';
+    }
+    return;
+  }
+  
+  if (empty) empty.style.display = 'none';
+  
+  body.innerHTML = suppliers.map(s => `
+    <tr>
+      <td>${escapeHtml(s.name)}</td>
+      <td>${escapeHtml(s.phone || '-')}</td>
+      <td>${escapeHtml(s.email || '-')}</td>
+      <td>${escapeHtml(s.address || '-')}</td>
+      <td style="text-align:center">
+        <button class="topbar-btn btn-outline btn-sm" onclick="openEditAccountingSupplier('${escapeHtml(s.id)}')">
+          <i data-lucide="edit" style="width:14px;height:14px;vertical-align:middle;margin-left:2px"></i> تعديل
+        </button>
+      </td>
+    </tr>
+  `).join('');
+  
+  if (window.lucide) lucide.createIcons();
+}
+
+function filterAccountingSuppliers() {
+  const query = ($a('accounting-supplier-search')?.value || '').toLowerCase().trim();
+  const filtered = accountingSuppliers.filter(s => {
+    return (s.name || '').toLowerCase().includes(query) || (s.phone || '').toLowerCase().includes(query);
+  });
+  renderAccountingSuppliersTable(filtered);
+}
+
+function openAddAccountingSupplier() {
+  $a('accounting-supplier-modal-title').innerHTML = '<i data-lucide="user-plus" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة مورد جديد';
+  $a('asm-id').value = '';
+  $a('asm-name').value = '';
+  $a('asm-phone').value = '';
+  $a('asm-email').value = '';
+  $a('asm-address').value = '';
+  
+  $a('accounting-supplier-modal').classList.add('open');
+  if (window.lucide) lucide.createIcons();
+}
+
+function openEditAccountingSupplier(id) {
+  const supplier = accountingSuppliers.find(s => String(s.id) === String(id));
+  if (!supplier) {
+    showAdminToast('لم يتم العثور على بيانات المورد', 'error');
+    return;
+  }
+  
+  $a('accounting-supplier-modal-title').innerHTML = '<i data-lucide="edit" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> تعديل بيانات المورد';
+  $a('asm-id').value = supplier.id;
+  $a('asm-name').value = supplier.name || '';
+  $a('asm-phone').value = supplier.phone || '';
+  $a('asm-email').value = supplier.email || '';
+  $a('asm-address').value = supplier.address || '';
+  
+  $a('accounting-supplier-modal').classList.add('open');
+  if (window.lucide) lucide.createIcons();
+}
+
+async function saveAccountingSupplier(btnElement) {
+  const id = $a('asm-id').value;
+  const name = $a('asm-name').value.trim();
+  const phone = $a('asm-phone').value.trim();
+  const email = $a('asm-email').value.trim();
+  const address = $a('asm-address').value.trim();
+  
+  if (!name) {
+    showAdminToast('الرجاء إدخال اسم المورد', 'error');
+    return;
+  }
+  
+  const payload = { name, phone, email, address };
+  
+  const originalHtml = btnElement.innerHTML;
+  btnElement.classList.add('btn-loading');
+  btnElement.innerHTML = 'جاري الحفظ...';
+  
+  try {
+    let url = '/api/accounting/suppliers';
+    let method = 'POST';
+    
+    if (id) {
+      url = `/api/accounting/suppliers/${encodeURIComponent(id)}`;
+      method = 'PUT';
+    }
+    
+    const result = await fetchAccountingSuppliers(url, {
+      method: method,
+      body: JSON.stringify(payload)
+    });
+    
+    closeModal('accounting-supplier-modal');
+    showAdminToast(id ? 'تم تعديل بيانات المورد بنجاح' : 'تم إضافة المورد بنجاح');
+    await loadAccountingSuppliers();
+  } catch (error) {
+    console.error('Error saving supplier:', error);
+    showAdminToast(error.message || 'حدث خطأ أثناء حفظ بيانات المورد', 'error');
+  } finally {
+    btnElement.classList.remove('btn-loading');
+    btnElement.innerHTML = originalHtml;
+  }
+}
+
 async function showAccountingTable(type) {
   const home = $a('accounting-home');
   const panel = $a('accounting-table-panel');
@@ -422,12 +591,14 @@ async function showAccountingTable(type) {
   const body = $a('accounting-table-body');
   const empty = $a('accounting-empty-state');
   const custActions = $a('accounting-customers-actions');
+  const suppActions = $a('accounting-suppliers-actions');
 
   if (home) home.style.display = 'none';
   if (panel) panel.style.display = 'block';
 
-  // Hide customers actions by default
+  // Hide actions panels by default
   if (custActions) custActions.style.display = 'none';
+  if (suppActions) suppActions.style.display = 'none';
 
   if (type === 'customers') {
     if (title) title.textContent = 'العملاء';
@@ -445,6 +616,22 @@ async function showAccountingTable(type) {
     
     // Load and render customers
     await loadAccountingCustomers();
+  } else if (type === 'suppliers') {
+    if (title) title.textContent = 'الموردون';
+    if (subtitle) subtitle.textContent = 'تفاصيل الموردين والمستحقات';
+    if (headers) {
+      headers.innerHTML = '<th>الاسم</th><th>الهاتف</th><th>البريد الإلكتروني</th><th>العنوان</th><th style="width:120px;text-align:center">إجراءات</th>';
+    }
+    if (suppActions) suppActions.style.display = 'flex';
+    
+    // Clear table body first & show loading
+    if (body) {
+      body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;">جاري تحميل الموردين...</td></tr>`;
+    }
+    if (empty) empty.style.display = 'none';
+    
+    // Load and render suppliers
+    await loadAccountingSuppliers();
   } else {
     // Standard static rendering for other types
     const data = accountingFixtures[type];

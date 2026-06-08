@@ -447,6 +447,10 @@
               <input type="text" class="table-search" id="accounting-customer-search" placeholder="بحث بالاسم أو الهاتف..." style="margin:0;" oninput="filterAccountingCustomers()"/>
               <button class="topbar-btn btn-primary" onclick="openAddAccountingCustomer()"><i data-lucide="user-plus" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>إضافة عميل</button>
             </div>
+            <div id="accounting-suppliers-actions" style="display:none; gap:10px; align-items:center;">
+              <input type="text" class="table-search" id="accounting-supplier-search" placeholder="بحث بالاسم أو الهاتف..." style="margin:0;" oninput="filterAccountingSuppliers()"/>
+              <button class="topbar-btn btn-primary" onclick="openAddAccountingSupplier()"><i data-lucide="user-plus" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>إضافة مورد</button>
+            </div>
             <button class="topbar-btn btn-outline" onclick="showAccountingHome()">العودة للنظام المالي</button>
           </div>
           <div class="accounting-table-inner">
@@ -1352,6 +1356,39 @@
     <div class="modal-footer">
       <button class="topbar-btn btn-primary btn-active-scale" onclick="saveAccountingCustomer(this)"><i data-lucide="save" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> حفظ العميل</button>
       <button class="topbar-btn btn-outline" onclick="closeModal('accounting-customer-modal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Accounting Supplier Modal ===== -->
+<div class="modal-overlay" id="accounting-supplier-modal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <h3 id="accounting-supplier-modal-title"><i data-lucide="user-plus" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة مورد جديد</h3>
+      <button class="modal-close" onclick="closeModal('accounting-supplier-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="asm-id" />
+      <div class="form-row">
+        <label>الاسم *</label>
+        <input type="text" id="asm-name" placeholder="اسم المورد الكامل"/>
+      </div>
+      <div class="form-row">
+        <label>الهاتف</label>
+        <input type="text" id="asm-phone" placeholder="رقم الهاتف"/>
+      </div>
+      <div class="form-row">
+        <label>البريد الإلكتروني</label>
+        <input type="email" id="asm-email" placeholder="البريد الإلكتروني"/>
+      </div>
+      <div class="form-row">
+        <label>العنوان</label>
+        <input type="text" id="asm-address" placeholder="العنوان"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="topbar-btn btn-primary btn-active-scale" onclick="saveAccountingSupplier(this)"><i data-lucide="save" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> حفظ المورد</button>
+      <button class="topbar-btn btn-outline" onclick="closeModal('accounting-supplier-modal')">إلغاء</button>
     </div>
   </div>
 </div>
