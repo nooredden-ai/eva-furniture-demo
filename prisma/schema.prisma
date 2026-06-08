@@ -78,20 +78,20 @@ enum JournalSourceType {
 }
 
 model Company {
-  id            String              @id @default(uuid())
-  name          String
-  legalName     String?
-  taxId         String?
-  currencyCode  CurrencyCode        @default(ILS)
-  timezone      String?             @default("UTC")
-  locale        String?             @default("en-IL")
-  address       String?
-  phone         String?
-  email         String?
-  website       String?
-  isActive      Boolean             @default(true)
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
+  id           String       @id @default(uuid())
+  name         String
+  legalName    String?
+  taxId        String?
+  currencyCode CurrencyCode @default(ILS)
+  timezone     String?      @default("UTC")
+  locale       String?      @default("en-IL")
+  address      String?
+  phone        String?
+  email        String?
+  website      String?
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   users          User[]
   products       Product[]
@@ -110,19 +110,19 @@ model Company {
 }
 
 model Role {
-  id           String            @id @default(uuid())
-  name         String            @unique
-  description  String?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  users        User[]
-  permissions  RolePermission[]
+  users       User[]
+  permissions RolePermission[]
 }
 
 model Permission {
-  id          String            @id @default(uuid())
-  slug        String            @unique
+  id          String  @id @default(uuid())
+  slug        String  @unique
   name        String
   description String?
 
@@ -140,27 +140,27 @@ model RolePermission {
 }
 
 model User {
-  id           String      @id @default(uuid())
-  company      Company     @relation(fields: [companyId], references: [id])
+  id           String     @id @default(uuid())
+  company      Company    @relation(fields: [companyId], references: [id])
   companyId    String
-  role         Role        @relation(fields: [roleId], references: [id])
+  role         Role       @relation(fields: [roleId], references: [id])
   roleId       String
   username     String
   email        String
   passwordHash String
   fullName     String?
   phone        String?
-  status       UserStatus  @default(ACTIVE)
-  active       Boolean     @default(true)
+  status       UserStatus @default(ACTIVE)
+  active       Boolean    @default(true)
   lastLoginAt  DateTime?
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
-  salesOrders   SalesOrder[]
-  salesInvoices SalesInvoice[]
-  payments      Payment[]
+  salesOrders    SalesOrder[]
+  salesInvoices  SalesInvoice[]
+  payments       Payment[]
   journalEntries JournalEntry[]
-  auditLogs     AuditLog[]
+  auditLogs      AuditLog[]
 
   @@unique([companyId, username])
   @@unique([companyId, email])
@@ -168,42 +168,43 @@ model User {
 }
 
 model ProductCategory {
-  id               String           @id @default(uuid())
-  company          Company          @relation(fields: [companyId], references: [id])
+  id               String            @id @default(uuid())
+  company          Company           @relation(fields: [companyId], references: [id])
   companyId        String
   name             String
   slug             String
   description      String?
-  parentCategory   ProductCategory? @relation("CategoryParent", fields: [parentCategoryId], references: [id])
+  parentCategory   ProductCategory?  @relation("CategoryParent", fields: [parentCategoryId], references: [id])
   parentCategoryId String?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  children         ProductCategory[] @relation("CategoryParent")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
-  products         Product[]
+  products Product[]
 
   @@unique([companyId, slug])
   @@index([companyId])
 }
 
 model Product {
-  id               String      @id @default(uuid())
-  company          Company     @relation(fields: [companyId], references: [id])
+  id               String           @id @default(uuid())
+  company          Company          @relation(fields: [companyId], references: [id])
   companyId        String
   category         ProductCategory? @relation(fields: [categoryId], references: [id])
   categoryId       String?
   sku              String
   name             String
   description      String?
-  unitPrice        Decimal     @db.Decimal(18, 4)
-  costPrice        Decimal     @db.Decimal(18, 4)
-  currencyCode     CurrencyCode @default(ILS)
+  unitPrice        Decimal          @db.Decimal(18, 4)
+  costPrice        Decimal          @db.Decimal(18, 4)
+  currencyCode     CurrencyCode     @default(ILS)
   imageUrl         String?
-  active           Boolean     @default(true)
-  taxRate          Decimal?    @db.Decimal(5, 2)
-  inventoryTracked Boolean     @default(false)
+  active           Boolean          @default(true)
+  taxRate          Decimal?         @db.Decimal(5, 2)
+  inventoryTracked Boolean          @default(false)
   deletedAt        DateTime?
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 
   salesOrderLines   SalesOrderLine[]
   salesInvoiceLines SalesInvoiceLine[]
@@ -214,23 +215,23 @@ model Product {
 }
 
 model Customer {
-  id             String      @id @default(uuid())
-  company        Company     @relation(fields: [companyId], references: [id])
-  companyId      String
-  name           String
-  email          String?
-  phone          String?
-  billingAddress String?
+  id              String    @id @default(uuid())
+  company         Company   @relation(fields: [companyId], references: [id])
+  companyId       String
+  name            String
+  email           String?
+  phone           String?
+  billingAddress  String?
   shippingAddress String?
-  customerCode   String?
-  creditLimit    Decimal?    @db.Decimal(18, 4)
-  active         Boolean     @default(true)
-  deletedAt      DateTime?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  customerCode    String?
+  creditLimit     Decimal?  @db.Decimal(18, 4)
+  active          Boolean   @default(true)
+  deletedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  salesOrders    SalesOrder[]
-  salesInvoices  SalesInvoice[]
+  salesOrders   SalesOrder[]
+  salesInvoices SalesInvoice[]
 
   @@unique([companyId, customerCode])
   @@index([companyId])
@@ -238,18 +239,18 @@ model Customer {
 }
 
 model Supplier {
-  id             String      @id @default(uuid())
-  company        Company     @relation(fields: [companyId], references: [id])
+  id             String    @id @default(uuid())
+  company        Company   @relation(fields: [companyId], references: [id])
   companyId      String
   name           String
   email          String?
   phone          String?
   billingAddress String?
   supplierCode   String?
-  active         Boolean     @default(true)
+  active         Boolean   @default(true)
   deletedAt      DateTime?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@unique([companyId, supplierCode])
   @@index([companyId])
@@ -257,32 +258,32 @@ model Supplier {
 }
 
 model SalesOrder {
-  id             String      @id @default(uuid())
-  company        Company     @relation(fields: [companyId], references: [id])
-  companyId      String
-  customer       Customer?   @relation(fields: [customerId], references: [id])
-  customerId     String?
-  orderNumber    String
-  status         OrderStatus @default(PENDING)
-  orderDate      DateTime    @default(now())
-  deliveryDate   DateTime?
-  subtotal       Decimal     @db.Decimal(18, 4)
-  taxTotal       Decimal     @db.Decimal(18, 4) @default("0")
-  shippingTotal  Decimal     @db.Decimal(18, 4) @default("0")
-  discountTotal  Decimal     @db.Decimal(18, 4) @default("0")
-  total          Decimal     @db.Decimal(18, 4)
-  currencyCode   CurrencyCode @default(ILS)
-  billingAddress String?
+  id              String       @id @default(uuid())
+  company         Company      @relation(fields: [companyId], references: [id])
+  companyId       String
+  customer        Customer?    @relation(fields: [customerId], references: [id])
+  customerId      String?
+  orderNumber     String
+  status          OrderStatus  @default(PENDING)
+  orderDate       DateTime     @default(now())
+  deliveryDate    DateTime?
+  subtotal        Decimal      @db.Decimal(18, 4)
+  taxTotal        Decimal      @default("0") @db.Decimal(18, 4)
+  shippingTotal   Decimal      @default("0") @db.Decimal(18, 4)
+  discountTotal   Decimal      @default("0") @db.Decimal(18, 4)
+  total           Decimal      @db.Decimal(18, 4)
+  currencyCode    CurrencyCode @default(ILS)
+  billingAddress  String?
   shippingAddress String?
-  notes          String?
-  deletedAt      DateTime?
-  createdBy      User?       @relation(fields: [createdById], references: [id])
-  createdById    String?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  notes           String?
+  deletedAt       DateTime?
+  createdBy       User?        @relation(fields: [createdById], references: [id])
+  createdById     String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  lines         SalesOrderLine[]
-  salesInvoice  SalesInvoice?
+  lines        SalesOrderLine[]
+  salesInvoice SalesInvoice?
 
   @@unique([companyId, orderNumber])
   @@index([companyId])
@@ -292,51 +293,51 @@ model SalesOrder {
 }
 
 model SalesOrderLine {
-  id            String      @id @default(uuid())
-  salesOrder    SalesOrder  @relation(fields: [salesOrderId], references: [id], onDelete: Restrict)
-  salesOrderId  String
-  product       Product?    @relation(fields: [productId], references: [id])
-  productId     String?
-  description   String?
-  quantity      Decimal     @db.Decimal(18, 4)
-  unitPrice     Decimal     @db.Decimal(18, 4)
-  discount      Decimal     @db.Decimal(18, 4) @default("0")
-  taxRate       Decimal?    @db.Decimal(5, 2)
-  lineTotal     Decimal     @db.Decimal(18, 4)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id           String     @id @default(uuid())
+  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Restrict)
+  salesOrderId String
+  product      Product?   @relation(fields: [productId], references: [id])
+  productId    String?
+  description  String?
+  quantity     Decimal    @db.Decimal(18, 4)
+  unitPrice    Decimal    @db.Decimal(18, 4)
+  discount     Decimal    @default("0") @db.Decimal(18, 4)
+  taxRate      Decimal?   @db.Decimal(5, 2)
+  lineTotal    Decimal    @db.Decimal(18, 4)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }
 
 model SalesInvoice {
-  id             String      @id @default(uuid())
-  company        Company     @relation(fields: [companyId], references: [id])
-  companyId      String
-  customer       Customer?   @relation(fields: [customerId], references: [id])
-  customerId     String?
-  salesOrder     SalesOrder? @relation(fields: [salesOrderId], references: [id], onDelete: Restrict)
-  salesOrderId   String?
-  invoiceNumber  String
-  invoiceDate    DateTime    @default(now())
-  dueDate        DateTime?
-  status         InvoiceStatus @default(OPEN)
-  subtotal       Decimal     @db.Decimal(18, 4)
-  taxTotal       Decimal     @db.Decimal(18, 4) @default("0")
-  shippingTotal  Decimal     @db.Decimal(18, 4) @default("0")
-  discountTotal  Decimal     @db.Decimal(18, 4) @default("0")
-  total          Decimal     @db.Decimal(18, 4)
-  balanceDue     Decimal     @db.Decimal(18, 4)
-  currencyCode   CurrencyCode @default(ILS)
-  notes          String?
-  deletedAt      DateTime?
-  createdBy      User?       @relation(fields: [createdById], references: [id])
-  createdById    String?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id            String        @id @default(uuid())
+  company       Company       @relation(fields: [companyId], references: [id])
+  companyId     String
+  customer      Customer?     @relation(fields: [customerId], references: [id])
+  customerId    String?
+  salesOrder    SalesOrder?   @relation(fields: [salesOrderId], references: [id], onDelete: Restrict)
+  salesOrderId  String?       @unique
+  invoiceNumber String
+  invoiceDate   DateTime      @default(now())
+  dueDate       DateTime?
+  status        InvoiceStatus @default(OPEN)
+  subtotal      Decimal       @db.Decimal(18, 4)
+  taxTotal      Decimal       @default("0") @db.Decimal(18, 4)
+  shippingTotal Decimal       @default("0") @db.Decimal(18, 4)
+  discountTotal Decimal       @default("0") @db.Decimal(18, 4)
+  total         Decimal       @db.Decimal(18, 4)
+  balanceDue    Decimal       @db.Decimal(18, 4)
+  currencyCode  CurrencyCode  @default(ILS)
+  notes         String?
+  deletedAt     DateTime?
+  createdBy     User?         @relation(fields: [createdById], references: [id])
+  createdById   String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
-  lines         SalesInvoiceLine[]
-  payments      Payment[]
-  journalEntry  JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: Restrict)
-  journalEntryId String?
+  lines          SalesInvoiceLine[]
+  payments       Payment[]
+  journalEntry   JournalEntry?      @relation(fields: [journalEntryId], references: [id], onDelete: Restrict, name: "InvoiceJournalEntry")
+  journalEntryId String?            @unique
 
   @@unique([companyId, invoiceNumber])
   @@index([companyId])
@@ -354,7 +355,7 @@ model SalesInvoiceLine {
   description    String?
   quantity       Decimal      @db.Decimal(18, 4)
   unitPrice      Decimal      @db.Decimal(18, 4)
-  discount       Decimal      @db.Decimal(18, 4) @default("0")
+  discount       Decimal      @default("0") @db.Decimal(18, 4)
   taxRate        Decimal?     @db.Decimal(5, 2)
   lineTotal      Decimal      @db.Decimal(18, 4)
   createdAt      DateTime     @default(now())
@@ -362,28 +363,28 @@ model SalesInvoiceLine {
 }
 
 model Payment {
-  id              String         @id @default(uuid())
-  company         Company        @relation(fields: [companyId], references: [id])
-  companyId       String
-  paymentNumber   String
-  paymentDate     DateTime       @default(now())
-  amount          Decimal        @db.Decimal(18, 4)
-  currencyCode    CurrencyCode   @default(ILS)
-  method          PaymentMethod
-  direction       PaymentDirection
-  reference       String?
-  salesInvoice    SalesInvoice?  @relation(fields: [salesInvoiceId], references: [id], onDelete: Restrict)
-  salesInvoiceId  String?
-  journalEntry    JournalEntry?  @relation(fields: [journalEntryId], references: [id], onDelete: Restrict)
-  journalEntryId  String?
-  bankAccount     String?
-  cashAccount     String?
-  notes           String?
-  deletedAt       DateTime?
-  createdBy       User?          @relation(fields: [createdById], references: [id])
-  createdById     String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id             String           @id @default(uuid())
+  company        Company          @relation(fields: [companyId], references: [id])
+  companyId      String
+  paymentNumber  String
+  paymentDate    DateTime         @default(now())
+  amount         Decimal          @db.Decimal(18, 4)
+  currencyCode   CurrencyCode     @default(ILS)
+  method         PaymentMethod
+  direction      PaymentDirection
+  reference      String?
+  salesInvoice   SalesInvoice?    @relation(fields: [salesInvoiceId], references: [id], onDelete: Restrict)
+  salesInvoiceId String?
+  journalEntry   JournalEntry?    @relation(fields: [journalEntryId], references: [id], onDelete: Restrict)
+  journalEntryId String?
+  bankAccount    String?
+  cashAccount    String?
+  notes          String?
+  deletedAt      DateTime?
+  createdBy      User?            @relation(fields: [createdById], references: [id])
+  createdById    String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   @@unique([companyId, paymentNumber])
   @@index([companyId])
@@ -391,44 +392,46 @@ model Payment {
 }
 
 model AccountingAccount {
-  id              String      @id @default(uuid())
-  company         Company     @relation(fields: [companyId], references: [id])
+  id              String              @id @default(uuid())
+  company         Company             @relation(fields: [companyId], references: [id])
   companyId       String
   accountCode     String
   name            String
   accountType     AccountType
-  parent          AccountingAccount? @relation("AccountParent", fields: [parentAccountId], references: [id])
+  parent          AccountingAccount?  @relation("AccountParent", fields: [parentAccountId], references: [id])
   parentAccountId String?
-  currencyCode    CurrencyCode @default(ILS)
-  isActive        Boolean     @default(true)
+  children        AccountingAccount[] @relation("AccountParent")
+  currencyCode    CurrencyCode        @default(ILS)
+  isActive        Boolean             @default(true)
   deletedAt       DateTime?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
-  journalLines    JournalEntryLine[]
+  journalLines JournalEntryLine[]
 
   @@unique([companyId, accountCode])
   @@index([companyId])
 }
 
 model JournalEntry {
-  id             String      @id @default(uuid())
-  company        Company     @relation(fields: [companyId], references: [id])
-  companyId      String
-  entryNumber    String
-  entryDate      DateTime    @default(now())
-  description    String?
-  sourceType     JournalSourceType
-  sourceId       String?
-  postedAt       DateTime?
-  isPosted       Boolean     @default(false)
-  createdBy      User?       @relation(fields: [createdById], references: [id])
-  createdById    String?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  id          String            @id @default(uuid())
+  company     Company           @relation(fields: [companyId], references: [id])
+  companyId   String
+  entryNumber String
+  entryDate   DateTime          @default(now())
+  description String?
+  sourceType  JournalSourceType
+  sourceId    String?
+  postedAt    DateTime?
+  isPosted    Boolean           @default(false)
+  createdBy   User?             @relation(fields: [createdById], references: [id])
+  createdById String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
-  lines          JournalEntryLine[]
-  payments       Payment[]
+  lines        JournalEntryLine[]
+  payments     Payment[]
+  salesInvoice SalesInvoice?      @relation(name: "InvoiceJournalEntry")
 
   @@unique([companyId, entryNumber])
   @@index([companyId])
@@ -437,26 +440,26 @@ model JournalEntry {
 }
 
 model JournalEntryLine {
-  id             String        @id @default(uuid())
-  journalEntry   JournalEntry  @relation(fields: [journalEntryId], references: [id], onDelete: Restrict)
+  id             String            @id @default(uuid())
+  journalEntry   JournalEntry      @relation(fields: [journalEntryId], references: [id], onDelete: Restrict)
   journalEntryId String
   account        AccountingAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
   accountId      String
-  debit          Decimal       @db.Decimal(18, 4) @default("0")
-  credit         Decimal       @db.Decimal(18, 4) @default("0")
+  debit          Decimal           @default("0") @db.Decimal(18, 4)
+  credit         Decimal           @default("0") @db.Decimal(18, 4)
   description    String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 }
 
 model CompanySetting {
-  id          String   @id @default(uuid())
-  company     Company  @relation(fields: [companyId], references: [id])
-  companyId   String
-  key         String
-  value       Json
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  company   Company  @relation(fields: [companyId], references: [id])
+  companyId String
+  key       String
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([companyId, key])
   @@index([companyId])
@@ -478,15 +481,15 @@ model Theme {
 }
 
 model BrandingAsset {
-  id          String   @id @default(uuid())
-  company     Company  @relation(fields: [companyId], references: [id])
-  companyId   String
-  type        String
-  filePath    String
-  url         String
-  meta        Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  company   Company  @relation(fields: [companyId], references: [id])
+  companyId String
+  type      String
+  filePath  String
+  url       String
+  meta      Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([companyId])
 }
