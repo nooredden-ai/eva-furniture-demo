@@ -467,6 +467,57 @@ input, select, textarea {
   margin-bottom: 24px;
 }
 
+.accounting-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+}
+
+.accounting-card {
+  background: var(--admin-surface2);
+  border: 1px solid var(--admin-border);
+  border-radius: 18px;
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 220px;
+}
+
+.accounting-card-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: var(--admin-surface);
+  font-size: 1.4rem;
+}
+
+.accounting-card h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.accounting-card p {
+  margin: 0;
+  color: var(--admin-text2);
+  line-height: 1.6;
+}
+
+.accounting-table-panel .table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.accounting-table-panel .table-header h3 {
+  margin: 0;
+}
+
 .table-header {
   padding: 20px 24px;
   display: flex;

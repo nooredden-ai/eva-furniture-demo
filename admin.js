@@ -91,13 +91,14 @@ function refreshPage(page) {
     categories: 'التصنيفات',
     orders:     'إدارة الطلبات',
     users:      'إدارة المستخدمين',
+    accounting: 'النظام المالي',
     coupons:    'إدارة الكوبونات',
     settings:   'إعدادات المتجر',
     'access-denied': 'وصول مرفوض'
   };
   const titleIcons = {
     dashboard: 'bar-chart', products: 'package', categories: 'tag',
-    orders: 'receipt', users: 'users', coupons: 'gift', settings: 'settings',
+    orders: 'receipt', users: 'users', accounting: 'credit-card', coupons: 'gift', settings: 'settings',
     'access-denied': 'shield-alert'
   };
   const titleEl = $a('topbar-title');
@@ -119,8 +120,67 @@ function refreshPage(page) {
   else if (page === 'categories') renderCategoriesPage();
   else if (page === 'orders')     renderOrdersTable();
   else if (page === 'users')      renderUsersTable();
+  else if (page === 'accounting') renderAccountingPage();
   else if (page === 'coupons')    renderCouponsTable();
   else if (page === 'settings')   initSettingsPage();
+}
+
+const accountingFixtures = {
+  customers: {
+    title: 'العملاء',
+    headers: ['الاسم', 'الهاتف', 'العنوان'],
+    rows: [
+      ['محمد أحمد', '0590000000', 'نابلس'],
+      ['شركة النور', '0560000000', 'رام الله']
+    ]
+  },
+  suppliers: {
+    title: 'الموردون',
+    headers: ['الاسم', 'الهاتف', 'العنوان'],
+    rows: [
+      ['مورد المفروشات الأول', '0591111111', 'الخليل'],
+      ['شركة الأخشاب', '0592222222', 'جنين']
+    ]
+  },
+  accounts: {
+    title: 'دليل الحسابات',
+    headers: ['الرمز', 'الاسم', 'نوع الحساب'],
+    rows: [
+      ['1000', 'الصندوق', 'أصول'],
+      ['1010', 'البنك', 'أصول'],
+      ['4000', 'المبيعات', 'إيرادات'],
+      ['5000', 'المصروفات', 'مصروفات']
+    ]
+  }
+};
+
+function renderAccountingPage() {
+  const home = $a('accounting-home');
+  const panel = $a('accounting-table-panel');
+  if (home) home.style.display = 'block';
+  if (panel) panel.style.display = 'none';
+  if (window.lucide) lucide.createIcons();
+}
+
+function showAccountingHome() {
+  renderAccountingPage();
+}
+
+function showAccountingTable(type) {
+  const data = accountingFixtures[type];
+  if (!data) return;
+
+  const home = $a('accounting-home');
+  const panel = $a('accounting-table-panel');
+  const title = $a('accounting-table-title');
+  const headers = $a('accounting-table-headers');
+  const body = $a('accounting-table-body');
+
+  if (home) home.style.display = 'none';
+  if (panel) panel.style.display = 'block';
+  if (title) title.textContent = data.title;
+  if (headers) headers.innerHTML = data.headers.map(h => `<th>${h}</th>`).join('');
+  if (body) body.innerHTML = data.rows.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('');
 }
 
 // ===== Pending Badge =====
@@ -1619,11 +1679,13 @@ async function initAdmin() {
   const navCoupons = $a('nav-coupons');
   const navSettings = $a('nav-settings');
 
+  const navAccounting = $a('nav-accounting');
   if (navDashboard) navDashboard.style.display = Auth.can('view_dashboard') ? '' : 'none';
   if (navProducts) navProducts.style.display = Auth.can('view_products') ? '' : 'none';
   if (navCategories) navCategories.style.display = Auth.can('view_categories') ? '' : 'none';
   if (navOrders) navOrders.style.display = Auth.can('view_orders') ? '' : 'none';
   if (navUsers) navUsers.style.display = Auth.can('view_users') ? '' : 'none';
+  if (navAccounting) navAccounting.style.display = '';
   if (navCoupons) navCoupons.style.display = Auth.can('view_coupons') ? '' : 'none';
   if (navSettings) navSettings.style.display = Auth.can('view_settings') ? '' : 'none';
 

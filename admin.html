@@ -49,6 +49,9 @@
     <div class="nav-item" data-page="users" id="nav-users">
        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2c0-2.21-1.79-4-4-4H11c-2.21 0-4 1.79-4 4v2h10zm-5-9c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/></svg></span> المستخدمين
     </div>
+    <div class="nav-item" data-page="accounting" id="nav-accounting">
+       <span class="nav-icon"><i data-lucide="credit-card" style="width:20px;height:20px"></i></span> المحاسبة
+    </div>
     <div class="nav-item" data-page="coupons" id="nav-coupons">
        <span class="nav-icon"><i data-lucide="gift" style="width:20px;height:20px"></i></span> الكوبونات
     </div>
@@ -269,6 +272,49 @@
         </table>
       </div>
 
+    </div>
+
+    <div class="admin-page" id="admin-accounting" style="display:none">
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <h3><i data-lucide="credit-card" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>النظام المالي</h3>
+        </div>
+        <div id="accounting-home">
+          <div class="accounting-grid">
+            <div class="accounting-card">
+              <div class="accounting-card-icon">👥</div>
+              <h3>العملاء</h3>
+              <p>إدارة بيانات العملاء بشكل بسيط</p>
+              <button class="topbar-btn btn-primary" onclick="showAccountingTable('customers')">عرض العملاء</button>
+            </div>
+            <div class="accounting-card">
+              <div class="accounting-card-icon">🏢</div>
+              <h3>الموردون</h3>
+              <p>حفظ بيانات الموردين وجهات الشراء</p>
+              <button class="topbar-btn btn-primary" onclick="showAccountingTable('suppliers')">عرض الموردين</button>
+            </div>
+            <div class="accounting-card">
+              <div class="accounting-card-icon">📘</div>
+              <h3>دليل الحسابات</h3>
+              <p>الحسابات الأساسية مثل الصندوق والبنك والمبيعات والمصاريف</p>
+              <button class="topbar-btn btn-primary" onclick="showAccountingTable('accounts')">عرض الحسابات</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="accounting-table-panel" id="accounting-table-panel" style="display:none; margin-top:24px;">
+          <div class="table-header" style="justify-content: space-between; gap: 12px;">
+            <h3 id="accounting-table-title"></h3>
+            <button class="topbar-btn btn-outline" onclick="showAccountingHome()">رجوع</button>
+          </div>
+          <table class="admin-table">
+            <thead>
+              <tr id="accounting-table-headers"></tr>
+            </thead>
+            <tbody id="accounting-table-body"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
 
     <!-- ==================== COUPONS ==================== -->
