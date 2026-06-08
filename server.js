@@ -1482,6 +1482,93 @@ app.post('/api/accounting/bank-deposit', async (req, res) => {
   }
 });
 
+// =========================
+// API: JOURNAL ENTRIES VIEWER (Phase 12B)
+// =========================
+app.get('/api/accounting/journal-entries', async (req, res) => {
+  try {
+    const company = await prisma.company.findFirst();
+    if (!company) {
+      return res.status(404).json({ success: false, message: 'لا توجد شركة في قاعدة البيانات.' });
+    }
+
+    // Parse pagination parameters
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize) || 20));
+    const skip = (page - 1) * pageSize;
+
+    // Fetch total count
+    const totalCount = await prisma.journalEntry.count({
+      where: { companyId: company.id },
+    });
+
+    // Fetch journal entries with pagination
+    const entries = await prisma.journalEntry.findMany({
+      where: { companyId: company.id },
+      include: { lines: true },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: pageSize,
+    });
+
+    // Transform and calculate totals
+    const formattedEntries = await Promise.all(
+      entries.map(async (entry) => {
+        const totalDebit = entry.lines.reduce((sum, line) => sum + parseFloat(line.debit || 0), 0);
+        const totalCredit = entry.lines.reduce((sum, line) => sum + parseFloat(line.credit || 0), 0);
+
+        // Fetch account details for each line
+        const linesWithAccounts = await Promise.all(
+          entry.lines.map(async (line) => {
+            const account = await prisma.accountingAccount.findUnique({
+              where: { id: line.accountId },
+              select: { accountCode: true, name: true },
+            });
+            return {
+              accountCode: account?.accountCode || 'N/A',
+              accountName: account?.name || 'N/A',
+              debit: parseFloat(line.debit),
+              credit: parseFloat(line.credit),
+            };
+          })
+        );
+
+        return {
+          id: entry.id,
+          entryNumber: entry.entryNumber,
+          entryDate: entry.entryDate,
+          description: entry.description,
+          sourceType: entry.sourceType,
+          isPosted: entry.isPosted,
+          totalDebit,
+          totalCredit,
+          lines: linesWithAccounts,
+        };
+      })
+    );
+
+    // Calculate total pages
+    const totalPages = Math.ceil(totalCount / pageSize);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        entries: formattedEntries,
+        pagination: {
+          page,
+          pageSize,
+          totalCount,
+          totalPages,
+          hasMore: page < totalPages,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('[JOURNAL ENTRIES]', error);
+    res.status(500).json({ success: false, message: 'فشل جلب القيود المحاسبية.' });
+  }
+});
+
 /* =========================
    API: PING
 ========================= */
