@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>المتجر الإلكتروني</title>
-  <meta name="description" content="تسوق أونلاين بأفضل الأسعار" />
+  <title>EVA Furniture | إيفا للمفروشات</title>
+  <meta name="description" content="إيفا للمفروشات - متجر أثاث فاخر يوفر تشكيلات غرف جلوس، غرف نوم، كنب، طاولات وديكور منزلي بأناقة عصرية." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
@@ -19,10 +19,10 @@
 <header class="header">
   <div class="header-inner">
     <div class="logo" style="display:flex;align-items:center;gap:6px">
-      <i data-lucide="gem" style="width:24px;height:24px;color:var(--primary)"></i>
+      <i data-lucide="home" style="width:24px;height:24px;color:var(--primary)"></i>
       <div>
-        <span id="store-name">متجرك</span>
-        <span>متجر التجميل والعناية</span>
+        <span id="store-name">EVA Furniture</span>
+        <span>إيفا للمفروشات</span>
       </div>
     </div>
     <div class="header-actions">
@@ -57,7 +57,7 @@
   <div class="cart-footer">
     <div class="cart-total">
       <span>المجموع</span>
-      <span class="total-price" id="cart-total-price">0 ر.س</span>
+      <span class="total-price" id="cart-total-price">0 ₪</span>
     </div>
     <div class="cart-action-buttons">
       <button class="checkout-btn" id="checkout-btn" onclick="goToCheckout()" disabled>
@@ -83,13 +83,21 @@
     </div>
     <div class="hero-banner" id="hero-banner" aria-hidden="true"></div>
     <div class="hero-content">
-      <div class="hero-badge" style="display:inline-flex;align-items:center;gap:6px"><i data-lucide="sparkles" style="width:14px;height:14px"></i> وصل جديد هذا الأسبوع</div>
-      <h1>جمالك يستحق<br/><em>الأفضل دائماً</em></h1>
-      <p>اكتشفي تشكيلتنا الفاخرة من مستحضرات العناية<br/>بالبشرة والمكياج والعطور الراقية</p>
-      <a href="#products" class="hero-cta" style="cursor:pointer;display:inline-flex;align-items:center;gap:6px"
-         onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'});return false;">
-        تسوقي الآن <i data-lucide="shopping-bag" style="width:18px;height:18px"></i>
-      </a>
+      <div class="hero-badge" style="display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;">
+        ✓ جودة عالية ✓ تصاميم عصرية ✓ توصيل آمن ✓ خدمة عملاء مميزة
+      </div>
+      <h1>أثاث عصري<br/><em>يليق بمنزلك</em></h1>
+      <p>اكتشف تشكيلتنا المميزة من غرف الجلوس وغرف النوم والطاولات والكراسي والمفروشات المنزلية المصممة لتمنح منزلك الراحة والأناقة.</p>
+      <div class="hero-actions" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:16px">
+        <a href="#products" class="hero-cta" style="cursor:pointer;display:inline-flex;align-items:center;gap:10px"
+           onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'});return false;">
+          استكشف المنتجات <i data-lucide="shopping-bag" style="width:18px;height:18px"></i>
+        </a>
+        <a href="#categories" class="hero-cta hero-cta-secondary" style="cursor:pointer;display:inline-flex;align-items:center;gap:10px;background:rgba(255,255,255,0.9);color:var(--text);border:1px solid rgba(43,33,24,0.12);"
+           onclick="document.getElementById('categories').scrollIntoView({behavior:'smooth'});return false;">
+          تصفح التصنيفات <i data-lucide="list" style="width:18px;height:18px"></i>
+        </a>
+      </div>
     </div>
   </section>
 
@@ -125,9 +133,9 @@
   </div>
 
   <!-- CATEGORIES -->
-  <section class="section" style="padding-bottom:16px">
+  <section class="section" id="categories" style="padding-bottom:16px">
     <h2 class="section-title"><i data-lucide="folder-heart" style="width:24px;height:24px;color:var(--primary);vertical-align:middle;margin-left:8px"></i>تسوق حسب الفئة</h2>
-    <p class="section-subtitle">اختر الفئة التي تناسبك</p>
+    <p class="section-subtitle">اختر أفضل قطع الأثاث والديكور لمنزلك</p>
     <div class="categories-scroll" id="categories-container"></div>
   </section>
 
@@ -141,7 +149,7 @@
   <!-- PRODUCTS -->
   <section class="section" id="products">
     <h2 class="section-title"><i data-lucide="sparkles" style="width:24px;height:24px;color:var(--primary);vertical-align:middle;margin-left:8px"></i>منتجاتنا المميزة</h2>
-    <p class="section-subtitle">اختاري من أفضل ماركات التجميل العالمية والمحلية</p>
+    <p class="section-subtitle">تصفّح قطع الأثاث والديكور المختارة بعناية لتجربة منزلية متكاملة</p>
     <div class="products-grid" id="products-container"></div>
   </section>
 
@@ -150,8 +158,8 @@
     <div class="footer-inner">
       <div class="footer-grid">
         <div class="footer-col">
-          <h4 data-footer-name style="display:flex;align-items:center;gap:6px"><i data-lucide="gem" style="width:18px;height:18px"></i> متجرك</h4>
-          <p data-footer-desc>وجهتك الأولى لمستحضرات التجميل والعناية الفاخرة في المملكة العربية السعودية</p>
+          <h4 data-footer-name style="display:flex;align-items:center;gap:6px"><i data-lucide="gem" style="width:18px;height:18px"></i> EVA Furniture</h4>
+          <p data-footer-desc>إيفا للمفروشات تقدم أثاثاً منزلياً فاخراً بتصاميم عصرية وجودة عالية.</p>
         </div>
         <div class="footer-col">
           <h4>روابط سريعة</h4>
@@ -330,7 +338,7 @@
       <div class="summary-divider"></div>
       <div class="summary-row">
         <span>المجموع الفرعي</span>
-        <span id="summary-subtotal">0 ر.س</span>
+        <span id="summary-subtotal">0 ₪</span>
       </div>
       <div class="summary-row">
         <span>رسوم التوصيل</span>
@@ -338,11 +346,11 @@
       </div>
       <div class="summary-row" id="discount-row" style="display:none">
         <span>الخصم</span>
-        <span id="summary-discount" style="color:#22c55e;font-weight:700">0 ر.س</span>
+        <span id="summary-discount" style="color:#22c55e;font-weight:700">0 ₪</span>
       </div>
       <div class="summary-total">
         <span>الإجمالي</span>
-        <span id="summary-total">0 ر.س</span>
+        <span id="summary-total">0 ₪</span>
       </div>
       <button class="desktop-place-order" onclick="placeOrder()">
         <i data-lucide="check-circle" style="width:20px;height:20px"></i> تأكيد الطلب
@@ -359,7 +367,7 @@
       <div class="mobile-footer-inner">
         <div class="mobile-footer-total">
           <span class="mobile-footer-label">الإجمالي</span>
-          <span class="mobile-footer-value" id="mobile-summary-total">0 ر.س</span>
+          <span class="mobile-footer-value" id="mobile-summary-total">0 ₪</span>
         </div>
         <button class="mobile-place-order" onclick="placeOrder()">
           <i data-lucide="check-circle" style="width:18px;height:18px"></i> تأكيد الطلب
@@ -379,12 +387,12 @@
       <p class="number" id="order-number-display">ORD-000000</p>
     </div>
     <div class="confirmation-summary" style="background:var(--bg);border-radius:var(--radius);padding:20px;margin-bottom:32px;font-size:0.95rem;color:var(--text-light);line-height:1.8;text-align:right">
-      <div style="display:flex;justify-content:space-between;margin-bottom:10px"><strong>المجموع الفرعي</strong><span id="order-confirm-subtotal">0 ر.س</span></div>
-      <div style="display:flex;justify-content:space-between;margin-bottom:10px"><strong>رسوم التوصيل</strong><span id="order-confirm-shipping">0 ر.س</span></div>
-      <div id="confirm-discount-row" style="display:flex;justify-content:space-between;margin-bottom:10px;display:none"><strong>الخصم</strong><span id="order-confirm-discount" style="color:#22c55e;font-weight:700">0 ر.س</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px"><strong>المجموع الفرعي</strong><span id="order-confirm-subtotal">0 ₪</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px"><strong>رسوم التوصيل</strong><span id="order-confirm-shipping">0 ₪</span></div>
+      <div id="confirm-discount-row" style="display:flex;justify-content:space-between;margin-bottom:10px;display:none"><strong>الخصم</strong><span id="order-confirm-discount" style="color:#22c55e;font-weight:700">0 ₪</span></div>
       <div style="display:flex;justify-content:space-between;margin-bottom:10px"><strong>المنطقة</strong><span id="order-confirm-zone">-</span></div>
       <div style="display:flex;justify-content:space-between;margin-bottom:10px"><strong>العنوان</strong><span id="order-confirm-address">-</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:1.05rem;font-weight:800;border-top:1px dashed rgba(0,0,0,0.12);padding-top:12px;color:var(--text-strong)"><span>الإجمالي</span><span id="order-confirm-total">0 ر.س</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:1.05rem;font-weight:800;border-top:1px dashed rgba(0,0,0,0.12);padding-top:12px;color:var(--text-strong)"><span>الإجمالي</span><span id="order-confirm-total">0 ₪</span></div>
     </div>
     <div style="background:var(--bg);border-radius:var(--radius);padding:20px;margin-bottom:32px;font-size:0.9rem;color:var(--text-light);line-height:2;text-align:right">
       <p style="display:flex;align-items:center;gap:8px"><i data-lucide="package" style="width:16px;height:16px"></i> سيتم تجهيز طلبك خلال يوم عمل واحد</p>

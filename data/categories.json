@@ -2,42 +2,46 @@
   {
     "id": "all",
     "name": "الكل",
-    "emoji": "🛍️"
+    "image": "/images/products/BR1.jpg"
   },
   {
-    "id": "face",
-    "name": "العناية بالوجه",
-    "emoji": "",
-    "image": "/images/categories/1779565055273-H7f2d.jpg"
+    "id": "living-room",
+    "name": "غرف جلوس",
+    "image": "/images/products/BR3.jpg"
   },
   {
-    "id": "perfume",
-    "name": "العطور",
-    "emoji": "",
-    "image": "/images/categories/1779561221002-JX2Zx.jpg"
+    "id": "bedroom",
+    "name": "غرف نوم",
+    "image": "/images/products/M1.jpg"
   },
   {
-    "id": "makeup",
-    "name": "المكياج",
-    "emoji": "",
-    "image": "/images/categories/1779561321725-X0Gma.jpg"
+    "id": "sofas",
+    "name": "كنب وأرائك",
+    "image": "/images/products/PRO4.jpg"
   },
   {
-    "id": "hair",
-    "name": "العناية بالشعر",
-    "emoji": "",
-    "image": "/images/categories/1779561542459-Xe43T.jpg"
+    "id": "tables",
+    "name": "طاولات",
+    "image": "/images/products/BR2.jpg"
   },
   {
-    "id": "body",
-    "name": "العناية بالجسم",
-    "emoji": "",
-    "image": "/images/categories/1779561533610-HP0Fu.jpg"
+    "id": "chairs",
+    "name": "كراسي ومقاعد",
+    "image": "/images/products/PRO2.jpg"
   },
   {
-    "id": "accessories",
-    "name": "الإكسسوارات",
-    "emoji": "",
-    "image": "/images/categories/1779561603500-l4ujG.jpg"
+    "id": "outdoor",
+    "name": "أثاث خارجي",
+    "image": "/images/products/N4.jpg"
+  },
+  {
+    "id": "decor",
+    "name": "ديكور منزلي",
+    "image": "/images/products/BR5.jpg"
+  },
+  {
+    "id": "special",
+    "name": "عروض خاصة",
+    "image": "/images/products/PRO1.jpg"
   }
 ]

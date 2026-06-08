@@ -1,20 +1,20 @@
 /* ===== CSS Variables ===== */
 :root {
-  --primary: #335c7d;
-  --primary-light: #ddeaf4;
-  --secondary: #5d7b94;
-  --accent: #607e9d;
-  --gold: #c7ab6f;
-  --bg: #f5f7f9;
+  --primary: #B88746;
+  --primary-light: #E7D6BF;
+  --secondary: #E7D6BF;
+  --accent: #4E342E;
+  --gold: #B88746;
+  --bg: #FAF7F2;
   --glass: rgba(255, 255, 255, 0.84);
   --glass-strong: rgba(255, 255, 255, 0.96);
   --surface: #ffffff;
-  --surface-strong: #fbfcfd;
-  --surface-soft: #f3f6f8;
-  --text: #172334;
-  --text-strong: #0f172a;
-  --text-light: #5f7187;
-  --border: rgba(89, 105, 130, 0.14);
+  --surface-strong: #F8F1E6;
+  --surface-soft: #F7EFE7;
+  --text: #2B2118;
+  --text-strong: #2B2118;
+  --text-light: #7A6A5E;
+  --border: rgba(98, 62, 38, 0.14);
   --success: #1f9d75;
   --danger: #d44d5b;
   --space-1: 8px;
@@ -95,7 +95,7 @@ input, select, textarea { font-family: var(--font); }
 /* Top search (premium) */
 .top-search { position: relative; }
 .top-search input[type="search"] {
-  width: 380px; max-width: 45vw; min-width: 140px;
+  width: min(380px, 100%); max-width: 45vw; min-width: 140px;
   padding: 10px 18px; border-radius: 999px; border: 1px solid rgba(0,0,0,0.06);
   background: rgba(0,0,0,0.02); box-shadow: none;
   transition: all 0.28s cubic-bezier(0.22,1,0.36,1);
@@ -200,7 +200,19 @@ input, select, textarea { font-family: var(--font); }
   pointer-events: none;
 }
 .hero-badge {
-  display: none !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 auto 24px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(184, 135, 70, 0.16);
+  color: var(--text-light);
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  box-shadow: 0 20px 60px rgba(55, 75, 98, 0.08);
 }
 .hero h1 { font-size: clamp(1.8rem, 4.5vw, 2.8rem); font-weight: 900; line-height: 1.15; margin-bottom: 12px; letter-spacing: -0.04em; color: var(--text-strong); }
 .hero h1 em { font-style: normal; color: var(--primary); }

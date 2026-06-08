@@ -441,7 +441,7 @@ function selectCategory(catId) {
 }
 
 function getCurrency() {
-  return storeSettings?.currencySymbol || 'ر.س';
+  return storeSettings?.currencySymbol || '₪';
 }
 
 function renderProducts() {
@@ -721,7 +721,7 @@ function openQuickLinkModal(key) {
   const links = {
     about: {
       title: 'من نحن',
-      body: currentStore.aboutText ? `<div>${currentStore.aboutText}</div>` : `<p>${storeName} هو متجر إلكتروني متخصص في منتجات التجميل والعناية بالبشرة. نقدم تجربة تسوق فاخرة، منتجات أصلية، وخدمة عملاء سريعة وودية.</p><p>هدفنا هو أن تكوني مشرقة وواثقة في كل يوم، من خلال مجموعة منتقاة من أفضل الماركات العالمية والمحلية.</p>`
+      body: currentStore.aboutText ? `<div>${currentStore.aboutText}</div>` : `<p>${storeName} هو متجر إلكتروني متخصص في الأثاث والمفروشات المنزلية. نقدم قطعاً أنيقة وعالية الجودة لتجديد منزلك وتجعل كل غرفة مكاناً مريحاً وفاخراً.</p><p>اختر من تشكيلاتنا المختارة لتجربة تسوق سلسة مع خدمة عملاء احترافية وتوصيل آمن.</p>`
     },
     contact: {
       title: 'تواصل معنا',
