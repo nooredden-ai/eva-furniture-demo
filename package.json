@@ -5,7 +5,8 @@
   "main": "admin.js",
   "scripts": {
     "dev": "node server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "seed:backend": "cd backend && npm run seed"
   },
   "keywords": [],
   "author": "",
