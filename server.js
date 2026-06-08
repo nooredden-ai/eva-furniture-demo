@@ -1253,6 +1253,106 @@ app.put('/api/accounting/accounts/:id', async (req, res) => {
   }
 });
 
+// =========================
+// API: ACCOUNTING SETTINGS
+// =========================
+app.get('/api/accounting/settings', async (req, res) => {
+  try {
+    // Determine companyId from JWT or fallback
+    let companyId = req.user?.companyId;
+    if (!companyId) {
+      const fallbackCompany = await prisma.company.findFirst();
+      if (!fallbackCompany) {
+        return res.status(404).json({ success: false, message: 'No company found in the database.' });
+      }
+      companyId = fallbackCompany.id;
+      // TODO: remove company.findFirst fallback after full JWT company migration.
+    }
+
+    const settings = await prisma.accountingSettings.findUnique({
+      where: { companyId },
+    });
+
+    if (!settings) {
+      return res.json({
+        defaultCashAccountId: null,
+        defaultBankAccountId: null,
+        defaultSalesAccountId: null,
+        defaultPurchasesAccountId: null,
+        defaultInventoryAccountId: null,
+        defaultCOGSAccountId: null,
+      });
+    }
+
+    const { defaultCashAccountId, defaultBankAccountId, defaultSalesAccountId, defaultPurchasesAccountId, defaultInventoryAccountId, defaultCOGSAccountId } = settings;
+    res.json({ defaultCashAccountId, defaultBankAccountId, defaultSalesAccountId, defaultPurchasesAccountId, defaultInventoryAccountId, defaultCOGSAccountId });
+  } catch (error) {
+    console.error('[ACCOUNTING SETTINGS GET]', error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve accounting settings.' });
+  }
+});
+
+app.patch('/api/accounting/settings', async (req, res) => {
+  try {
+    // Determine companyId from JWT or fallback
+    let companyId = req.user?.companyId;
+    if (!companyId) {
+      const fallbackCompany = await prisma.company.findFirst();
+      if (!fallbackCompany) {
+        return res.status(404).json({ success: false, message: 'No company found in the database.' });
+      }
+      companyId = fallbackCompany.id;
+      // TODO: remove company.findFirst fallback after full JWT company migration.
+    }
+
+    const allowedFields = [
+      'defaultCashAccountId',
+      'defaultBankAccountId',
+      'defaultSalesAccountId',
+      'defaultPurchasesAccountId',
+      'defaultInventoryAccountId',
+      'defaultCOGSAccountId',
+    ];
+    const data = {};
+    for (const field of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(req.body, field)) {
+        data[field] = req.body[field];
+      }
+    }
+
+    // Validate any provided account IDs belong to the same company
+    for (const [key, accountId] of Object.entries(data)) {
+      if (accountId) {
+        const account = await prisma.accountingAccount.findFirst({
+          where: { id: accountId, companyId, deletedAt: null },
+        });
+        if (!account) {
+          return res.status(400).json({ success: false, message: `${key} does not reference a valid account for this company.` });
+        }
+      }
+    }
+
+    const upserted = await prisma.accountingSettings.upsert({
+      where: { companyId },
+      update: {
+        ...data,
+        updatedBy: req.user?.userId || null,
+      },
+      create: {
+        companyId,
+        ...data,
+        updatedBy: req.user?.userId || null,
+      },
+    });
+
+    const { defaultCashAccountId, defaultBankAccountId, defaultSalesAccountId, defaultPurchasesAccountId, defaultInventoryAccountId, defaultCOGSAccountId } = upserted;
+    res.json({ defaultCashAccountId, defaultBankAccountId, defaultSalesAccountId, defaultPurchasesAccountId, defaultInventoryAccountId, defaultCOGSAccountId });
+  } catch (error) {
+    console.error('[ACCOUNTING SETTINGS PATCH]', error);
+    res.status(500).json({ success: false, message: 'Failed to update accounting settings.' });
+  }
+});
+
 /* =========================
    API: PING
 ========================= */
