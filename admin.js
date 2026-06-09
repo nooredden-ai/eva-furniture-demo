@@ -229,8 +229,9 @@ function renderAccountingPage() {
 
   if (window.lucide) lucide.createIcons();
   
-  // تحديث KPIs للعملاء والموردين
+  // تحديث KPIs والأقسام السريعة
   updateAccountingKPIs();
+  renderQuickBusinessInsights();
 }
 
 function showAccountingHome() {
@@ -378,6 +379,67 @@ async function updateAccountingKPIs() {
     }
   } catch (error) {
     console.error('Error updating accounting KPIs:', error);
+  }
+}
+
+async function getLowStockProducts() {
+  try {
+    const products = await API.getProducts();
+    const list = Array.isArray(products) ? products.filter(p => p.stock < 10) : [];
+    return list.slice(0, 5);
+  } catch (error) {
+    console.error('Error fetching low stock products:', error);
+    return [];
+  }
+}
+
+async function getRecentOrders() {
+  try {
+    const orders = await API.getOrders();
+    if (!Array.isArray(orders)) return [];
+    return orders.slice().sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+  } catch (error) {
+    console.error('Error fetching recent orders:', error);
+    return [];
+  }
+}
+
+function renderLowStockProducts(products) {
+  const container = $a('low-stock-products-list');
+  if (!container) return;
+  if (!products.length) {
+    container.innerHTML = '<div class="quick-empty">لا توجد منتجات منخفضة المخزون حالياً</div>';
+    return;
+  }
+  container.innerHTML = products.map(product => {
+    const name = escapeHtml(product.name || product.title || 'منتج غير معروف');
+    const stock = Number(product.stock || 0).toLocaleString('ar-SA');
+    return `<div class="quick-list-item"><span>${name}</span><strong>${stock}</strong></div>`;
+  }).join('');
+}
+
+function renderRecentOrders(orders) {
+  const container = $a('recent-orders-list');
+  if (!container) return;
+  if (!orders.length) {
+    container.innerHTML = '<div class="quick-empty">لا توجد طلبات حالياً</div>';
+    return;
+  }
+  container.innerHTML = orders.map(order => {
+    const orderNumber = escapeHtml(order.orderNumber || order.id || '---');
+    const total = Number(order.total || 0).toLocaleString('ar-SA') + ' ₪';
+    const status = escapeHtml(order.status || 'غير معروف');
+    return `<div class="quick-list-item"><span>${orderNumber}</span><strong>${total} • ${status}</strong></div>`;
+  }).join('');
+}
+
+async function renderQuickBusinessInsights() {
+  try {
+    const [lowStockProducts, recentOrders] = await Promise.all([getLowStockProducts(), getRecentOrders()]);
+    renderLowStockProducts(lowStockProducts);
+    renderRecentOrders(recentOrders);
+  } catch (error) {
+    console.error('Error rendering quick business insights:', error);
   }
 }
 

@@ -701,6 +701,35 @@ input, select, textarea {
   color: var(--admin-text);
 }
 
+.quick-list {
+  display: grid;
+  gap: 12px;
+}
+.quick-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--admin-surface2);
+  border: 1px solid var(--admin-border);
+  color: var(--admin-text);
+  font-size: 0.94rem;
+}
+.quick-list-item strong {
+  font-weight: 800;
+  color: var(--admin-text);
+}
+.quick-empty {
+  padding: 20px;
+  border-radius: 18px;
+  background: rgba(226, 232, 240, 0.75);
+  border: 1px dashed var(--admin-border);
+  color: var(--admin-text2);
+  text-align: center;
+}
+
 .accounting-table-inner {
   display: grid;
   gap: 16px;
