@@ -1370,7 +1370,7 @@ async function renderProductsTable() {
     if (window.lucide) lucide.createIcons();
     return;
   }
-  const canEdit = Auth.can('manage_products');
+  const canEdit = Auth.can('edit_products');
   const storeSettings = await API.getStoreSettings();
   const sym = storeSettings.currencySymbol || storeSettings.currency || 'USD';
   
@@ -1477,7 +1477,8 @@ function confirmDeleteOrder(orderId) {
 function openAddProduct() {
   editingProduct = null;
   $a('product-modal-title').innerHTML = '<i data-lucide="plus-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة منتج جديد';
-  ['pm-name','pm-price','pm-oldprice','pm-badge'].forEach(id => $a(id).value = '');
+  ['pm-name','pm-price','pm-oldprice','pm-badge','pm-stock'].forEach(id => $a(id).value = '');
+  $a('pm-stock').value   = '0';
   $a('pm-bg').value      = '#FFE8F0,#FFB3D1';
   $a('pm-rating').value  = '4.5';
   $a('pm-reviews').value = '0';
@@ -1497,6 +1498,7 @@ function openEditProduct(productId) {
     $a('pm-name').value       = p.name;
     $a('pm-price').value      = p.price;
     $a('pm-oldprice').value   = p.oldPrice || '';
+    $a('pm-stock').value      = p.stock != null ? p.stock : 0;
     const bgColors = (p.bg || '').replace(/linear-gradient\(135deg,/, '').replace(/\)/, '');
     $a('pm-bg').value         = bgColors;
     $a('pm-badge').value      = p.badge || '';
@@ -1543,6 +1545,7 @@ async function processSaveProduct() {
     category: $a('pm-category').value,
     price:    parseFloat($a('pm-price').value) || 0,
     oldPrice: parseFloat($a('pm-oldprice').value) || null,
+    stock:    parseInt($a('pm-stock').value, 10) || 0,
     bg:       bgVal.startsWith('linear') ? bgVal : `linear-gradient(135deg,${bgVal})`,
     badge:    $a('pm-badge').value || null,
     rating:   parseFloat($a('pm-rating').value) || 4.5,
