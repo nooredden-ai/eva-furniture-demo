@@ -260,19 +260,121 @@ async function getAccountingSuppliersCount() {
   }
 }
 
+async function getAccountingProductsCount() {
+  try {
+    const products = await API.getProducts();
+    const activeProducts = Array.isArray(products) ? products.filter(p => p.active !== false) : [];
+    return activeProducts.length;
+  } catch (error) {
+    console.error('Error fetching products count:', error);
+    return 0;
+  }
+}
+
+async function getLowStockProductsCount() {
+  try {
+    const products = await API.getProducts();
+    const lowStock = Array.isArray(products) ? products.filter(p => p.stock < 10) : [];
+    return lowStock.length;
+  } catch (error) {
+    console.error('Error fetching low stock count:', error);
+    return 0;
+  }
+}
+
+async function getTodaySales() {
+  try {
+    const orders = await API.getOrders();
+    if (!Array.isArray(orders)) return 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayEnd = new Date(today);
+    todayEnd.setHours(23, 59, 59, 999);
+    
+    return orders.reduce((total, order) => {
+      const orderDate = new Date(order.date);
+      orderDate.setHours(0, 0, 0, 0);
+      if (orderDate.getTime() === today.getTime()) {
+        return total + (order.total || 0);
+      }
+      return total;
+    }, 0);
+  } catch (error) {
+    console.error('Error fetching today sales:', error);
+    return 0;
+  }
+}
+
+async function getMonthSales() {
+  try {
+    const orders = await API.getOrders();
+    if (!Array.isArray(orders)) return 0;
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return orders.reduce((total, order) => {
+      const orderDate = new Date(order.date);
+      if (orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear) {
+        return total + (order.total || 0);
+      }
+      return total;
+    }, 0);
+  } catch (error) {
+    console.error('Error fetching month sales:', error);
+    return 0;
+  }
+}
+
+async function getCompletedOrdersCount() {
+  try {
+    const orders = await API.getOrders();
+    if (!Array.isArray(orders)) return 0;
+    return orders.filter(o => o.status === 'delivered').length;
+  } catch (error) {
+    console.error('Error fetching completed orders:', error);
+    return 0;
+  }
+}
+
 async function updateAccountingKPIs() {
   try {
     const customersCount = await getAccountingCustomersCount();
     const suppliersCount = await getAccountingSuppliersCount();
+    const productsCount = await getAccountingProductsCount();
+    const lowStockCount = await getLowStockProductsCount();
+    const todaySales = await getTodaySales();
+    const monthSales = await getMonthSales();
+    const completedOrders = await getCompletedOrdersCount();
     
     const customersKPI = $a('kpi-customers-count');
     const suppliersKPI = $a('kpi-suppliers-count');
+    const productsKPI = $a('kpi-products-count');
+    const lowStockKPI = $a('kpi-low-stock-count');
+    const todaySalesKPI = $a('kpi-today-sales');
+    const monthSalesKPI = $a('kpi-month-sales');
+    const completedOrdersKPI = $a('kpi-completed-orders');
     
     if (customersKPI) {
       customersKPI.textContent = customersCount.toLocaleString('ar-SA');
     }
     if (suppliersKPI) {
       suppliersKPI.textContent = suppliersCount.toLocaleString('ar-SA');
+    }
+    if (productsKPI) {
+      productsKPI.textContent = productsCount.toLocaleString('ar-SA');
+    }
+    if (lowStockKPI) {
+      lowStockKPI.textContent = lowStockCount.toLocaleString('ar-SA');
+    }
+    if (todaySalesKPI) {
+      todaySalesKPI.textContent = todaySales.toLocaleString('ar-SA') + ' ₪';
+    }
+    if (monthSalesKPI) {
+      monthSalesKPI.textContent = monthSales.toLocaleString('ar-SA') + ' ₪';
+    }
+    if (completedOrdersKPI) {
+      completedOrdersKPI.textContent = completedOrders.toLocaleString('ar-SA');
     }
   } catch (error) {
     console.error('Error updating accounting KPIs:', error);
