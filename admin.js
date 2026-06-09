@@ -91,7 +91,7 @@ function refreshPage(page) {
     categories: 'التصنيفات',
     orders:     'إدارة الطلبات',
     users:      'إدارة المستخدمين',
-    accounting: 'النظام المالي',
+    accounting: 'المالية المبسطة',
     coupons:    'إدارة الكوبونات',
     settings:   'إعدادات المتجر',
     'access-denied': 'وصول مرفوض'
