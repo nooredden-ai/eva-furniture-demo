@@ -91,7 +91,7 @@ function refreshPage(page) {
     categories: 'التصنيفات',
     orders:     'إدارة الطلبات',
     users:      'إدارة المستخدمين',
-    accounting: 'المالية المبسطة',
+    accounting: 'ملخص المبيعات والمخزون',
     coupons:    'إدارة الكوبونات',
     settings:   'إعدادات المتجر',
     'access-denied': 'وصول مرفوض'
@@ -123,6 +123,16 @@ function refreshPage(page) {
   else if (page === 'accounting') renderAccountingPage();
   else if (page === 'coupons')    renderCouponsTable();
   else if (page === 'settings')   initSettingsPage();
+}
+
+function toggleAdvancedTools() {
+  const el = $a('advanced-tools');
+  if (!el) return;
+  if (el.style.display === 'none' || el.style.display === '') {
+    el.style.display = 'flex';
+  } else {
+    el.style.display = 'none';
+  }
 }
 
 const accountingFixtures = {

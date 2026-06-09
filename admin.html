@@ -49,9 +49,9 @@
     <div class="nav-item" data-page="users" id="nav-users">
        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2c0-2.21-1.79-4-4-4H11c-2.21 0-4 1.79-4 4v2h10zm-5-9c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/></svg></span> المستخدمين
     </div>
-    <div class="nav-item" data-page="accounting" id="nav-accounting">
-       <span class="nav-icon"><i data-lucide="credit-card" style="width:20px;height:20px"></i></span> المالية المبسطة
-    </div>
+     <div class="nav-item" data-page="accounting" id="nav-accounting">
+       <span class="nav-icon"><i data-lucide="credit-card" style="width:20px;height:20px"></i></span> ملخص المبيعات والمخزون
+     </div>
     <div class="nav-item" data-page="coupons" id="nav-coupons">
        <span class="nav-icon"><i data-lucide="gift" style="width:20px;height:20px"></i></span> الكوبونات
     </div>
@@ -118,6 +118,7 @@
       <!-- Quick Actions Section (NoorLabs Admin 2.0) -->
       <div class="quick-actions-card">
         <h3><i data-lucide="zap" style="width:18px;height:18px;vertical-align:middle;margin-left:6px;color:var(--admin-primary)"></i>إجراءات سريعة</h3>
+        <p class="dashboard-guidance">ابدأ من المنتجات، ثم تابع الطلبات، وراقب المبيعات والمخزون من المالية المبسطة.</p>
         <div class="quick-actions-grid">
           <button type="button" class="qa-btn action-add_products" onclick="navigateTo('products'); openAddProduct();">
             <i data-lucide="plus-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i>
@@ -284,7 +285,7 @@
       <div class="admin-table-wrap">
         <div class="accounting-headbar">
           <div class="accounting-page-header">
-            <span class="accounting-label">المالية المبسطة</span>
+            <span class="accounting-label">ملخص المبيعات والمخزون</span>
             <h2>ملخص سريع للمبيعات والطلبات والمخزون والأرباح اليومية.</h2>
           </div>
           <div class="accounting-meta-grid">
@@ -475,46 +476,82 @@
               <h4>إجراءات سريعة</h4>
             </div>
             <div class="accounting-service-grid">
-              <button class="service-card" onclick="navigateTo('products')" data-color="products">
+              <button class="service-card primary-action" onclick="navigateTo('products')" data-color="products">
                 <div class="service-card-head">
                   <div class="service-icon"><i data-lucide="package"></i></div>
                   <div>
-                    <div class="service-title">عرض المنتجات منخفضة المخزون</div>
-                    <div class="service-desc">عرض المنتجات التي تحتاج إعادة تزويد</div>
+                    <div class="service-title">المنتجات</div>
+                    <div class="service-desc">عرض وإدارة منتجات المتجر</div>
                   </div>
                 </div>
                 <span class="service-action"><i data-lucide="arrow-left"></i></span>
               </button>
-              <button class="service-card" onclick="navigateTo('orders')" data-color="orders">
+              <button class="service-card primary-action" onclick="navigateTo('orders')" data-color="orders">
                 <div class="service-card-head">
                   <div class="service-icon"><i data-lucide="shopping-cart"></i></div>
                   <div>
-                    <div class="service-title">عرض الطلبات</div>
-                    <div class="service-desc">مراجعة الطلبات الحالية</div>
+                    <div class="service-title">الطلبات</div>
+                    <div class="service-desc">مراجعة ومعالجة الطلبات</div>
                   </div>
                 </div>
                 <span class="service-action"><i data-lucide="arrow-left"></i></span>
               </button>
-              <button class="service-card" onclick="navigateTo('users')" data-color="customers">
+              <button class="service-card primary-action" onclick="navigateTo('accounting')" data-color="accounting">
+                <div class="service-card-head">
+                  <div class="service-icon"><i data-lucide="credit-card"></i></div>
+                  <div>
+                    <div class="service-title">المالية المبسطة</div>
+                    <div class="service-desc">ملخص المبيعات والمخزون</div>
+                  </div>
+                </div>
+                <span class="service-action"><i data-lucide="arrow-left"></i></span>
+              </button>
+              <button class="service-card primary-action" onclick="navigateTo('users')" data-color="customers">
                 <div class="service-card-head">
                   <div class="service-icon"><i data-lucide="users"></i></div>
                   <div>
-                    <div class="service-title">إدارة العملاء</div>
-                    <div class="service-desc">عرض وإدارة العملاء</div>
+                    <div class="service-title">العملاء</div>
+                    <div class="service-desc">قائمة العملاء وتفاصيلهم</div>
                   </div>
                 </div>
                 <span class="service-action"><i data-lucide="arrow-left"></i></span>
               </button>
-              <button class="service-card" onclick="navigateTo('products')" data-color="products">
-                <div class="service-card-head">
-                  <div class="service-icon"><i data-lucide="plus-circle"></i></div>
-                  <div>
-                    <div class="service-title">إضافة منتج جديد</div>
-                    <div class="service-desc">إضافة منتج جديد للمتجر</div>
-                  </div>
+
+              <div class="advanced-tools-wrapper">
+                <div class="advanced-tools-header"><button class="topbar-btn btn-outline" onclick="toggleAdvancedTools()">إعدادات وأدوات متقدمة</button></div>
+                <div class="advanced-tools" id="advanced-tools" style="display:none">
+                  <button class="service-card" onclick="showAccountingTable('suppliers')" data-color="suppliers">
+                    <div class="service-card-head">
+                      <div class="service-icon"><i data-lucide="truck"></i></div>
+                      <div>
+                        <div class="service-title">الموردون</div>
+                        <div class="service-desc">بيانات الموردين</div>
+                      </div>
+                    </div>
+                    <span class="service-action"><i data-lucide="arrow-left"></i></span>
+                  </button>
+                  <button class="service-card" onclick="showAccountingTable('accounts')" data-color="accounts">
+                    <div class="service-card-head">
+                      <div class="service-icon"><i data-lucide="book-open"></i></div>
+                      <div>
+                        <div class="service-title">حسابات المتجر</div>
+                        <div class="service-desc">فئات الحسابات (محاسبي)</div>
+                      </div>
+                    </div>
+                    <span class="service-action"><i data-lucide="arrow-left"></i></span>
+                  </button>
+                  <button class="service-card" onclick="openAccountingSettingsModal()" data-color="settings">
+                    <div class="service-card-head">
+                      <div class="service-icon"><i data-lucide="settings"></i></div>
+                      <div>
+                        <div class="service-title">إعدادات المحاسبة</div>
+                        <div class="service-desc">خيارات متقدمة (محاسبي)</div>
+                      </div>
+                    </div>
+                    <span class="service-action"><i data-lucide="arrow-left"></i></span>
+                  </button>
                 </div>
-                <span class="service-action"><i data-lucide="arrow-left"></i></span>
-              </button>
+              </div>
             </div>
           </div>
 

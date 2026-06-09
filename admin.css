@@ -915,6 +915,24 @@ input, select, textarea {
   color: var(--admin-primary);
 }
 
+/* Dashboard UX tweaks */
+.dashboard-guidance {
+  margin: 8px 0 14px 0;
+  color: var(--admin-text2);
+  font-size: 0.95rem;
+}
+
+.primary-action {
+  padding: 18px 20px;
+  border-radius: 12px;
+  font-size: 1.02rem;
+}
+
+.advanced-tools-wrapper { margin-top:12px; }
+.advanced-tools-header { margin-bottom:8px }
+.advanced-tools { display:flex; gap:10px; flex-wrap:wrap }
+.advanced-tools .service-card { opacity:0.9 }
+
 .admin-table {
   width: 100%;
   border-collapse: collapse;
