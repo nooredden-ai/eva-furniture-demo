@@ -229,9 +229,10 @@ function renderAccountingPage() {
 
   if (window.lucide) lucide.createIcons();
   
-  // تحديث KPIs والأقسام السريعة
+  // تحديث KPIs والأقسام السريعة وتنبيهات الأعمال
   updateAccountingKPIs();
   renderQuickBusinessInsights();
+  renderBusinessAlerts();
 }
 
 function showAccountingHome() {
@@ -335,6 +336,66 @@ async function getCompletedOrdersCount() {
   } catch (error) {
     console.error('Error fetching completed orders:', error);
     return 0;
+  }
+}
+
+async function getOutOfStockProductsCount() {
+  try {
+    const products = await API.getProducts();
+    if (!Array.isArray(products)) return 0;
+    return products.filter(p => Number(p.stock) <= 0).length;
+  } catch (error) {
+    console.error('Error fetching out of stock products count:', error);
+    return 0;
+  }
+}
+
+async function getProcessingOrdersCount() {
+  try {
+    const orders = await API.getOrders();
+    if (!Array.isArray(orders)) return 0;
+    return orders.filter(o => o.status === 'processing').length;
+  } catch (error) {
+    console.error('Error fetching processing orders count:', error);
+    return 0;
+  }
+}
+
+async function hasNoTodaySales() {
+  const todaySales = await getTodaySales();
+  return todaySales === 0;
+}
+
+async function renderBusinessAlerts() {
+  try {
+    const [lowStockCount, outOfStockCount, processingOrdersCount, noSalesToday] = await Promise.all([
+      getLowStockProductsCount(),
+      getOutOfStockProductsCount(),
+      getProcessingOrdersCount(),
+      hasNoTodaySales()
+    ]);
+
+    const container = $a('business-alerts-list');
+    if (!container) return;
+
+    const alerts = [
+      { label: 'عدد المنتجات منخفضة المخزون', value: lowStockCount },
+      { label: 'عدد المنتجات النافدة', value: outOfStockCount },
+      { label: 'الطلبات قيد المعالجة', value: processingOrdersCount }
+    ];
+
+    if (noSalesToday) {
+      alerts.push({ label: 'تنبيه', value: 'لا توجد مبيعات اليوم', isMessage: true });
+    }
+
+    container.innerHTML = alerts.map(alert => {
+      if (alert.isMessage) {
+        return `<div class="quick-list-item"><span>${escapeHtml(alert.label)}</span><strong>${escapeHtml(alert.value)}</strong></div>`;
+      }
+      return `<div class="quick-list-item"><span>${escapeHtml(alert.label)}</span><strong>${Number(alert.value).toLocaleString('ar-SA')}</strong></div>`;
+    }).join('');
+  } catch (error) {
+    console.error('Error rendering business alerts:', error);
   }
 }
 

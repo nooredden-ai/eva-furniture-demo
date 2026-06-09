@@ -721,6 +721,23 @@ input, select, textarea {
   font-weight: 800;
   color: var(--admin-text);
 }
+.business-alerts-card {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 22px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 28px;
+}
+.business-alerts-card .quick-glance-header {
+  margin-bottom: 16px;
+}
+.business-alerts-card .quick-glance-header h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--admin-text);
+}
 .quick-empty {
   padding: 20px;
   border-radius: 18px;
