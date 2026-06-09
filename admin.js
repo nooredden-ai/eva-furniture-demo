@@ -1366,7 +1366,7 @@ async function renderProductsTable() {
 
   const tbody = $a('products-table-body');
   if (products.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state" style="margin:20px"><div class="empty-icon"><i data-lucide="package-x"></i></div><h3>لا توجد منتجات</h3><p>أضف منتجات جديدة للمتجر.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="margin:20px"><div class="empty-icon"><i data-lucide="package-x"></i></div><h3>لا توجد منتجات</h3><p>أضف منتجات جديدة للمتجر.</p></div></td></tr>`;
     if (window.lucide) lucide.createIcons();
     return;
   }
@@ -1390,6 +1390,7 @@ async function renderProductsTable() {
       </td>
       <td>${catName}</td>
       <td><strong>${p.price.toLocaleString('ar-SA')} ${sym}</strong>${p.oldPrice ? `<br><span style="text-decoration:line-through;color:var(--admin-text2);font-size:0.8rem">${p.oldPrice} ${sym}</span>` : ''}</td>
+      <td>${renderStockCell(p)}</td>
       <td><i data-lucide="star" style="width:14px;height:14px;color:#F59E0B;vertical-align:middle;margin-left:2px"></i> ${p.rating}</td>
       <td>
         <span class="${canEdit ? 'product-toggle' : ''}" ${canEdit ? `onclick="toggleProduct(${p.id})"` : ''} title="${p.active ? 'إيقاف' : 'تفعيل'}" style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:${p.active ? '#22c55e22' : '#ef444422'}">
@@ -1405,6 +1406,17 @@ async function renderProductsTable() {
     </tr>`;
   }).join('');
   if (window.lucide) lucide.createIcons();
+}
+
+function renderStockCell(p) {
+  const stock = p.stock != null && Number.isFinite(Number(p.stock)) ? Number(p.stock) : 0;
+  if (stock <= 0) {
+    return `<span class="stock-badge stock-empty">نافد</span>`;
+  }
+  if (stock < 10) {
+    return `<span class="stock-badge stock-low">${stock} <span style="margin-left:6px;font-weight:600;color:var(--admin-warning)">منخفض</span></span>`;
+  }
+  return `<span class="stock-badge">${stock}</span>`;
 }
 
 function toggleProduct(productId) {
@@ -2114,6 +2126,24 @@ async function updateOrderStatus(status) {
     showAdminToast(res?.message || 'فشل تحديث الحالة', 'error');
     const stEl = $a('om-status');
     if(stEl) stEl.value = currentViewOrder.status; // revert UI
+  }
+}
+
+async function applyOrderStatus() {
+  const btn = $a('apply-status-btn');
+  const stEl = $a('om-status');
+  if (!currentViewOrder || !stEl) return;
+  const newStatus = stEl.value;
+  if (newStatus === currentViewOrder.status) {
+    showAdminToast('لم يتغير شيء — نفس الحالة الحالية', 'info');
+    return;
+  }
+  const originalHtml = btn ? btn.innerHTML : null;
+  try {
+    if (btn) { btn.disabled = true; btn.classList.add('btn-loading'); btn.innerHTML = 'جارٍ التطبيق...'; }
+    await updateOrderStatus(newStatus);
+  } finally {
+    if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); if (originalHtml) btn.innerHTML = originalHtml; }
   }
 }
 

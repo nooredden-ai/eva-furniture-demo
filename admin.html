@@ -184,7 +184,7 @@
         <table class="admin-table">
           <thead>
             <tr>
-              <th>المنتج</th><th>الفئة</th><th>السعر</th><th>التقييم</th><th>الحالة</th><th>إجراءات</th>
+              <th>المنتج</th><th>الفئة</th><th>السعر</th><th>المخزون</th><th>التقييم</th><th>الحالة</th><th>إجراءات</th>
             </tr>
           </thead>
           <tbody id="products-table-body"></tbody>
@@ -1538,9 +1538,9 @@
           <label style="font-weight:600;display:block;margin-bottom:6px">تعيين إلى موظف</label>
           <select id="om-assignee" onchange="assignOrderToUser(this.value)" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text)"></select>
         </div>
-        <div style="margin-bottom:20px" class="action-update_orders">
+        <div style="margin-bottom:12px" class="action-update_orders">
           <label style="font-weight:600;display:block;margin-bottom:6px">تحديث الحالة</label>
-          <select id="om-status" onchange="updateOrderStatus(this.value)" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text)">
+          <select id="om-status" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text)">
             <option value="pending">قيد الانتظار</option>
             <option value="confirmed">تم التأكيد</option>
             <option value="processing">جاري التجهيز</option>
@@ -1548,6 +1548,9 @@
             <option value="delivered">تم التوصيل</option>
             <option value="cancelled">ملغي</option>
           </select>
+          <div style="margin-top:8px;text-align:right">
+            <button class="topbar-btn btn-primary" id="apply-status-btn" onclick="applyOrderStatus()">تطبيق الحالة</button>
+          </div>
         </div>
         <div style="margin-bottom:20px" class="action-delete_orders">
           <button class="topbar-btn btn-danger" onclick="confirmDeleteOrder()"><i data-lucide="trash-2" style="width:14px;height:14px;vertical-align:middle;margin-left:2px"></i> حذف الطلب</button>
