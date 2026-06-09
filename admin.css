@@ -883,6 +883,38 @@ input, select, textarea {
   box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.08);
 }
 
+.orders-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.order-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: 999px;
+  background: var(--admin-surface2);
+  color: var(--admin-text);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.order-filter-btn.active,
+.order-filter-btn:hover {
+  border-color: var(--admin-primary);
+  background: rgba(99, 102, 241, 0.12);
+}
+
+.order-filter-count {
+  font-weight: 700;
+  color: var(--admin-primary);
+}
+
 .admin-table {
   width: 100%;
   border-collapse: collapse;

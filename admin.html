@@ -211,6 +211,12 @@
             <input type="text" class="table-search" id="order-search" placeholder="بحث برقم الطلب أو اسم العميل..."/>
               <button class="topbar-btn btn-primary" id="bulk-print-btn" onclick="bulkDownloadPdf()"><i data-lucide="download" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>تحميل فاتورة PDF جماعي</button>
           </div>
+          <div class="orders-filter-row" id="order-filter-row">
+            <button type="button" id="order-filter-all" class="order-filter-btn active" onclick="setOrderFilter('all')">الكل <span class="order-filter-count" id="order-filter-count-all">0</span></button>
+            <button type="button" id="order-filter-pending" class="order-filter-btn" onclick="setOrderFilter('pending')">قيد الانتظار <span class="order-filter-count" id="order-filter-count-pending">0</span></button>
+            <button type="button" id="order-filter-processing" class="order-filter-btn" onclick="setOrderFilter('processing')">قيد المعالجة <span class="order-filter-count" id="order-filter-count-processing">0</span></button>
+            <button type="button" id="order-filter-delivered" class="order-filter-btn" onclick="setOrderFilter('delivered')">تم التسليم <span class="order-filter-count" id="order-filter-count-delivered">0</span></button>
+          </div>
         </div>
         <table class="admin-table">
           <thead>

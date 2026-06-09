@@ -1808,8 +1808,35 @@ function confirmDeleteOrder(orderId) {
 
 // ===== Orders =====nlet currentViewOrder = null;
 
+let currentOrderStatusFilter = 'all';
+
+function setOrderFilter(filter) {
+  currentOrderStatusFilter = filter;
+  document.querySelectorAll('.order-filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.id === `order-filter-${filter}`);
+  });
+  renderOrdersTable();
+}
+
+function updateOrderFilterCounts(orders) {
+  const counts = {
+    all: orders.length,
+    pending: orders.filter(o => o.status === 'pending').length,
+    processing: orders.filter(o => o.status === 'processing').length,
+    delivered: orders.filter(o => o.status === 'delivered').length,
+  };
+  Object.keys(counts).forEach(key => {
+    const span = $a(`order-filter-count-${key}`);
+    if (span) span.textContent = counts[key];
+  });
+}
+
 function renderOrdersTable() {
   Promise.all([API.getOrders(), API.getStoreSettings(), API.getUsers()]).then(([orders, store, users]) => {
+    updateOrderFilterCounts(orders);
+    if (currentOrderStatusFilter !== 'all') {
+      orders = orders.filter(o => o.status === currentOrderStatusFilter);
+    }
     const search = ($a('order-search')?.value || '').toLowerCase();
     if (search) orders = orders.filter(o => (o.id || o.orderNumber || '').toLowerCase().includes(search) || o.customer.includes(search));
     const tbody = $a('orders-table-body');
