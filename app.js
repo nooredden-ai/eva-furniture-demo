@@ -906,7 +906,7 @@ function placeOrder() {
     address: addressEl ? addressEl.value.trim() : '',
     zone: zoneEl.value,
     zoneName: zoneEl.options[zoneEl.selectedIndex]?.textContent || '',
-    items: cart.map(i => ({ name: i.name, emoji: i.emoji || '', qty: i.qty, price: i.price })),
+    items: cart.map(i => ({ productId: i.id, name: i.name, emoji: i.emoji || '', qty: i.qty, price: i.price })),
     subtotal,
     shipping,
     discount: discountAmount,

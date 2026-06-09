@@ -577,9 +577,10 @@ app.post('/api/orders/bulk-pdf', async (req, res) => {
 });
 
 app.put('/api/orders/:id/status', requirePerm('update_orders'), (req, res) => {
-  const updatedOrder = orderRepository.updateStatus(req.params.id, req.body.status, req.headers['x-user-role'] || 'system');
-  if (!updatedOrder) return res.status(404).json({ success: false, message: 'Order not found' });
-  res.json({ success: true, order: updatedOrder });
+  const result = orderRepository.updateStatus(req.params.id, req.body.status, req.headers['x-user-role'] || 'system');
+  if (result === null) return res.status(404).json({ success: false, message: 'Order not found' });
+  if (result && result.error) return res.status(400).json({ success: false, message: result.error });
+  res.json({ success: true, order: result });
 });
 
 app.put('/api/orders/:id/assign', requirePerm('update_orders'), (req, res) => {

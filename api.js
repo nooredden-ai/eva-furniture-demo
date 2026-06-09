@@ -45,14 +45,21 @@ async function fetchWithStability(url, options = {}, retries = 2, timeoutMs = 80
       
       const response = await fetch(url, { ...options, headers: finalHeaders, signal: controller.signal });
       clearTimeout(id);
-      
+      const text = await response.text();
+      let json = null;
+      try {
+        json = text ? JSON.parse(text) : null;
+      } catch (parseErr) {
+        // ignore invalid JSON
+      }
       if (response.ok) {
-        const json = await response.json();
-        // If the API already follows the Phase 5 format, return it directly
         if (json && typeof json === 'object' && 'success' in json) {
           return json;
         }
         return { success: true, data: json };
+      }
+      if (json && typeof json === 'object' && json.message) {
+        return { success: false, message: json.message, data: json };
       }
       throw new Error(`HTTP ${response.status}`);
     } catch (err) {

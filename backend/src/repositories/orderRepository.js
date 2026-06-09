@@ -1,5 +1,6 @@
 const BaseRepository = require('./baseRepository');
 const { generateNextOrderId } = require('../utils/idUtils');
+const productRepository = require('./productRepository');
 
 class OrderRepository extends BaseRepository {
   constructor() {
@@ -48,6 +49,54 @@ class OrderRepository extends BaseRepository {
     const orders = this.findAll();
     const order = orders.find(item => String(item.id) === String(id));
     if (!order) return null;
+
+    if (status === 'confirmed' && !order.stockDeducted) {
+      const products = productRepository.findAll();
+      const prodById = {};
+      const prodByName = {};
+
+      products.forEach(p => {
+        prodById[String(p.id)] = p;
+        const normalized = String(p.name || '').toLowerCase().trim();
+        if (normalized) prodByName[normalized] = p;
+      });
+
+      const insufficient = [];
+      for (const item of order.items || []) {
+        let prod = null;
+        if (item.productId != null) prod = prodById[String(item.productId)];
+        if (!prod) prod = prodByName[String(item.name || '').toLowerCase().trim()];
+
+        const available = prod && typeof prod.stock !== 'undefined' && prod.stock !== null ? Number(prod.stock) : 0;
+        const required = Number(item.qty) || 0;
+
+        if (!prod || available < required) {
+          insufficient.push({
+            name: item.name || (prod && prod.name) || 'Unknown',
+            required,
+            available
+          });
+        }
+      }
+
+      if (insufficient.length > 0) {
+        return { error: `المخزون غير كافٍ للمنتج: ${insufficient[0].name}` };
+      }
+
+      for (const item of order.items || []) {
+        let prod = null;
+        if (item.productId != null) prod = prodById[String(item.productId)];
+        if (!prod) prod = prodByName[String(item.name || '').toLowerCase().trim()];
+        const required = Number(item.qty) || 0;
+        if (prod) {
+          prod.stock = Math.max(0, Number(prod.stock) - required);
+        }
+      }
+
+      productRepository.saveAll(products);
+      order.stockDeducted = true;
+    }
+
     order.status = status;
     order.lastUpdated = new Date().toISOString();
     if (!Array.isArray(order.statusHistory)) order.statusHistory = [];
