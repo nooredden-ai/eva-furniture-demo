@@ -228,10 +228,55 @@ function renderAccountingPage() {
   }
 
   if (window.lucide) lucide.createIcons();
+  
+  // تحديث KPIs للعملاء والموردين
+  updateAccountingKPIs();
 }
 
 function showAccountingHome() {
   renderAccountingPage();
+}
+
+// ===== KPI Update Functions =====
+async function getAccountingCustomersCount() {
+  try {
+    const data = await fetchAccountingCustomers('/api/accounting/customers');
+    const customers = Array.isArray(data) ? data : (data.data || []);
+    return customers.length;
+  } catch (error) {
+    console.error('Error fetching customers count:', error);
+    return 0;
+  }
+}
+
+async function getAccountingSuppliersCount() {
+  try {
+    const data = await fetchAccountingCustomers('/api/accounting/suppliers');
+    const suppliers = Array.isArray(data) ? data : (data.data || []);
+    return suppliers.length;
+  } catch (error) {
+    console.error('Error fetching suppliers count:', error);
+    return 0;
+  }
+}
+
+async function updateAccountingKPIs() {
+  try {
+    const customersCount = await getAccountingCustomersCount();
+    const suppliersCount = await getAccountingSuppliersCount();
+    
+    const customersKPI = $a('kpi-customers-count');
+    const suppliersKPI = $a('kpi-suppliers-count');
+    
+    if (customersKPI) {
+      customersKPI.textContent = customersCount.toLocaleString('ar-SA');
+    }
+    if (suppliersKPI) {
+      suppliersKPI.textContent = suppliersCount.toLocaleString('ar-SA');
+    }
+  } catch (error) {
+    console.error('Error updating accounting KPIs:', error);
+  }
 }
 
 // ===== Accounting Customers Integration =====
