@@ -602,6 +602,99 @@ app.post('/api/orders/:id/note', requirePerm('add_order_notes'), (req, res) => {
 });
 
 /* =========================
+   API: DIRECT SALE (Stock Deduction)
+========================= */
+app.post('/api/direct-sale', (req, res) => {
+  console.log('[DIRECT-SALE-ROUTE] Hit!');
+  try {
+    const { productId, quantity, salePrice, note } = req.body;
+
+    // Validation
+    if (productId == null || quantity == null || salePrice == null) {
+      return res.status(400).json({ success: false, message: 'معرف المنتج والكمية وسعر البيع مطلوبان' });
+    }
+
+    const qty = Number(quantity);
+    const price = Number(salePrice);
+    if (!Number.isInteger(qty) || qty <= 0) {
+      return res.status(400).json({ success: false, message: 'الكمية يجب أن تكون رقم أكبر من 0' });
+    }
+    if (Number.isNaN(price) || price <= 0) {
+      return res.status(400).json({ success: false, message: 'سعر البيع الفعلي يجب أن يكون رقم أكبر من 0' });
+    }
+
+    // Get product
+    const products = productRepository.findAll();
+    const productIdx = products.findIndex(p => String(p.id) === String(productId));
+    if (productIdx === -1) {
+      return res.status(404).json({ success: false, message: 'المنتج غير موجود' });
+    }
+
+    const product = products[productIdx];
+    const currentStock = Number(product.stock) || 0;
+
+    // Check stock availability
+    if (currentStock < qty) {
+      return res.status(400).json({
+        success: false,
+        message: `المخزون غير كافٍ. المتاح: ${currentStock}، المطلوب: ${qty}`
+      });
+    }
+
+    // Deduct stock
+    product.stock = currentStock - qty;
+    productRepository.saveAll(products);
+
+    const directSales = readJSON('direct-sales.json');
+    const nextId = directSales.reduce((max, item) => {
+      const idNum = Number(item.id);
+      return Number.isFinite(idNum) ? Math.max(max, idNum) : max;
+    }, 0) + 1;
+
+    const listedPrice = Number(product.price) || 0;
+    const total = price * qty;
+    const saleRecord = {
+      id: nextId,
+      productId: product.id,
+      productName: product.name,
+      quantity: qty,
+      listedPrice,
+      salePrice: price,
+      total,
+      note: typeof note === 'string' ? note.trim() : '',
+      createdAt: new Date().toISOString()
+    };
+
+    directSales.push(saleRecord);
+    writeJSON('direct-sales.json', directSales);
+
+    console.log(`[DIRECT-SALE] ${product.name}: ${qty} unit(s) sold at ${price}. Stock: ${currentStock} → ${product.stock}`);
+
+    res.json({
+      success: true,
+      message: 'تم تسجيل البيع بنجاح',
+      productName: product.name,
+      soldQuantity: qty,
+      newStock: product.stock,
+      saleRecord
+    });
+  } catch (err) {
+    console.error('[DIRECT-SALE ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تسجيل البيع' });
+  }
+});
+
+app.get('/api/direct-sales', (req, res) => {
+  try {
+    const directSales = readJSON('direct-sales.json');
+    res.json(Array.isArray(directSales) ? directSales : []);
+  } catch (err) {
+    console.error('[DIRECT-SALES GET ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحميل مبيعات مباشرة' });
+  }
+});
+
+/* =========================
    API: COUPONS
 ========================= */
 app.get('/api/coupons', requirePerm('view_coupons'), (req, res) => {

@@ -1,0 +1,13 @@
+[
+  {
+    "id": 1,
+    "productId": 1,
+    "productName": "طقم ضيافة مودرن",
+    "quantity": 5,
+    "listedPrice": 2850,
+    "salePrice": 2000,
+    "total": 10000,
+    "note": "",
+    "createdAt": "2026-06-10T11:46:04.114Z"
+  }
+]
