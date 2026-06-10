@@ -695,6 +695,92 @@ app.get('/api/direct-sales', (req, res) => {
 });
 
 /* =========================
+   API: STOCK RECEIPTS (Inventory Receiving)
+========================= */
+app.post('/api/stock-receipts', (req, res) => {
+  console.log('[STOCK-RECEIPT-ROUTE] Hit!');
+  try {
+    const { productId, quantity, unitCost, supplier, note } = req.body;
+
+    // Validation
+    if (productId == null || quantity == null || unitCost == null) {
+      return res.status(400).json({ success: false, message: 'معرف المنتج والكمية والتكلفة مطلوبان' });
+    }
+
+    const qty = Number(quantity);
+    const cost = Number(unitCost);
+    if (!Number.isInteger(qty) || qty <= 0) {
+      return res.status(400).json({ success: false, message: 'الكمية يجب أن تكون رقم أكبر من 0' });
+    }
+    if (Number.isNaN(cost) || cost < 0) {
+      return res.status(400).json({ success: false, message: 'تكلفة الوحدة يجب أن تكون رقم غير سالب' });
+    }
+
+    // Get product
+    const products = productRepository.findAll();
+    const productIdx = products.findIndex(p => String(p.id) === String(productId));
+    if (productIdx === -1) {
+      return res.status(404).json({ success: false, message: 'المنتج غير موجود' });
+    }
+
+    const product = products[productIdx];
+    const oldStock = Number(product.stock) || 0;
+    const oldCostPrice = Number(product.costPrice) || 0;
+
+    // Calculate weighted average cost price
+    // newCostPrice = ((oldStock × oldCost) + (newQty × newUnitCost)) / (oldStock + newQty)
+    const newCostPrice = ((oldStock * oldCostPrice) + (qty * cost)) / (oldStock + qty);
+
+    // Update product
+    product.stock = oldStock + qty;
+    product.costPrice = newCostPrice;
+    productRepository.saveAll(products);
+
+    // Record stock receipt
+    const stockReceipts = readJSON('stock-receipts.json');
+    const nextId = 'REC-' + String(stockReceipts.length + 1).padStart(4, '0');
+
+    const receipt = {
+      id: nextId,
+      productId: product.id,
+      productName: product.name,
+      quantity: qty,
+      unitCost: cost,
+      supplier: typeof supplier === 'string' ? supplier.trim() : '',
+      note: typeof note === 'string' ? note.trim() : '',
+      createdAt: new Date().toISOString()
+    };
+
+    stockReceipts.push(receipt);
+    writeJSON('stock-receipts.json', stockReceipts);
+
+    console.log(`[STOCK-RECEIPT] ${product.name}: ${qty} unit(s) received at cost ${cost}. Stock: ${oldStock} → ${product.stock}, CostPrice: ${oldCostPrice} → ${newCostPrice}`);
+
+    res.json({
+      success: true,
+      message: 'تم تسجيل التوريد بنجاح',
+      productName: product.name,
+      newStock: product.stock,
+      newCostPrice,
+      receipt
+    });
+  } catch (err) {
+    console.error('[STOCK-RECEIPT ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تسجيل التوريد' });
+  }
+});
+
+app.get('/api/stock-receipts', (req, res) => {
+  try {
+    const stockReceipts = readJSON('stock-receipts.json');
+    res.json(Array.isArray(stockReceipts) ? stockReceipts : []);
+  } catch (err) {
+    console.error('[STOCK-RECEIPTS GET ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحميل التوريدات' });
+  }
+});
+
+/* =========================
    API: COUPONS
 ========================= */
 app.get('/api/coupons', requirePerm('view_coupons'), (req, res) => {

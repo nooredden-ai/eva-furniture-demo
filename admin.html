@@ -49,6 +49,9 @@
     <div class="nav-item" data-page="direct-sale" id="nav-direct-sale">
        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm6 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></span> بيع مباشر
     </div>
+    <div class="nav-item" data-page="stock-receiving" id="nav-stock-receiving">
+       <span class="nav-icon"><i data-lucide="truck" style="width:20px;height:20px"></i></span> توريد مخزون
+    </div>
     <div class="nav-item" data-page="users" id="nav-users">
        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2c0-2.21-1.79-4-4-4H11c-2.21 0-4 1.79-4 4v2h10zm-5-9c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/></svg></span> المستخدمين
     </div>
@@ -292,6 +295,64 @@
               لا توجد عمليات بيع بعد
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== STOCK RECEIVING ==================== -->
+    <div class="admin-page" id="admin-stock-receiving">
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <h3><i data-lucide="truck" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>توريد مخزون</h3>
+          <div style="display:flex;gap:10px;align-items:center">
+            <span style="font-size:12px;color:var(--admin-text2)">تسجيل توريدات المخزون وتحديث التكاليف</span>
+            <button class="topbar-btn btn-primary" onclick="openAddStockReceipt()"><i data-lucide="plus" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>توريد جديد</button>
+          </div>
+        </div>
+        
+        <!-- Stock Receipts Log -->
+        <div style="margin-top:24px;">
+          <div id="stock-receipts-log" style="background:var(--admin-bg-alt);border-radius:8px;max-height:500px;overflow-y:auto;">
+            <div style="padding:24px;text-align:center;color:var(--admin-text2);font-size:13px;">
+              جاري التحميل...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stock Receipt Modal -->
+    <div class="modal-overlay" id="stock-receipt-modal">
+      <div class="modal">
+        <div class="modal-header">
+          <h3><i data-lucide="truck" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> توريد مخزون</h3>
+          <button class="modal-close" onclick="closeModal('stock-receipt-modal')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-row">
+            <label>المنتج *</label>
+            <select id="sr-product-select"></select>
+          </div>
+          <div class="form-row">
+            <label>الكمية الواردة *</label>
+            <input type="number" id="sr-quantity" min="1" placeholder="أدخل الكمية" required/>
+          </div>
+          <div class="form-row">
+            <label>تكلفة الوحدة *</label>
+            <input type="number" id="sr-unitCost" min="0" step="0.01" placeholder="أدخل تكلفة الوحدة" required/>
+          </div>
+          <div class="form-row">
+            <label>المورد (اختياري)</label>
+            <input type="text" id="sr-supplier" placeholder="مثال: مصنع تركيا"/>
+          </div>
+          <div class="form-row">
+            <label>ملاحظة (اختياري)</label>
+            <textarea id="sr-note" rows="2" placeholder="ملاحظات حول التوريد..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="topbar-btn btn-primary btn-active-scale" onclick="saveStockReceipt(this)"><i data-lucide="save" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> تسجيل التوريد</button>
+          <button class="topbar-btn btn-outline" onclick="closeModal('stock-receipt-modal')">إلغاء</button>
         </div>
       </div>
     </div>

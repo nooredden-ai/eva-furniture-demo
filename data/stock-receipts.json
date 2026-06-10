@@ -1,0 +1,22 @@
+[
+  {
+    "id": "REC-0001",
+    "productId": 1,
+    "productName": "طقم ضيافة مودرن",
+    "quantity": 10,
+    "unitCost": 1200,
+    "supplier": "???? ?????",
+    "note": "????? ???????",
+    "createdAt": "2026-06-10T16:01:19.809Z"
+  },
+  {
+    "id": "REC-0002",
+    "productId": 1,
+    "productName": "طقم ضيافة مودرن",
+    "quantity": 10,
+    "unitCost": 1200,
+    "supplier": "",
+    "note": "",
+    "createdAt": "2026-06-10T16:25:07.748Z"
+  }
+]

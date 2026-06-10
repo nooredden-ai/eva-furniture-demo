@@ -7,6 +7,7 @@ let editingCategory = null;
 let productsCache = [];
 let imageMarkedForRemoval = false; // Tracks if the user clicked "Remove" in edit mode
 let directSaleLog = []; // Track direct sales for UI display
+let stockReceiptsLog = []; // Track stock receipts for UI display
 
 // Temp settings state (before save)
 let _settingsTempPrimary     = null;
@@ -116,6 +117,7 @@ function refreshPage(page) {
     if (page === 'categories') { appState.categories = null; }
     if (page === 'orders')     { appState.orders = null; }
     if (page === 'direct-sale') { appState.products = null; }
+    if (page === 'stock-receiving') { appState.products = null; }
     if (page === 'users')      { appState.users = null; }
     if (page === 'settings')   { appState.settings = null; appState.countries = null; }
   }
@@ -124,6 +126,7 @@ function refreshPage(page) {
   else if (page === 'categories') renderCategoriesPage();
   else if (page === 'orders')     renderOrdersTable();
   else if (page === 'direct-sale') initDirectSale();
+  else if (page === 'stock-receiving') initStockReceiving();
   else if (page === 'users')      renderUsersTable();
   else if (page === 'accounting') renderAccountingPage();
   else if (page === 'coupons')    renderCouponsTable();
@@ -3728,6 +3731,185 @@ function renderDirectSaleLog() {
         </div>
       </div>
       ${sale.note ? `<div style="font-size:12px;color:var(--admin-text2);">ملاحظة: ${escapeHtml(sale.note)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+// ===== Stock Receiving (Phase 27) =====
+async function initStockReceiving() {
+  try {
+    const products = await API.getProducts();
+    const select = $a('sr-product-select');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">-- اختر منتج --</option>';
+    
+    if (Array.isArray(products)) {
+      products.filter(p => p.active !== false).forEach(product => {
+        const option = document.createElement('option');
+        option.value = product.id;
+        option.textContent = `${product.name} (المتاح: ${product.stock})`;
+        option.dataset.stock = product.stock;
+        option.dataset.costPrice = product.costPrice || 0;
+        select.appendChild(option);
+      });
+    }
+
+    await loadStockReceipts();
+    renderStockReceiptsLog();
+    if (window.lucide) lucide.createIcons();
+  } catch (error) {
+    console.error('Error initializing stock receiving:', error);
+    showAdminToast('فشل تحميل المنتجات', 'error');
+  }
+}
+
+async function openAddStockReceipt() {
+  const modal = $a('stock-receipt-modal');
+  const select = $a('sr-product-select');
+  
+  // Reset form
+  $a('sr-quantity').value = '';
+  $a('sr-unitCost').value = '';
+  $a('sr-supplier').value = '';
+  $a('sr-note').value = '';
+  
+  if (modal) modal.classList.add('open');
+  if (window.lucide) lucide.createIcons();
+}
+
+async function saveStockReceipt(btn) {
+  withLock('stock-receipt-save', async () => {
+    try {
+      const productId = parseInt($a('sr-product-select').value, 10);
+      const quantity = parseInt($a('sr-quantity').value, 10);
+      const unitCost = Number($a('sr-unitCost').value);
+      const supplier = ($a('sr-supplier').value || '').trim();
+      const note = ($a('sr-note').value || '').trim();
+
+      if (!productId || !quantity || quantity <= 0 || unitCost < 0) {
+        showAdminToast('يرجى ملء الحقول المطلوبة بشكل صحيح', 'error');
+        return;
+      }
+
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<i data-lucide="loader-2" style="width:14px;height:14px;vertical-align:middle;margin-left:4px;animation:spin 1s linear infinite"></i> جاري الحفظ...';
+
+      const response = await fetchWithStability('/api/stock-receipts', {
+        method: 'POST',
+        body: JSON.stringify({
+          productId,
+          quantity,
+          unitCost,
+          supplier,
+          note
+        }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.success) {
+        showAdminToast(`✓ تم تسجيل التوريد: ${response.productName} - ${response.receipt.quantity} وحدة`);
+
+        // Close modal and reset form
+        closeModal('stock-receipt-modal');
+        $a('sr-product-select').value = '';
+        $a('sr-quantity').value = '';
+        $a('sr-unitCost').value = '';
+        $a('sr-supplier').value = '';
+        $a('sr-note').value = '';
+
+        // Add to log
+        stockReceiptsLog.unshift({
+          id: response.receipt.id,
+          productName: response.productName,
+          quantity: response.receipt.quantity,
+          unitCost: response.receipt.unitCost,
+          supplier: response.receipt.supplier,
+          note: response.receipt.note,
+          newStock: response.newStock,
+          newCostPrice: response.newCostPrice,
+          timestamp: new Date().toLocaleTimeString('ar-SA'),
+          date: new Date().toLocaleDateString('ar-SA')
+        });
+
+        // Keep only last 20 entries
+        if (stockReceiptsLog.length > 20) stockReceiptsLog.pop();
+
+        renderStockReceiptsLog();
+      } else {
+        showAdminToast(response.message || 'فشل تسجيل التوريد', 'error');
+      }
+    } catch (error) {
+      console.error('Error saving stock receipt:', error);
+      showAdminToast('حدث خطأ أثناء حفظ التوريد', 'error');
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+      if (window.lucide) lucide.createIcons();
+    }
+  });
+}
+
+async function loadStockReceipts() {
+  try {
+    const response = await fetchWithStability('/api/stock-receipts');
+    if (Array.isArray(response)) {
+      stockReceiptsLog = response.map(receipt => ({
+        ...receipt,
+        timestamp: receipt.createdAt ? new Date(receipt.createdAt).toLocaleTimeString('ar-SA') : '',
+        date: receipt.createdAt ? new Date(receipt.createdAt).toLocaleDateString('ar-SA') : ''
+      }));
+    }
+  } catch (error) {
+    console.error('Error loading stock receipts:', error);
+    stockReceiptsLog = [];
+  }
+}
+
+function renderStockReceiptsLog() {
+  const logContainer = $a('stock-receipts-log');
+  const sym = '₪'; // Shekels
+  
+  if (!logContainer) return;
+
+  if (!stockReceiptsLog || stockReceiptsLog.length === 0) {
+    logContainer.innerHTML = `
+      <div style="padding:24px;text-align:center;color:var(--admin-text2);font-size:13px;">
+        لا توجد توريدات بعد
+      </div>
+    `;
+    return;
+  }
+
+  logContainer.innerHTML = stockReceiptsLog.map((receipt, idx) => `
+    <div style="padding:12px 16px;border-bottom:1px solid var(--admin-border);display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:600;color:var(--admin-text);">${escapeHtml(receipt.productName)}</div>
+          <div style="font-size:12px;color:var(--admin-text2);">${receipt.date} - ${receipt.timestamp}</div>
+          ${receipt.supplier ? `<div style="font-size:12px;color:var(--admin-text2);">المورد: ${escapeHtml(receipt.supplier)}</div>` : ''}
+        </div>
+        <div style="text-align:right;min-width:120px;">
+          <div style="font-size:12px;color:var(--admin-text2);">تكلفة الوحدة</div>
+          <div style="font-weight:600;color:var(--admin-text);">${Number(receipt.unitCost).toLocaleString('ar-SA')} ${sym}</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div style="min-width:110px;">
+          <div style="font-size:12px;color:var(--admin-text2);">الكمية الواردة</div>
+          <div style="font-weight:600;color:var(--admin-text);">${receipt.quantity} وحدة</div>
+        </div>
+        <div style="min-width:110px;">
+          <div style="font-size:12px;color:var(--admin-text2);">المتاح بعده</div>
+          <div style="font-weight:600;color:var(--admin-text);">${receipt.newStock != null ? `${receipt.newStock} وحدة` : '-'}</div>
+        </div>
+        <div style="min-width:110px;">
+          <div style="font-size:12px;color:var(--admin-text2);">التكلفة الجديدة</div>
+          <div style="font-weight:600;color:var(--admin-text);">${Number(receipt.newCostPrice).toLocaleString('ar-SA')} ${sym}</div>
+        </div>
+      </div>
+      ${receipt.note ? `<div style="font-size:12px;color:var(--admin-text2);">ملاحظة: ${escapeHtml(receipt.note)}</div>` : ''}
     </div>
   `).join('');
 }
