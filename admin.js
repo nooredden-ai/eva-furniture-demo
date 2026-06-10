@@ -6,6 +6,7 @@ let editingProduct = null;
 let editingCategory = null;
 let productsCache = [];
 let imageMarkedForRemoval = false; // Tracks if the user clicked "Remove" in edit mode
+let directSaleLog = []; // Track direct sales for UI display
 
 // Temp settings state (before save)
 let _settingsTempPrimary     = null;
@@ -64,6 +65,7 @@ function navigateTo(page) {
     products: 'view_products',
     categories: 'view_categories',
     orders: 'view_orders',
+    'direct-sale': 'update_orders',
     users: 'view_users',
     coupons: 'view_coupons',
     settings: 'view_settings'
@@ -90,6 +92,7 @@ function refreshPage(page) {
     products:   'إدارة المنتجات',
     categories: 'التصنيفات',
     orders:     'إدارة الطلبات',
+    'direct-sale': 'بيع مباشر',
     users:      'إدارة المستخدمين',
     accounting: 'ملخص المبيعات والمخزون',
     coupons:    'إدارة الكوبونات',
@@ -98,7 +101,7 @@ function refreshPage(page) {
   };
   const titleIcons = {
     dashboard: 'bar-chart', products: 'package', categories: 'tag',
-    orders: 'receipt', users: 'users', accounting: 'credit-card', coupons: 'gift', settings: 'settings',
+    orders: 'receipt', 'direct-sale': 'shopping-cart', users: 'users', accounting: 'credit-card', coupons: 'gift', settings: 'settings',
     'access-denied': 'shield-alert'
   };
   const titleEl = $a('topbar-title');
@@ -112,6 +115,7 @@ function refreshPage(page) {
     if (page === 'products')   { appState.products = null; appState.categories = null; }
     if (page === 'categories') { appState.categories = null; }
     if (page === 'orders')     { appState.orders = null; }
+    if (page === 'direct-sale') { appState.products = null; }
     if (page === 'users')      { appState.users = null; }
     if (page === 'settings')   { appState.settings = null; appState.countries = null; }
   }
@@ -119,6 +123,7 @@ function refreshPage(page) {
   else if (page === 'products')   renderProductsTable();
   else if (page === 'categories') renderCategoriesPage();
   else if (page === 'orders')     renderOrdersTable();
+  else if (page === 'direct-sale') initDirectSale();
   else if (page === 'users')      renderUsersTable();
   else if (page === 'accounting') renderAccountingPage();
   else if (page === 'coupons')    renderCouponsTable();
@@ -439,6 +444,9 @@ async function updateAccountingKPIs() {
     if (lowStockKPI) {
       lowStockKPI.textContent = lowStockCount.toLocaleString('ar-SA');
     }
+    const directSalesCount = await getDirectSalesCount();
+    const directSalesKPI = $a('kpi-direct-sales-count');
+
     if (todaySalesKPI) {
       todaySalesKPI.textContent = todaySales.toLocaleString('ar-SA') + ' ₪';
     }
@@ -448,8 +456,48 @@ async function updateAccountingKPIs() {
     if (completedOrdersKPI) {
       completedOrdersKPI.textContent = completedOrders.toLocaleString('ar-SA');
     }
+    if (directSalesKPI) {
+      directSalesKPI.textContent = directSalesCount.toLocaleString('ar-SA');
+    }
   } catch (error) {
     console.error('Error updating accounting KPIs:', error);
+  }
+}
+
+async function loadDirectSalesLog() {
+  try {
+    const response = await fetchWithStability('/api/direct-sales');
+    const sales = Array.isArray(response) ? response : Array.isArray(response.data) ? response.data : [];
+
+    directSaleLog = sales
+      .slice(-20)
+      .reverse()
+      .map(sale => ({
+        id: sale.id,
+        productName: sale.productName,
+        quantity: sale.quantity,
+        listedPrice: sale.listedPrice,
+        salePrice: sale.salePrice,
+        total: sale.total,
+        note: sale.note,
+        newStock: null,
+        timestamp: new Date(sale.createdAt).toLocaleTimeString('ar-SA'),
+        date: new Date(sale.createdAt).toLocaleDateString('ar-SA')
+      }));
+  } catch (error) {
+    console.error('Error loading direct sales log:', error);
+    directSaleLog = [];
+  }
+}
+
+async function getDirectSalesCount() {
+  try {
+    const response = await fetchWithStability('/api/direct-sales');
+    const sales = Array.isArray(response) ? response : Array.isArray(response.data) ? response.data : [];
+    return sales.length;
+  } catch (error) {
+    console.error('Error fetching direct sales count:', error);
+    return 0;
   }
 }
 
@@ -1366,7 +1414,7 @@ async function renderProductsTable() {
 
   const tbody = $a('products-table-body');
   if (products.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="margin:20px"><div class="empty-icon"><i data-lucide="package-x"></i></div><h3>لا توجد منتجات</h3><p>أضف منتجات جديدة للمتجر.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state" style="margin:20px"><div class="empty-icon"><i data-lucide="package-x"></i></div><h3>لا توجد منتجات</h3><p>أضف منتجات جديدة للمتجر.</p></div></td></tr>`;
     if (window.lucide) lucide.createIcons();
     return;
   }
@@ -1390,6 +1438,7 @@ async function renderProductsTable() {
       </td>
       <td>${catName}</td>
       <td><strong>${p.price.toLocaleString('ar-SA')} ${sym}</strong>${p.oldPrice ? `<br><span style="text-decoration:line-through;color:var(--admin-text2);font-size:0.8rem">${p.oldPrice} ${sym}</span>` : ''}</td>
+      <td>${typeof p.costPrice !== 'undefined' && p.costPrice !== null ? `${Number(p.costPrice).toLocaleString('ar-SA')} ${sym}` : '-'}</td>
       <td>${renderStockCell(p)}</td>
       <td><i data-lucide="star" style="width:14px;height:14px;color:#F59E0B;vertical-align:middle;margin-left:2px"></i> ${p.rating}</td>
       <td>
@@ -1489,8 +1538,9 @@ function confirmDeleteOrder(orderId) {
 function openAddProduct() {
   editingProduct = null;
   $a('product-modal-title').innerHTML = '<i data-lucide="plus-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة منتج جديد';
-  ['pm-name','pm-price','pm-oldprice','pm-badge','pm-stock'].forEach(id => $a(id).value = '');
+  ['pm-name','pm-price','pm-oldprice','pm-badge','pm-stock','pm-costPrice'].forEach(id => $a(id).value = '');
   $a('pm-stock').value   = '0';
+  $a('pm-costPrice').value = '0';
   $a('pm-bg').value      = '#FFE8F0,#FFB3D1';
   $a('pm-rating').value  = '4.5';
   $a('pm-reviews').value = '0';
@@ -1511,6 +1561,7 @@ function openEditProduct(productId) {
     $a('pm-price').value      = p.price;
     $a('pm-oldprice').value   = p.oldPrice || '';
     $a('pm-stock').value      = p.stock != null ? p.stock : 0;
+    $a('pm-costPrice').value  = (typeof p.costPrice !== 'undefined' && p.costPrice !== null) ? p.costPrice : 0;
     const bgColors = (p.bg || '').replace(/linear-gradient\(135deg,/, '').replace(/\)/, '');
     $a('pm-bg').value         = bgColors;
     $a('pm-badge').value      = p.badge || '';
@@ -1556,6 +1607,7 @@ async function processSaveProduct() {
     name:     $a('pm-name').value.trim(),
     category: $a('pm-category').value,
     price:    parseFloat($a('pm-price').value) || 0,
+    costPrice: parseFloat($a('pm-costPrice').value) || 0,
     oldPrice: parseFloat($a('pm-oldprice').value) || null,
     stock:    parseInt($a('pm-stock').value, 10) || 0,
     bg:       bgVal.startsWith('linear') ? bgVal : `linear-gradient(135deg,${bgVal})`,
@@ -3526,4 +3578,156 @@ async function saveAccountingSettings(btnElement) {
       if (window.lucide) lucide.createIcons();
     }
   });
+}
+
+/* ===== DIRECT SALE FUNCTIONS ===== */
+
+async function initDirectSale() {
+  try {
+    const products = await API.getProducts();
+    const select = $a('direct-sale-product');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">-- اختر منتج --</option>';
+    
+    if (Array.isArray(products)) {
+      products.filter(p => p.active !== false).forEach(product => {
+        const option = document.createElement('option');
+        option.value = product.id;
+        option.textContent = `${product.name} (متاح: ${product.stock})`;
+        option.dataset.stock = product.stock;
+        select.appendChild(option);
+      });
+    }
+
+    // Add change listener to show stock info
+    select.onchange = () => {
+      const selectedOption = select.options[select.selectedIndex];
+      const stockInfo = $a('direct-sale-stock-info');
+      const stockText = $a('direct-sale-stock-text');
+      
+      if (selectedOption.value) {
+        const stock = selectedOption.dataset.stock || 0;
+        stockInfo.style.display = 'block';
+        stockText.textContent = `المتاح: ${stock} وحدة`;
+      } else {
+        stockInfo.style.display = 'none';
+      }
+    };
+
+    await loadDirectSalesLog();
+    renderDirectSaleLog();
+    if (window.lucide) lucide.createIcons();
+  } catch (error) {
+    console.error('Error initializing direct sale:', error);
+    showAdminToast('فشل تحميل المنتجات', 'error');
+  }
+}
+
+async function registerDirectSale() {
+  withLock('direct-sale-register', async () => {
+    try {
+      const productId = $a('direct-sale-product').value;
+      const quantity = parseInt($a('direct-sale-quantity').value, 10);
+      const salePrice = Number($a('direct-sale-price').value);
+      const note = ($a('direct-sale-note').value || '').trim();
+
+      if (!productId || !quantity || quantity <= 0 || !salePrice || salePrice <= 0) {
+        showAdminToast('يرجى ملء جميع الحقول المطلوبة بشكل صحيح', 'error');
+        return;
+      }
+
+      const response = await fetchWithStability('/api/direct-sale', {
+        method: 'POST',
+        body: JSON.stringify({
+          productId: parseInt(productId, 10),
+          quantity,
+          salePrice,
+          note
+        }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.success) {
+        showAdminToast(`✓ تم تسجيل البيع: ${response.productName} - ${response.soldQuantity} وحدة`);
+
+        // Reset form and refresh
+        $a('direct-sale-product').value = '';
+        $a('direct-sale-quantity').value = '';
+        $a('direct-sale-price').value = '';
+        $a('direct-sale-note').value = '';
+        $a('direct-sale-stock-info').style.display = 'none';
+
+        directSaleLog.unshift({
+          id: response.saleRecord?.id || null,
+          productName: response.productName,
+          quantity: response.soldQuantity,
+          listedPrice: response.saleRecord?.listedPrice || response.listedPrice || 0,
+          salePrice: response.saleRecord?.salePrice || salePrice,
+          total: response.saleRecord?.total || (response.soldQuantity * salePrice),
+          note: response.saleRecord?.note || note,
+          newStock: response.newStock,
+          timestamp: new Date().toLocaleTimeString('ar-SA'),
+          date: new Date().toLocaleDateString('ar-SA')
+        });
+
+        // Keep only last 20 entries
+        if (directSaleLog.length > 20) directSaleLog.pop();
+
+        renderDirectSaleLog();
+        
+        // Refresh products in page
+        if (window.appState) appState.products = null;
+      } else {
+        showAdminToast(response.message || 'فشل تسجيل البيع', 'error');
+      }
+    } catch (error) {
+      console.error('Error registering direct sale:', error);
+      showAdminToast('حدث خطأ أثناء تسجيل البيع', 'error');
+    }
+  });
+}
+
+function renderDirectSaleLog() {
+  const logContainer = $a('direct-sale-log');
+  if (!logContainer) return;
+
+  if (directSaleLog.length === 0) {
+    logContainer.innerHTML = `
+      <div style="padding:24px;text-align:center;color:var(--admin-text2);font-size:13px;">
+        لا توجد عمليات بيع بعد
+      </div>
+    `;
+    return;
+  }
+
+  logContainer.innerHTML = directSaleLog.map((sale, idx) => `
+    <div style="padding:12px 16px;border-bottom:1px solid var(--admin-border);display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div style="font-weight:600;color:var(--admin-text);">${escapeHtml(sale.productName)}</div>
+          <div style="font-size:12px;color:var(--admin-text2);">${sale.date} - ${sale.timestamp}</div>
+        </div>
+        <div style="text-align:right;min-width:120px;">
+          <div style="font-size:12px;color:var(--admin-text2);">السعر الفعلي للوحدة</div>
+          <div style="font-weight:600;color:var(--admin-text);">${Number(sale.salePrice).toLocaleString('ar-SA')} ₪</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div style="min-width:110px;">
+          <div style="font-size:12px;color:var(--admin-text2);">الكمية</div>
+          <div style="font-weight:600;color:var(--admin-text);">${sale.quantity} وحدة</div>
+        </div>
+        <div style="min-width:110px;">
+          <div style="font-size:12px;color:var(--admin-text2);">المتبقي</div>
+          <div style="font-weight:600;color:var(--admin-text);">${sale.newStock != null ? `${sale.newStock} وحدة` : '-'} </div>
+        </div>
+        <div style="min-width:110px;">
+          <div style="font-size:12px;color:var(--admin-text2);">المجموع</div>
+          <div style="font-weight:600;color:var(--admin-text);">${Number(sale.total).toLocaleString('ar-SA')} ₪</div>
+        </div>
+      </div>
+      ${sale.note ? `<div style="font-size:12px;color:var(--admin-text2);">ملاحظة: ${escapeHtml(sale.note)}</div>` : ''}
+    </div>
+  `).join('');
 }
