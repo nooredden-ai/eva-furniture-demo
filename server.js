@@ -607,7 +607,7 @@ app.post('/api/orders/:id/note', requirePerm('add_order_notes'), (req, res) => {
 app.post('/api/direct-sale', (req, res) => {
   console.log('[DIRECT-SALE-ROUTE] Hit!');
   try {
-    const { productId, quantity, salePrice, note } = req.body;
+    const { productId, quantity, salePrice, note, customerName, customerPhone, customerAddress } = req.body;
 
     // Validation
     if (productId == null || quantity == null || salePrice == null) {
@@ -661,7 +661,11 @@ app.post('/api/direct-sale', (req, res) => {
       listedPrice,
       salePrice: price,
       total,
+      customerName: typeof customerName === 'string' ? customerName.trim() : '',
+      customerPhone: typeof customerPhone === 'string' ? customerPhone.trim() : '',
+      customerAddress: typeof customerAddress === 'string' ? customerAddress.trim() : '',
       note: typeof note === 'string' ? note.trim() : '',
+      saleStatus: 'completed',
       createdAt: new Date().toISOString()
     };
 
@@ -691,6 +695,94 @@ app.get('/api/direct-sales', (req, res) => {
   } catch (err) {
     console.error('[DIRECT-SALES GET ERROR]', err);
     res.status(500).json({ success: false, message: 'فشل تحميل مبيعات مباشرة' });
+  }
+});
+
+app.put('/api/direct-sales/:id', (req, res) => {
+  try {
+    const saleId = Number(req.params.id);
+    const { customerName, customerPhone, customerAddress, note } = req.body;
+
+    const directSales = readJSON('direct-sales.json');
+    const saleIdx = directSales.findIndex(s => Number(s.id) === saleId);
+    
+    if (saleIdx === -1) {
+      return res.status(404).json({ success: false, message: 'عملية البيع غير موجودة' });
+    }
+
+    const sale = directSales[saleIdx];
+
+    // Allowed fields to update: customerName, customerPhone, customerAddress, note
+    if (customerName !== undefined) sale.customerName = typeof customerName === 'string' ? customerName.trim() : '';
+    if (customerPhone !== undefined) sale.customerPhone = typeof customerPhone === 'string' ? customerPhone.trim() : '';
+    if (customerAddress !== undefined) sale.customerAddress = typeof customerAddress === 'string' ? customerAddress.trim() : '';
+    if (note !== undefined) sale.note = typeof note === 'string' ? note.trim() : '';
+
+    writeJSON('direct-sales.json', directSales);
+
+    res.json({
+      success: true,
+      message: 'تم تحديث بيانات الزبون بنجاح',
+      saleRecord: sale
+    });
+  } catch (err) {
+    console.error('[DIRECT-SALE UPDATE ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحديث بيانات الزبون' });
+  }
+});
+
+app.put('/api/direct-sales/:id/cancel', (req, res) => {
+  try {
+    const saleId = Number(req.params.id);
+    const { cancelReason } = req.body;
+
+    if (!cancelReason || typeof cancelReason !== 'string' || !cancelReason.trim()) {
+      return res.status(400).json({ success: false, message: 'سبب الإلغاء مطلوب' });
+    }
+
+    const directSales = readJSON('direct-sales.json');
+    const saleIdx = directSales.findIndex(s => Number(s.id) === saleId);
+    
+    if (saleIdx === -1) {
+      return res.status(404).json({ success: false, message: 'عملية البيع غير موجودة' });
+    }
+
+    const sale = directSales[saleIdx];
+
+    if (sale.saleStatus === 'cancelled') {
+      return res.status(400).json({ success: false, message: 'عملية البيع ملغية بالفعل' });
+    }
+
+    // Get the product to restore stock
+    const products = productRepository.findAll();
+    const productIdx = products.findIndex(p => String(p.id) === String(sale.productId));
+    
+    if (productIdx !== -1) {
+      const product = products[productIdx];
+      const currentStock = Number(product.stock) || 0;
+      product.stock = currentStock + Number(sale.quantity);
+      productRepository.saveAll(products);
+      console.log(`[DIRECT-SALE CANCEL] restored ${sale.quantity} to ${product.name}. Stock: ${currentStock} → ${product.stock}`);
+    } else {
+      console.warn(`[DIRECT-SALE CANCEL] Product ID ${sale.productId} not found to restore stock.`);
+    }
+
+    // Update sale record
+    sale.saleStatus = 'cancelled';
+    sale.cancelReason = cancelReason.trim();
+    sale.cancelledAt = new Date().toISOString();
+    sale.cancelledBy = req.user?.role || 'admin';
+
+    writeJSON('direct-sales.json', directSales);
+
+    res.json({
+      success: true,
+      message: 'تم إلغاء عملية البيع بنجاح وإعادة المخزون',
+      saleRecord: sale
+    });
+  } catch (err) {
+    console.error('[DIRECT-SALE CANCEL ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل إلغاء عملية البيع' });
   }
 });
 

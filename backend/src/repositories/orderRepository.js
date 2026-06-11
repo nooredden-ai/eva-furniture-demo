@@ -50,6 +50,25 @@ class OrderRepository extends BaseRepository {
     const order = orders.find(item => String(item.id) === String(id));
     if (!order) return null;
 
+    const currentStatus = order.status || 'pending';
+    if (currentStatus === status) {
+      return order; // No change
+    }
+
+    const validNext = {
+      'pending': ['confirmed', 'cancelled'],
+      'confirmed': ['processing', 'cancelled'],
+      'processing': ['shipped', 'cancelled'],
+      'shipped': ['delivered', 'cancelled'],
+      'delivered': [],
+      'cancelled': []
+    };
+
+    const allowed = validNext[currentStatus] || [];
+    if (!allowed.includes(status)) {
+      return { error: 'لا يمكن الانتقال لهذه الحالة مباشرة.' };
+    }
+
     if (status === 'confirmed' && !order.stockDeducted) {
       const products = productRepository.findAll();
       const prodById = {};
@@ -95,6 +114,29 @@ class OrderRepository extends BaseRepository {
 
       productRepository.saveAll(products);
       order.stockDeducted = true;
+    } else if (status === 'cancelled' && order.stockDeducted) {
+      const products = productRepository.findAll();
+      const prodById = {};
+      const prodByName = {};
+
+      products.forEach(p => {
+        prodById[String(p.id)] = p;
+        const normalized = String(p.name || '').toLowerCase().trim();
+        if (normalized) prodByName[normalized] = p;
+      });
+
+      for (const item of order.items || []) {
+        let prod = null;
+        if (item.productId != null) prod = prodById[String(item.productId)];
+        if (!prod) prod = prodByName[String(item.name || '').toLowerCase().trim()];
+        const quantity = Number(item.qty) || 0;
+        if (prod) {
+          prod.stock = (Number(prod.stock) || 0) + quantity;
+        }
+      }
+
+      productRepository.saveAll(products);
+      order.stockDeducted = false;
     }
 
     order.status = status;

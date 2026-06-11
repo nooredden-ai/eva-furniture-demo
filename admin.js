@@ -473,16 +473,24 @@ async function loadDirectSalesLog() {
     const sales = Array.isArray(response) ? response : Array.isArray(response.data) ? response.data : [];
 
     directSaleLog = sales
-      .slice(-20)
+      .slice(-50)
       .reverse()
       .map(sale => ({
         id: sale.id,
+        productId: sale.productId,
         productName: sale.productName,
         quantity: sale.quantity,
         listedPrice: sale.listedPrice,
         salePrice: sale.salePrice,
         total: sale.total,
-        note: sale.note,
+        note: sale.note || '',
+        customerName: sale.customerName || '',
+        customerPhone: sale.customerPhone || '',
+        customerAddress: sale.customerAddress || '',
+        saleStatus: sale.saleStatus || 'completed',
+        cancelReason: sale.cancelReason || '',
+        cancelledAt: sale.cancelledAt || '',
+        cancelledBy: sale.cancelledBy || '',
         newStock: null,
         timestamp: new Date(sale.createdAt).toLocaleTimeString('ar-SA'),
         date: new Date(sale.createdAt).toLocaleDateString('ar-SA')
@@ -2053,40 +2061,141 @@ async function bulkDownloadPdf() {
 }
 
 async function openOrderDetails(orderId) {
-  const [orders, store, users] = await Promise.all([API.getOrders(), API.getStoreSettings(), API.getUsers()]);
+  const [orders, store, users, products] = await Promise.all([
+    API.getOrders(),
+    API.getStoreSettings(),
+    API.getUsers(),
+    API.getProducts()
+  ]);
   const order = findOrderByIdentifier(orders, orderId);
   if (!order) return;
   currentViewOrder = order;
 
-  // Populate Customer & Items
-  const custNameEl = $a('om-customer-name');
-  if(custNameEl) custNameEl.textContent = order.customer;
-  const custPhoneEl = $a('om-customer-phone');
-  if(custPhoneEl) custPhoneEl.textContent = order.phone;
-  const custAddressEl = $a('om-customer-address');
-  if(custAddressEl) custAddressEl.textContent = order.address || 'لا يوجد عنوان تفصيلي';
-  
   const currency = store.currencySymbol || store.currency || 'USD';
-  const itemsEl = $a('om-items');
-  if(itemsEl) itemsEl.innerHTML = order.items.map(i => `<div style="display:flex;justify-content:space-between;margin-bottom:4px;border-bottom:1px solid rgba(0,0,0,0.05);padding-bottom:4px;"><span>${i.emoji || ''} ${i.name} ×${i.qty}</span><span>${(i.price * i.qty).toLocaleString('ar-SA')} ${currency}</span></div>`).join('');
-  const totalEl = $a('om-total');
-  if(totalEl) totalEl.textContent = `الإجمالي: ${order.total.toLocaleString('ar-SA')} ${currency}`;
 
-  // Populate Assignee Dropdown
+  // 1. Populate Order Header Card
+  const headerCardEl = $a('om-header-card');
+  if (headerCardEl) {
+    const statusLabels = {
+      pending: 'قيد الانتظار',
+      confirmed: 'تم التأكيد',
+      processing: 'جاري التجهيز',
+      shipped: 'تم الشحن',
+      delivered: 'تم التوصيل',
+      cancelled: 'ملغي'
+    };
+    
+    const statusColors = {
+      pending: '#f59e0b',    // Orange
+      confirmed: '#3b82f6',  // Blue
+      processing: '#8b5cf6', // Purple
+      shipped: '#06b6d4',    // Cyan
+      delivered: '#10b981',  // Green
+      cancelled: '#ef4444'   // Red
+    };
+    
+    const badgeColor = statusColors[order.status] || '#64748b';
+    const badgeText = statusLabels[order.status] || order.status;
+    const createdAt = order.date || '-';
+    const lastUpdated = order.lastUpdated ? new Date(order.lastUpdated).toLocaleDateString('ar-SA') : '-';
+    
+    headerCardEl.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <span style="font-size:0.8rem; color:var(--admin-text2)">رقم الطلب</span>
+        <strong style="font-size:1.05rem; color:var(--admin-text)">${order.id}</strong>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <span style="font-size:0.8rem; color:var(--admin-text2)">الحالة الحالية</span>
+        <div>
+          <span style="background:${badgeColor}22; color:${badgeColor}; border: 1px solid ${badgeColor}44; padding: 3px 8px; border-radius: 4px; font-weight:700; font-size:0.85rem; display:inline-block;">
+            ${badgeText}
+          </span>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <span style="font-size:0.8rem; color:var(--admin-text2)">تاريخ الإنشاء</span>
+        <strong style="font-size:0.95rem; color:var(--admin-text)">${createdAt}</strong>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <span style="font-size:0.8rem; color:var(--admin-text2)">آخر تحديث</span>
+        <strong style="font-size:0.95rem; color:var(--admin-text)">${lastUpdated}</strong>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <span style="font-size:0.8rem; color:var(--admin-text2)">إجمالي الطلب</span>
+        <strong style="font-size:1.05rem; color:var(--admin-primary)">${order.total.toLocaleString('ar-SA')} ${currency}</strong>
+      </div>
+    `;
+  }
+
+  // 2. Populate Customer Card
+  const custNameEl = $a('om-customer-name');
+  if (custNameEl) custNameEl.textContent = order.customer;
+  const custPhoneEl = $a('om-customer-phone');
+  if (custPhoneEl) custPhoneEl.textContent = order.phone;
+  const custAddressEl = $a('om-customer-address');
+  if (custAddressEl) custAddressEl.textContent = order.address || 'لا يوجد عنوان تفصيلي';
+
+  const customerActionsEl = $a('om-customer-actions');
+  if (customerActionsEl) {
+    const cleanPhone = order.phone.replace(/[^0-9]/g, '');
+    customerActionsEl.innerHTML = `
+      <a href="https://wa.me/${cleanPhone}" target="_blank" class="topbar-btn btn-outline btn-sm btn-active-scale" style="display: flex; align-items: center; gap: 4px; color: #25D366; border-color: #25D366; text-decoration: none; font-weight: 600;">
+        <i data-lucide="message-square" style="width:14px; height:14px;"></i> واتساب
+      </a>
+      <a href="tel:${order.phone}" class="topbar-btn btn-outline btn-sm btn-active-scale" style="display: flex; align-items: center; gap: 4px; color: var(--admin-primary); border-color: var(--admin-primary); text-decoration: none; font-weight: 600;">
+        <i data-lucide="phone" style="width:14px; height:14px;"></i> اتصال
+      </a>
+    `;
+  }
+
+  // 3. Populate Products Card
+  const productsListEl = $a('om-products-list');
+  if (productsListEl) {
+    productsListEl.innerHTML = order.items.map(item => {
+      const product = products.find(p => String(p.id) === String(item.productId) || p.name === item.name);
+      const imageSrc = product ? (product.image || (product.images && product.images[0])) : null;
+      const bg = product ? product.bg : 'var(--admin-bg)';
+      const emoji = product ? product.emoji : '';
+      
+      const imgHtml = imageSrc 
+        ? `<img src="${imageSrc}" style="width:100%;height:100%;object-fit:cover" />`
+        : (emoji ? `<span style="font-size:1.3rem;">${emoji}</span>` : `<i data-lucide="package" style="width:20px;height:20px;opacity:0.5"></i>`);
+        
+      return `
+        <div style="display: flex; gap: 12px; align-items: center; background: var(--admin-bg-alt); padding: 10px; border-radius: 8px; border: 1px solid var(--admin-border);">
+          <div style="width: 50px; height: 50px; border-radius: 6px; background: ${bg}; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0;">
+            ${imgHtml}
+          </div>
+          <div style="flex: 1;">
+            <div style="font-weight: 700; color: var(--admin-text); font-size: 0.95rem;">${item.name}</div>
+            <div style="font-size: 0.85rem; color: var(--admin-text2); margin-top: 2px;">سعر الوحدة: ${item.price.toLocaleString('ar-SA')} ${currency}</div>
+          </div>
+          <div style="text-align: left;">
+            <div style="font-weight: 700; color: var(--admin-text); font-size: 0.95rem;">${(item.price * item.qty).toLocaleString('ar-SA')} ${currency}</div>
+            <div style="font-size: 0.85rem; color: var(--admin-text2); margin-top: 2px;">الكمية: ${item.qty}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+  
+  const totalEl = $a('om-total');
+  if (totalEl) totalEl.textContent = `Total: ${order.total.toLocaleString('ar-SA')} ${currency}`;
+
+  // 4. Populate Assignee Dropdown
   const assignSelect = $a('om-assignee');
-  if(assignSelect) {
+  if (assignSelect) {
     assignSelect.innerHTML = `<option value="">-- غير معين --</option>` + users.map(u => `<option value="${u.id}">${u.name} (${Auth.getRoleLabel(u.role)})</option>`).join('');
     assignSelect.value = order.assignedTo || '';
   }
 
-  // Populate Status Dropdown
-  const statusSelect = $a('om-status');
-  if(statusSelect) statusSelect.value = order.status;
+  // 5. Populate Status Workflow UI
+  renderOrderStatusWorkflow(order);
 
-  // Render Notes
+  // 6. Render Notes
   renderOrderNotes();
 
-  // Render Timeline
+  // 7. Render Timeline
   renderOrderTimeline();
 
   $a('order-modal').classList.add('open');
@@ -2097,7 +2206,7 @@ async function openOrderDetails(orderId) {
 function renderOrderNotes() {
   const order = currentViewOrder;
   const list = $a('om-notes-list');
-  if(!list) return;
+  if (!list) return;
   if (!order.internalComments || order.internalComments.length === 0) {
     list.innerHTML = '<div style="color:var(--admin-text2);font-size:0.85rem">لا توجد ملاحظات.</div>';
   } else {
@@ -2112,7 +2221,7 @@ function renderOrderNotes() {
 
 async function addOrderNote() {
   const input = $a('om-new-note');
-  if(!input) return;
+  if (!input) return;
   const text = input.value.trim();
   if (!text || !currentViewOrder) return;
   
@@ -2135,70 +2244,214 @@ async function addOrderNote() {
 function renderOrderTimeline() {
   const order = currentViewOrder;
   const tl = $a('om-timeline');
-  if(!tl) return;
+  if (!tl) return;
   let events = [];
   
+  const statusLabels = {
+    pending: 'تم إنشاء الطلب',
+    confirmed: 'تم التأكيد',
+    processing: 'جاري التجهيز',
+    shipped: 'تم الشحن',
+    delivered: 'تم التوصيل',
+    cancelled: 'ملغي'
+  };
+
+  const statusColors = {
+    pending: '#f59e0b',
+    confirmed: '#3b82f6',
+    processing: '#8b5cf6',
+    shipped: '#06b6d4',
+    delivered: '#10b981',
+    cancelled: '#ef4444'
+  };
+
+  const statusIcons = {
+    pending: 'shopping-cart',
+    confirmed: 'check-circle',
+    processing: 'package',
+    shipped: 'truck',
+    delivered: 'heart',
+    cancelled: 'x-circle'
+  };
+
   // Creation event
-  events.push({ status: 'تم الطلب', date: order.date, by: 'العميل', icon: 'shopping-cart', color: '#3b82f6' });
+  events.push({
+    status: 'تم الطلب بنجاح',
+    date: order.date,
+    time: '',
+    by: 'العميل',
+    icon: 'shopping-cart',
+    color: '#3b82f6'
+  });
   
   // Status history
   if (order.statusHistory && order.statusHistory.length > 0) {
     order.statusHistory.forEach(h => {
-      events.push({ status: statusText(h.status), date: h.date, by: Auth.getRoleLabel(h.changedBy) || h.changedBy, icon: 'refresh-cw', color: '#8b5cf6' });
+      const d = new Date(h.date);
+      events.push({
+        status: statusLabels[h.status] || h.status,
+        date: d.toLocaleDateString('ar-SA'),
+        time: d.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }),
+        by: Auth.getRoleLabel(h.changedBy) || h.changedBy,
+        icon: statusIcons[h.status] || 'refresh-cw',
+        color: statusColors[h.status] || '#8b5cf6'
+      });
     });
-  } else {
-    events.push({ status: statusText(order.status), date: order.lastUpdated || order.date, by: 'النظام', icon: 'check', color: '#10b981' });
   }
 
-  // Sort by date (descending)
-  events.sort((a,b) => new Date(b.date) - new Date(a.date));
+  // Sort by date/time (most recent on top)
+  events.reverse();
 
   tl.innerHTML = events.map(e => `
-    <div style="display:flex;gap:10px;align-items:flex-start">
-      <div style="width:24px;height:24px;border-radius:50%;background:${e.color}22;color:${e.color};display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px">
-        <i data-lucide="${e.icon}" style="width:12px;height:12px"></i>
+    <div style="position: relative; padding-bottom: 8px;">
+      <div style="position: absolute; right: -21px; top: 4px; width: 10px; height: 10px; border-radius: 50%; background: ${e.color}; border: 2px solid var(--admin-surface); z-index: 1;"></div>
+      <div style="font-weight: 700; color: var(--admin-text); font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+        <i data-lucide="${e.icon}" style="width:14px; height:14px; color:${e.color}"></i> ${e.status}
       </div>
-      <div>
-        <div style="font-weight:600">${e.status}</div>
-        <div style="font-size:0.75rem;color:var(--admin-text2)">${new Date(e.date).toLocaleString('ar-SA')} • بواسطة: ${e.by}</div>
+      <div style="font-size: 0.8rem; color: var(--admin-text2); margin-top: 4px; padding-right: 20px;">
+        <span>${e.date} ${e.time}</span> • <span style="font-weight: 600;">بواسطة ${e.by}</span>
       </div>
     </div>
   `).join('');
   if (window.lucide) lucide.createIcons();
 }
 
-async function updateOrderStatus(status) {
+function renderOrderStatusWorkflow(order) {
+  const currentDisplay = $a('om-status-current-display');
+  const actionsContainer = $a('om-status-workflow-actions');
+  if (!currentDisplay || !actionsContainer) return;
+
+  const currentStatus = order.status || 'pending';
+  const statusLabels = {
+    pending: 'قيد الانتظار',
+    confirmed: 'تم التأكيد',
+    processing: 'جاري التجهيز',
+    shipped: 'تم الشحن',
+    delivered: 'تم التوصيل',
+    cancelled: 'ملغي'
+  };
+
+  currentDisplay.textContent = `الحالة الحالية: ${statusLabels[currentStatus] || currentStatus}`;
+
+  let html = '';
+  if (currentStatus === 'pending') {
+    html = `
+      <button class="topbar-btn btn-primary btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px;" onclick="handleWorkflowStatusTransition('confirmed')">تأكيد الطلب</button>
+      <button class="topbar-btn btn-danger btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px; margin-top: 4px;" onclick="handleWorkflowStatusTransition('cancelled')">إلغاء الطلب</button>
+    `;
+  } else if (currentStatus === 'confirmed') {
+    html = `
+      <button class="topbar-btn btn-primary btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px;" onclick="handleWorkflowStatusTransition('processing')">بدء التجهيز</button>
+      <button class="topbar-btn btn-danger btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px; margin-top: 4px;" onclick="handleWorkflowStatusTransition('cancelled')">إلغاء وإرجاع المخزون</button>
+    `;
+  } else if (currentStatus === 'processing') {
+    html = `
+      <button class="topbar-btn btn-primary btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px;" onclick="handleWorkflowStatusTransition('shipped')">تم الشحن</button>
+      <button class="topbar-btn btn-danger btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px; margin-top: 4px;" onclick="handleWorkflowStatusTransition('cancelled')">إلغاء وإرجاع المخزون</button>
+    `;
+  } else if (currentStatus === 'shipped') {
+    html = `
+      <button class="topbar-btn btn-primary btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px;" onclick="handleWorkflowStatusTransition('delivered')">تم التوصيل</button>
+      <button class="topbar-btn btn-danger btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px; margin-top: 4px;" onclick="handleWorkflowStatusTransition('cancelled')">إلغاء وإرجاع المخزون</button>
+    `;
+  } else if (currentStatus === 'delivered') {
+    html = `<div style="color:#22c55e; font-weight:700; font-size:0.95rem; padding: 10px; background: #22c55e11; border: 1px solid #22c55e33; border-radius: 6px; text-align: center;"><i data-lucide="check-circle" style="width:16px;height:16px;vertical-align:middle;margin-left:4px;color:#22c55e"></i> تم إغلاق الطلب بنجاح</div>`;
+  } else if (currentStatus === 'cancelled') {
+    html = `<div style="color:#ef4444; font-weight:700; font-size:0.95rem; padding: 10px; background: #ef444411; border: 1px solid #ef444433; border-radius: 6px; text-align: center;"><i data-lucide="x-circle" style="width:16px;height:16px;vertical-align:middle;margin-left:4px;color:#ef4444"></i> تم إلغاء الطلب</div>`;
+  }
+
+  actionsContainer.innerHTML = html;
+  if (window.lucide) lucide.createIcons();
+}
+
+async function handleWorkflowStatusTransition(nextStatus) {
   if (!currentViewOrder) return;
-  const res = await API.updateOrderStatus(currentViewOrder.id, status);
+  
+  if (nextStatus === 'cancelled') {
+    const reasonInput = $a('om-cancel-reason');
+    if (reasonInput) reasonInput.value = '';
+    const errorEl = $a('om-cancel-reason-error');
+    if (errorEl) errorEl.style.display = 'none';
+    $a('cancellation-confirm-modal').classList.add('open');
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  const actionsContainer = $a('om-status-workflow-actions');
+  const originalHtml = actionsContainer ? actionsContainer.innerHTML : '';
+  if (actionsContainer) actionsContainer.innerHTML = '<span style="font-size: 0.9rem; color: var(--admin-text2);">جاري التحديث...</span>';
+  
+  const res = await API.updateOrderStatus(currentViewOrder.id, nextStatus);
   if (res && res.success) {
+    let toastMsg = 'تم تحديث حالة الطلب بنجاح';
+    
+    if (nextStatus === 'confirmed') {
+      toastMsg = 'تم تأكيد الطلب وخصم المخزون.';
+    } else if (nextStatus === 'processing') {
+      toastMsg = 'تم بدء تجهيز الطلب.';
+    } else if (nextStatus === 'shipped') {
+      toastMsg = 'تم شحن الطلب.';
+    } else if (nextStatus === 'delivered') {
+      toastMsg = 'تم تسليم الطلب.';
+    }
+    
+    showAdminToast(toastMsg);
     currentViewOrder = res.order || res.data?.order || res.data || res;
-    renderOrderTimeline();
+    
+    // Refresh components
+    const [freshOrders] = await Promise.all([API.getOrders(true)]);
+    const updatedOrder = findOrderByIdentifier(freshOrders, currentViewOrder.id);
+    if (updatedOrder) currentViewOrder = updatedOrder;
+
+    openOrderDetails(currentViewOrder.id);
     renderOrdersTable();
     updatePendingBadge();
-    showAdminToast('تم تحديث الحالة');
     if (currentAdminPage === 'dashboard') renderDashboard();
   } else {
-    showAdminToast(res?.message || 'فشل تحديث الحالة', 'error');
-    const stEl = $a('om-status');
-    if(stEl) stEl.value = currentViewOrder.status; // revert UI
+    showAdminToast(res?.message || 'لا يمكن الانتقال لهذه الحالة مباشرة.', 'error');
+    if (actionsContainer) actionsContainer.innerHTML = originalHtml;
+    if (window.lucide) lucide.createIcons();
   }
 }
 
-async function applyOrderStatus() {
-  const btn = $a('apply-status-btn');
-  const stEl = $a('om-status');
-  if (!currentViewOrder || !stEl) return;
-  const newStatus = stEl.value;
-  if (newStatus === currentViewOrder.status) {
-    showAdminToast('لم يتغير شيء — نفس الحالة الحالية', 'info');
+async function submitOrderCancellation() {
+  if (!currentViewOrder) return;
+  const reasonInput = $a('om-cancel-reason');
+  const errorEl = $a('om-cancel-reason-error');
+  if (!reasonInput) return;
+  
+  const reason = reasonInput.value.trim();
+  if (!reason) {
+    if (errorEl) errorEl.style.display = 'block';
     return;
   }
-  const originalHtml = btn ? btn.innerHTML : null;
-  try {
-    if (btn) { btn.disabled = true; btn.classList.add('btn-loading'); btn.innerHTML = 'جارٍ التطبيق...'; }
-    await updateOrderStatus(newStatus);
-  } finally {
-    if (btn) { btn.disabled = false; btn.classList.remove('btn-loading'); if (originalHtml) btn.innerHTML = originalHtml; }
+  if (errorEl) errorEl.style.display = 'none';
+  
+  closeModal('cancellation-confirm-modal');
+  
+  const actionsContainer = $a('om-status-workflow-actions');
+  if (actionsContainer) actionsContainer.innerHTML = '<span style="font-size: 0.9rem; color: var(--admin-text2);">جاري إلغاء الطلب...</span>';
+  
+  // 1. Add Note for cancellation reason using existing API
+  await API.addOrderNote(currentViewOrder.id, `سبب الإلغاء: ${reason}`);
+  
+  // 2. Call status update to cancelled
+  const res = await API.updateOrderStatus(currentViewOrder.id, 'cancelled');
+  if (res && res.success) {
+    const freshOrders = await API.getOrders(true);
+    const updatedOrder = findOrderByIdentifier(freshOrders, currentViewOrder.id);
+    if (updatedOrder) currentViewOrder = updatedOrder;
+    
+    const toastMsg = currentViewOrder.stockDeducted ? 'تم إلغاء الطلب وإرجاع المخزون.' : 'تم إلغاء الطلب.';
+    showAdminToast(toastMsg);
+    
+    openOrderDetails(currentViewOrder.id);
+    renderOrdersTable();
+    updatePendingBadge();
+    if (currentAdminPage === 'dashboard') renderDashboard();
+  } else {
+    showAdminToast(res?.message || 'فشل إلغاء الطلب.', 'error');
+    openOrderDetails(currentViewOrder.id); // restore UI
   }
 }
 
@@ -3634,6 +3887,9 @@ async function registerDirectSale() {
       const quantity = parseInt($a('direct-sale-quantity').value, 10);
       const salePrice = Number($a('direct-sale-price').value);
       const note = ($a('direct-sale-note').value || '').trim();
+      const customerName = ($a('direct-sale-customer-name').value || '').trim();
+      const customerPhone = ($a('direct-sale-customer-phone').value || '').trim();
+      const customerAddress = ($a('direct-sale-customer-address').value || '').trim();
 
       if (!productId || !quantity || quantity <= 0 || !salePrice || salePrice <= 0) {
         showAdminToast('يرجى ملء جميع الحقول المطلوبة بشكل صحيح', 'error');
@@ -3646,7 +3902,10 @@ async function registerDirectSale() {
           productId: parseInt(productId, 10),
           quantity,
           salePrice,
-          note
+          note,
+          customerName,
+          customerPhone,
+          customerAddress
         }),
         headers: { 'Content-Type': 'application/json' }
       });
@@ -3659,25 +3918,34 @@ async function registerDirectSale() {
         $a('direct-sale-quantity').value = '';
         $a('direct-sale-price').value = '';
         $a('direct-sale-note').value = '';
+        $a('direct-sale-customer-name').value = '';
+        $a('direct-sale-customer-phone').value = '';
+        $a('direct-sale-customer-address').value = '';
         $a('direct-sale-stock-info').style.display = 'none';
 
         directSaleLog.unshift({
           id: response.saleRecord?.id || null,
+          productId: response.saleRecord?.productId || parseInt(productId, 10),
           productName: response.productName,
           quantity: response.soldQuantity,
           listedPrice: response.saleRecord?.listedPrice || response.listedPrice || 0,
           salePrice: response.saleRecord?.salePrice || salePrice,
           total: response.saleRecord?.total || (response.soldQuantity * salePrice),
+          customerName: response.saleRecord?.customerName || customerName,
+          customerPhone: response.saleRecord?.customerPhone || customerPhone,
+          customerAddress: response.saleRecord?.customerAddress || customerAddress,
           note: response.saleRecord?.note || note,
+          saleStatus: response.saleRecord?.saleStatus || 'completed',
           newStock: response.newStock,
           timestamp: new Date().toLocaleTimeString('ar-SA'),
           date: new Date().toLocaleDateString('ar-SA')
         });
 
-        // Keep only last 20 entries
-        if (directSaleLog.length > 20) directSaleLog.pop();
+        // Keep only last 50 entries
+        if (directSaleLog.length > 50) directSaleLog.pop();
 
-        renderDirectSaleLog();
+        // Re-initialize dropdown with updated stocks
+        await initDirectSale();
         
         // Refresh products in page
         if (window.appState) appState.products = null;
@@ -3697,42 +3965,246 @@ function renderDirectSaleLog() {
 
   if (directSaleLog.length === 0) {
     logContainer.innerHTML = `
-      <div style="padding:24px;text-align:center;color:var(--admin-text2);font-size:13px;">
-        لا توجد عمليات بيع بعد
-      </div>
+      <tr>
+        <td colspan="8" style="padding:24px;text-align:center;color:var(--admin-text2);font-size:13px;">
+          لا توجد عمليات بيع بعد
+        </td>
+      </tr>
     `;
     return;
   }
 
-  logContainer.innerHTML = directSaleLog.map((sale, idx) => `
-    <div style="padding:12px 16px;border-bottom:1px solid var(--admin-border);display:flex;flex-direction:column;gap:8px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">
-        <div>
-          <div style="font-weight:600;color:var(--admin-text);">${escapeHtml(sale.productName)}</div>
-          <div style="font-size:12px;color:var(--admin-text2);">${sale.date} - ${sale.timestamp}</div>
-        </div>
-        <div style="text-align:right;min-width:120px;">
-          <div style="font-size:12px;color:var(--admin-text2);">السعر الفعلي للوحدة</div>
-          <div style="font-weight:600;color:var(--admin-text);">${Number(sale.salePrice).toLocaleString('ar-SA')} ₪</div>
-        </div>
-      </div>
-      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-        <div style="min-width:110px;">
-          <div style="font-size:12px;color:var(--admin-text2);">الكمية</div>
-          <div style="font-weight:600;color:var(--admin-text);">${sale.quantity} وحدة</div>
-        </div>
-        <div style="min-width:110px;">
-          <div style="font-size:12px;color:var(--admin-text2);">المتبقي</div>
-          <div style="font-weight:600;color:var(--admin-text);">${sale.newStock != null ? `${sale.newStock} وحدة` : '-'} </div>
-        </div>
-        <div style="min-width:110px;">
-          <div style="font-size:12px;color:var(--admin-text2);">المجموع</div>
-          <div style="font-weight:600;color:var(--admin-text);">${Number(sale.total).toLocaleString('ar-SA')} ₪</div>
-        </div>
-      </div>
-      ${sale.note ? `<div style="font-size:12px;color:var(--admin-text2);">ملاحظة: ${escapeHtml(sale.note)}</div>` : ''}
+  logContainer.innerHTML = directSaleLog.map((sale) => {
+    const isCancelled = sale.saleStatus === 'cancelled';
+    const statusText = isCancelled ? 'ملغي' : 'مكتمل';
+    const statusStyle = isCancelled 
+      ? 'background:rgba(239, 68, 68, 0.1);color:var(--admin-danger);padding:4px 8px;border-radius:12px;font-size:12px;font-weight:600;display:inline-block;' 
+      : 'background:rgba(16, 185, 129, 0.1);color:#10b981;padding:4px 8px;border-radius:12px;font-size:12px;font-weight:600;display:inline-block;';
+
+    const customerDisplay = sale.customerName 
+      ? `${escapeHtml(sale.customerName)} ${sale.customerPhone ? `(${escapeHtml(sale.customerPhone)})` : ''}`
+      : '<span style="color:var(--admin-text2);font-style:italic;">زبون معرض</span>';
+
+    const editBtn = isCancelled 
+      ? '' 
+      : `<button class="topbar-btn btn-outline" style="padding:4px 8px;font-size:12px;display:inline-flex;align-items:center;gap:4px;" onclick="openEditDirectSaleCustomer(${sale.id})"><i data-lucide="user-cog" style="width:12px;height:12px;"></i> تعديل</button>`;
+
+    const cancelBtn = isCancelled 
+      ? '' 
+      : `<button class="topbar-btn btn-danger" style="padding:4px 8px;font-size:12px;display:inline-flex;align-items:center;gap:4px;" onclick="openCancelDirectSale(${sale.id})"><i data-lucide="x-circle" style="width:12px;height:12px;"></i> إلغاء</button>`;
+
+    return `
+      <tr style="${isCancelled ? 'opacity:0.7;background:rgba(239, 68, 68, 0.02);' : ''}">
+        <td style="font-weight:600;">#${sale.id}</td>
+        <td style="font-size:12px;color:var(--admin-text2);">${sale.date} ${sale.timestamp}</td>
+        <td style="font-weight:600;color:var(--admin-text);">${escapeHtml(sale.productName)}</td>
+        <td>${sale.quantity} وحدة</td>
+        <td style="font-weight:600;">${Number(sale.total).toLocaleString('ar-SA')} ₪</td>
+        <td style="font-size:12px;">${customerDisplay}</td>
+        <td>
+          <span style="${statusStyle}">${statusText}</span>
+        </td>
+        <td>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="topbar-btn btn-primary" style="padding:4px 8px;font-size:12px;display:inline-flex;align-items:center;gap:4px;" onclick="openDirectSaleDetails(${sale.id})"><i data-lucide="eye" style="width:12px;height:12px;"></i> تفاصيل</button>
+            ${editBtn}
+            ${cancelBtn}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function openDirectSaleDetails(saleId) {
+  const sale = directSaleLog.find(s => s.id === saleId);
+  if (!sale) return;
+
+  const grid = $a('ds-details-grid');
+  if (!grid) return;
+
+  const isCancelled = sale.saleStatus === 'cancelled';
+
+  grid.innerHTML = `
+    <div>
+      <span style="font-size:12px;color:var(--admin-text2);">رقم العملية</span>
+      <div style="font-weight:600;font-size:1.1rem;margin-top:2px;">#${sale.id}</div>
     </div>
-  `).join('');
+    <div>
+      <span style="font-size:12px;color:var(--admin-text2);">تاريخ العملية</span>
+      <div style="font-weight:600;margin-top:2px;">${sale.date} ${sale.timestamp}</div>
+    </div>
+    <div>
+      <span style="font-size:12px;color:var(--admin-text2);">اسم المنتج</span>
+      <div style="font-weight:600;margin-top:2px;color:var(--admin-primary);">${escapeHtml(sale.productName)}</div>
+    </div>
+    <div>
+      <span style="font-size:12px;color:var(--admin-text2);">الكمية المباعة</span>
+      <div style="font-weight:600;margin-top:2px;">${sale.quantity} وحدة</div>
+    </div>
+    <div>
+      <span style="font-size:12px;color:var(--admin-text2);">السعر الفعلي للوحدة</span>
+      <div style="font-weight:600;margin-top:2px;">${Number(sale.salePrice).toLocaleString('ar-SA')} ₪</div>
+    </div>
+    <div>
+      <span style="font-size:12px;color:var(--admin-text2);">المبلغ الإجمالي</span>
+      <div style="font-weight:600;margin-top:2px;color:var(--admin-text);">${Number(sale.total).toLocaleString('ar-SA')} ₪</div>
+    </div>
+    <div>
+      <span style="font-size:12px;color:var(--admin-text2);">اسم الزبون</span>
+      <div style="font-weight:600;margin-top:2px;">${escapeHtml(sale.customerName) || '-'}</div>
+    </div>
+    <div>
+      <span style="font-size:12px;color:var(--admin-text2);">رقم الهاتف</span>
+      <div style="font-weight:600;margin-top:2px;">${escapeHtml(sale.customerPhone) || '-'}</div>
+    </div>
+    <div style="grid-column: span 2;">
+      <span style="font-size:12px;color:var(--admin-text2);">العنوان</span>
+      <div style="font-weight:600;margin-top:2px;">${escapeHtml(sale.customerAddress) || '-'}</div>
+    </div>
+    <div>
+      <span style="font-size:12px;color:var(--admin-text2);">حالة العملية</span>
+      <div style="margin-top:2px;">
+        <span style="${isCancelled 
+          ? 'background:rgba(239, 68, 68, 0.1);color:var(--admin-danger);padding:4px 8px;border-radius:12px;font-size:12px;font-weight:600;' 
+          : 'background:rgba(16, 185, 129, 0.1);color:#10b981;padding:4px 8px;border-radius:12px;font-size:12px;font-weight:600;'}">
+          ${isCancelled ? 'ملغية' : 'مكتملة'}
+        </span>
+      </div>
+    </div>
+  `;
+
+  const noteElement = $a('ds-details-note');
+  if (noteElement) {
+    noteElement.textContent = sale.note || 'لا توجد ملاحظات';
+  }
+
+  const cancellationSection = $a('ds-details-cancellation-section');
+  if (cancellationSection) {
+    if (isCancelled) {
+      cancellationSection.style.display = 'block';
+      $a('ds-details-cancelled-by').textContent = sale.cancelledBy || '-';
+      $a('ds-details-cancelled-at').textContent = sale.cancelledAt ? new Date(sale.cancelledAt).toLocaleString('ar-SA') : '-';
+      $a('ds-details-cancelled-reason').textContent = sale.cancelReason || '-';
+    } else {
+      cancellationSection.style.display = 'none';
+    }
+  }
+
+  $a('direct-sale-details-modal').classList.add('open');
+  if (window.lucide) lucide.createIcons();
+}
+
+function openEditDirectSaleCustomer(saleId) {
+  const sale = directSaleLog.find(s => s.id === saleId);
+  if (!sale) return;
+
+  $a('ds-edit-id').value = sale.id;
+  $a('ds-edit-name').value = sale.customerName || '';
+  $a('ds-edit-phone').value = sale.customerPhone || '';
+  $a('ds-edit-address').value = sale.customerAddress || '';
+  $a('ds-edit-note').value = sale.note || '';
+
+  $a('direct-sale-edit-modal').classList.add('open');
+  if (window.lucide) lucide.createIcons();
+}
+
+async function submitDirectSaleEdit() {
+  const saleId = $a('ds-edit-id').value;
+  const customerName = $a('ds-edit-name').value.trim();
+  const customerPhone = $a('ds-edit-phone').value.trim();
+  const customerAddress = $a('ds-edit-address').value.trim();
+  const note = $a('ds-edit-note').value.trim();
+
+  if (!saleId) return;
+
+  try {
+    const response = await fetchWithStability(`/api/direct-sales/${saleId}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        customerName,
+        customerPhone,
+        customerAddress,
+        note
+      }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (response.success) {
+      showAdminToast('✓ تم تحديث بيانات الزبون بنجاح');
+      closeModal('direct-sale-edit-modal');
+      
+      const idx = directSaleLog.findIndex(s => String(s.id) === String(saleId));
+      if (idx !== -1 && response.saleRecord) {
+        directSaleLog[idx].customerName = response.saleRecord.customerName;
+        directSaleLog[idx].customerPhone = response.saleRecord.customerPhone;
+        directSaleLog[idx].customerAddress = response.saleRecord.customerAddress;
+        directSaleLog[idx].note = response.saleRecord.note;
+      }
+
+      renderDirectSaleLog();
+    } else {
+      showAdminToast(response.message || 'فشل تحديث بيانات الزبون', 'error');
+    }
+  } catch (error) {
+    console.error('Error updating direct sale customer info:', error);
+    showAdminToast('حدث خطأ أثناء التحديث', 'error');
+  }
+}
+
+function openCancelDirectSale(saleId) {
+  const sale = directSaleLog.find(s => s.id === saleId);
+  if (!sale) return;
+
+  $a('ds-cancel-id').value = sale.id;
+  $a('ds-cancel-reason').value = '';
+  $a('ds-cancel-reason-error').style.display = 'none';
+
+  $a('direct-sale-cancel-modal').classList.add('open');
+  if (window.lucide) lucide.createIcons();
+}
+
+async function submitDirectSaleCancellation() {
+  const saleId = $a('ds-cancel-id').value;
+  const cancelReason = $a('ds-cancel-reason').value.trim();
+
+  if (!cancelReason) {
+    $a('ds-cancel-reason-error').style.display = 'block';
+    return;
+  } else {
+    $a('ds-cancel-reason-error').style.display = 'none';
+  }
+
+  try {
+    const response = await fetchWithStability(`/api/direct-sales/${saleId}/cancel`, {
+      method: 'PUT',
+      body: JSON.stringify({ cancelReason }),
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (response.success) {
+      showAdminToast('✓ تم إلغاء عملية البيع بنجاح وإعادة المخزون');
+      closeModal('direct-sale-cancel-modal');
+      
+      const idx = directSaleLog.findIndex(s => String(s.id) === String(saleId));
+      if (idx !== -1 && response.saleRecord) {
+        directSaleLog[idx].saleStatus = response.saleRecord.saleStatus;
+        directSaleLog[idx].cancelReason = response.saleRecord.cancelReason;
+        directSaleLog[idx].cancelledAt = response.saleRecord.cancelledAt;
+        directSaleLog[idx].cancelledBy = response.saleRecord.cancelledBy;
+      }
+
+      await initDirectSale();
+      if (window.appState) appState.products = null;
+    } else {
+      showAdminToast(response.message || 'فشل إلغاء عملية البيع', 'error');
+    }
+  } catch (error) {
+    console.error('Error cancelling direct sale:', error);
+    showAdminToast('حدث خطأ أثناء إلغاء عملية البيع', 'error');
+  }
 }
 
 // ===== Stock Receiving (Phase 27) =====
