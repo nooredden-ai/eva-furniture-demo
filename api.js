@@ -240,7 +240,7 @@ const API = {
     });
     if (res.success && appState.orders) {
       const idx = appState.orders.findIndex(o => String(o.id) === String(id));
-      if (idx !== -1) appState.orders[idx] = res.data.order || res.data;
+      if (idx !== -1) appState.orders[idx] = res.order || res.data?.order || res.data || res;
     }
     return res;
   },
@@ -252,7 +252,7 @@ const API = {
     });
     if (res.success && appState.orders) {
       const idx = appState.orders.findIndex(o => String(o.id) === String(id));
-      if (idx !== -1) appState.orders[idx] = res.data.order || res.data;
+      if (idx !== -1) appState.orders[idx] = res.order || res.data?.order || res.data || res;
     }
     return res;
   },
@@ -264,7 +264,7 @@ const API = {
     });
     if (res.success && appState.orders) {
       const idx = appState.orders.findIndex(o => String(o.id) === String(id));
-      if (idx !== -1) appState.orders[idx] = res.data.order || res.data;
+      if (idx !== -1) appState.orders[idx] = res.order || res.data?.order || res.data || res;
     }
     return res;
   },

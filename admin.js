@@ -1188,10 +1188,10 @@ async function showAccountingTable(type) {
 
 // Ensure summary KPIs are present (static values) when page loads
 document.addEventListener('DOMContentLoaded', () => {
-  const kpiCash = $a('kpi-cash'); if (kpiCash) kpiCash.textContent = '12,500 ₪';
-  const kpiSales = $a('kpi-sales'); if (kpiSales) kpiSales.textContent = '48,300 ₪';
-  const kpiReceiv = $a('kpi-receivables'); if (kpiReceiv) kpiReceiv.textContent = '9,200 ₪';
-  const kpiExp = $a('kpi-expenses'); if (kpiExp) kpiExp.textContent = '6,750 ₪';
+  const kpiCash = $a('kpi-cash'); if (kpiCash) kpiCash.textContent = '0 ₪';
+  const kpiSales = $a('kpi-sales'); if (kpiSales) kpiSales.textContent = '0 ₪';
+  const kpiReceiv = $a('kpi-receivables'); if (kpiReceiv) kpiReceiv.textContent = '0 ₪';
+  const kpiExp = $a('kpi-expenses'); if (kpiExp) kpiExp.textContent = '0 ₪';
   renderAccountingPage();
 });
 
@@ -2122,7 +2122,7 @@ async function addOrderNote() {
   input.disabled = false;
   
   if (res && res.success) {
-    currentViewOrder = res.data.order || res.data;
+    currentViewOrder = res.order || res.data?.order || res.data || res;
     input.value = '';
     renderOrderNotes();
     showAdminToast('تمت إضافة الملاحظة');
@@ -2171,7 +2171,7 @@ async function updateOrderStatus(status) {
   if (!currentViewOrder) return;
   const res = await API.updateOrderStatus(currentViewOrder.id, status);
   if (res && res.success) {
-    currentViewOrder = res.data.order || res.data;
+    currentViewOrder = res.order || res.data?.order || res.data || res;
     renderOrderTimeline();
     renderOrdersTable();
     updatePendingBadge();
@@ -2206,7 +2206,7 @@ async function assignOrderToUser(userId) {
   if (!currentViewOrder) return;
   const res = await API.assignOrderToUser(currentViewOrder.id, userId);
   if (res && res.success) {
-    currentViewOrder = res.data.order || res.data;
+    currentViewOrder = res.order || res.data?.order || res.data || res;
     renderOrdersTable();
     showAdminToast('تم تعيين الطلب بنجاح');
   } else {
