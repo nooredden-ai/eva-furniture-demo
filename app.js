@@ -71,6 +71,25 @@ function isAllCategory(category) {
 }
 
 async function initStore() {
+  window.checkoutEnabled = true;
+  try {
+    const planResponse = await fetch('/api/store-plan');
+    const plan = await planResponse.json();
+    if (plan && plan.storefront === false) {
+      const overlay = document.getElementById('storefront-disabled-overlay');
+      if (overlay) {
+        overlay.style.display = 'flex';
+        if (window.lucide) lucide.createIcons();
+      }
+      return;
+    }
+    if (plan && plan.checkoutEnabled === false) {
+      window.checkoutEnabled = false;
+    }
+  } catch (err) {
+    console.error('Error fetching store plan:', err);
+  }
+
   const container = $('products-container');
   if (container) {
     container.innerHTML = Array(4).fill(0).map(() => `
@@ -660,6 +679,10 @@ function showPage(pageId) {
 }
 
 function goToCheckout() {
+  if (window.checkoutEnabled === false) {
+    showToast('إتمام الشراء معطل حالياً في هذا المتجر', 'error');
+    return;
+  }
   closeCart();
   renderCheckoutSummary();
   showPage('checkout');

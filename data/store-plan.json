@@ -1,0 +1,22 @@
+{
+  "planName": "full_store",
+  "modules": {
+    "storefront": true,
+    "orders": true,
+    "products": true,
+    "categories": true,
+    "directSales": true,
+    "inventory": true,
+    "stockReceiving": true,
+    "accounting": true,
+    "coupons": true,
+    "users": true,
+    "settings": true,
+    "paymentSettings": false,
+    "pricing": true
+  },
+  "checkout": {
+    "enabled": true,
+    "mode": "cod_only"
+  }
+}

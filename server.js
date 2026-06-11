@@ -469,6 +469,11 @@ app.get('/api/orders/:id', (req, res) => {
 
 app.post('/api/orders', (req, res) => {
   try {
+    const plan = readJSON('store-plan.json');
+    if (plan && plan.modules && plan.modules.orders === false) {
+      return res.status(403).json({ success: false, message: 'المتجر لا يقبل طلبات حالياً (الميزة غير مفعّلة في خطة المتجر)' });
+    }
+
     const { customer, phone, address, zone, zoneName, items, subtotal, shipping, total, notes, paymentMethod, couponCode, discount } = req.body;
 
     if (!customer || !phone || !items || !Array.isArray(items) || items.length === 0) {
@@ -607,6 +612,11 @@ app.post('/api/orders/:id/note', requirePerm('add_order_notes'), (req, res) => {
 app.post('/api/direct-sale', (req, res) => {
   console.log('[DIRECT-SALE-ROUTE] Hit!');
   try {
+    const plan = readJSON('store-plan.json');
+    if (plan && plan.modules && plan.modules.directSales === false) {
+      return res.status(403).json({ success: false, message: 'البيع المباشر غير مفعّل في خطة المتجر الحالية' });
+    }
+
     const { productId, quantity, salePrice, note, customerName, customerPhone, customerAddress } = req.body;
 
     // Validation
@@ -792,6 +802,11 @@ app.put('/api/direct-sales/:id/cancel', (req, res) => {
 app.post('/api/stock-receipts', (req, res) => {
   console.log('[STOCK-RECEIPT-ROUTE] Hit!');
   try {
+    const plan = readJSON('store-plan.json');
+    if (plan && plan.modules && plan.modules.stockReceiving === false) {
+      return res.status(403).json({ success: false, message: 'توريد المخزون غير مفعّل في خطة المتجر الحالية' });
+    }
+
     const { productId, quantity, unitCost, supplier, note } = req.body;
 
     // Validation
@@ -1061,6 +1076,69 @@ app.put('/api/permissions', requirePerm('manage_roles_permissions'), (req, res) 
   newPerms.super_admin = [...DEFAULT_PERMISSIONS.super_admin];
   permissionRepository.saveAll(newPerms);
   res.json({ success: true, permissions: newPerms });
+});
+
+/* =========================
+   API: STORE PLAN & FEATURE MODULES
+========================= */
+app.get('/api/store-plan', (req, res) => {
+  try {
+    const plan = readJSON('store-plan.json');
+    if (req.user) {
+      return res.json(plan);
+    }
+    return res.json({
+      storefront: !!(plan && plan.modules && plan.modules.storefront),
+      checkoutEnabled: !!(plan && plan.checkout && plan.checkout.enabled)
+    });
+  } catch (err) {
+    console.error('[GET STORE PLAN ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحميل خطة المتجر' });
+  }
+});
+
+app.put('/api/store-plan', (req, res) => {
+  try {
+    if (!req.user || req.user.role !== 'super_admin') {
+      return res.status(403).json({ success: false, message: 'غير مصرح لتعديل الخطة' });
+    }
+
+    const { planName, modules, checkout } = req.body;
+
+    if (!modules || typeof modules !== 'object') {
+      return res.status(400).json({ success: false, message: 'بيانات الخطة غير صالحة' });
+    }
+
+    const updatedPlan = {
+      planName: planName || 'custom_plan',
+      modules: {
+        storefront: !!modules.storefront,
+        orders: !!modules.orders,
+        products: !!modules.products,
+        categories: !!modules.categories,
+        directSales: !!modules.directSales,
+        inventory: !!modules.inventory,
+        stockReceiving: !!modules.stockReceiving,
+        accounting: !!modules.accounting,
+        coupons: !!modules.coupons,
+        users: !!modules.users,
+        settings: !!modules.settings,
+        paymentSettings: !!modules.paymentSettings,
+        pricing: !!modules.pricing
+      },
+      checkout: {
+        enabled: checkout ? !!checkout.enabled : true,
+        mode: checkout && checkout.mode ? checkout.mode : 'cod_only'
+      }
+    };
+
+    writeJSON('store-plan.json', updatedPlan);
+
+    res.json({ success: true, message: 'تم تحديث خطة المتجر بنجاح', plan: updatedPlan });
+  } catch (err) {
+    console.error('[PUT STORE PLAN ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحديث خطة المتجر' });
+  }
 });
 
 /* =========================

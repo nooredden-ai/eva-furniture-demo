@@ -8,6 +8,7 @@ let productsCache = [];
 let imageMarkedForRemoval = false; // Tracks if the user clicked "Remove" in edit mode
 let directSaleLog = []; // Track direct sales for UI display
 let stockReceiptsLog = []; // Track stock receipts for UI display
+let storePlan = null; // Track active modules plan for this store
 
 // Temp settings state (before save)
 let _settingsTempPrimary     = null;
@@ -61,6 +62,31 @@ function getOrderKey(order) {
 
 // ===== Navigation =====
 function navigateTo(page) {
+  if (page === 'store-plan' && !Auth.isSuperAdmin()) {
+    page = 'access-denied';
+  }
+
+  const modulePageMap = {
+    'products': 'products',
+    'categories': 'categories',
+    'orders': 'orders',
+    'direct-sale': 'directSales',
+    'stock-receiving': 'stockReceiving',
+    'users': 'users',
+    'accounting': 'accounting',
+    'coupons': 'coupons',
+    'settings': 'settings'
+  };
+
+  const moduleName = modulePageMap[page];
+  if (moduleName && window.storePlan && window.storePlan.modules && window.storePlan.modules[moduleName] === false) {
+    if (Auth.isSuperAdmin()) {
+      page = 'module-disabled';
+    } else {
+      page = 'access-denied';
+    }
+  }
+
   const pagesPermissions = {
     dashboard: 'view_dashboard',
     products: 'view_products',
@@ -98,11 +124,14 @@ function refreshPage(page) {
     accounting: 'ملخص المبيعات والمخزون',
     coupons:    'إدارة الكوبونات',
     settings:   'إعدادات المتجر',
+    'store-plan': 'إدارة خطة المتجر',
+    'module-disabled': 'ميزة غير مفعلة',
     'access-denied': 'وصول مرفوض'
   };
   const titleIcons = {
     dashboard: 'bar-chart', products: 'package', categories: 'tag',
     orders: 'receipt', 'direct-sale': 'shopping-cart', users: 'users', accounting: 'credit-card', coupons: 'gift', settings: 'settings',
+    'store-plan': 'shield-check', 'module-disabled': 'lock',
     'access-denied': 'shield-alert'
   };
   const titleEl = $a('topbar-title');
@@ -131,6 +160,7 @@ function refreshPage(page) {
   else if (page === 'accounting') renderAccountingPage();
   else if (page === 'coupons')    renderCouponsTable();
   else if (page === 'settings')   initSettingsPage();
+  else if (page === 'store-plan') initStorePlanPage();
 }
 
 function toggleAdvancedTools() {
@@ -2862,6 +2892,12 @@ function updateCurrencyPreview(country, overrideSym) {
 
 // Settings Tabs
 function switchSettingsTab(tab) {
+  if (tab === 'payments' && window.storePlan && window.storePlan.modules && window.storePlan.modules.paymentSettings === false) {
+    if (!Auth.isSuperAdmin()) {
+      showAdminToast('إعدادات الدفع الإلكتروني غير مفعّلة في خطة المتجر الحالية', 'error');
+      return;
+    }
+  }
   document.querySelectorAll('.stab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   document.querySelectorAll('.settings-tab-content').forEach(el => {
     el.classList.toggle('active', el.id === `stab-${tab}`);
@@ -3021,6 +3057,17 @@ async function initAdmin() {
   // Set store link
   const navOpenStore = $a('nav-open-store');
   if (navOpenStore) navOpenStore.href = `index.html?store=${STORE_ID}`;
+
+  // Fetch Store Plan & Apply visibility rules
+  try {
+    const plan = await fetchWithStability('/api/store-plan');
+    if (plan) {
+      window.storePlan = plan;
+      applyStorePlanVisibility();
+    }
+  } catch (err) {
+    console.error("Failed to load store plan on admin panel initialization:", err);
+  }
 
   // Dynamic Store Identity — Graceful
   try {
@@ -4384,4 +4431,201 @@ function renderStockReceiptsLog() {
       ${receipt.note ? `<div style="font-size:12px;color:var(--admin-text2);">ملاحظة: ${escapeHtml(receipt.note)}</div>` : ''}
     </div>
   `).join('');
+}
+
+// ===== Store Plan Management & Visibility (Phase 32B) =====
+async function initStorePlanPage() {
+  try {
+    const plan = await fetchWithStability('/api/store-plan');
+    if (plan && plan.modules) {
+      window.storePlan = plan;
+      $a('plan-mod-storefront').checked = !!plan.modules.storefront;
+      $a('plan-mod-orders').checked = !!plan.modules.orders;
+      $a('plan-mod-products').checked = !!plan.modules.products;
+      $a('plan-mod-categories').checked = !!plan.modules.categories;
+      $a('plan-mod-directSales').checked = !!plan.modules.directSales;
+      $a('plan-mod-inventory').checked = !!plan.modules.inventory;
+      $a('plan-mod-stockReceiving').checked = !!plan.modules.stockReceiving;
+      $a('plan-mod-accounting').checked = !!plan.modules.accounting;
+      $a('plan-mod-coupons').checked = !!plan.modules.coupons;
+      $a('plan-mod-users').checked = !!plan.modules.users;
+      $a('plan-mod-settings').checked = !!plan.modules.settings;
+      $a('plan-mod-paymentSettings').checked = !!plan.modules.paymentSettings;
+      $a('plan-mod-pricing').checked = !!plan.modules.pricing;
+      $a('plan-mod-checkout-enabled').checked = !!(plan.checkout && plan.checkout.enabled);
+    }
+  } catch (err) {
+    console.error('Error loading store plan page settings:', err);
+    showAdminToast('فشل تحميل إعدادات خطة المتجر', 'error');
+  }
+}
+
+async function saveStorePlan(btn) {
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i data-lucide="loader" style="width:14px;height:14px;vertical-align:middle;margin-left:4px;animation:spin 1s linear infinite"></i> جاري الحفظ...';
+  btn.disabled = true;
+
+  const payload = {
+    planName: 'custom_plan',
+    modules: {
+      storefront: $a('plan-mod-storefront').checked,
+      orders: $a('plan-mod-orders').checked,
+      products: $a('plan-mod-products').checked,
+      categories: $a('plan-mod-categories').checked,
+      directSales: $a('plan-mod-directSales').checked,
+      inventory: $a('plan-mod-inventory').checked,
+      stockReceiving: $a('plan-mod-stockReceiving').checked,
+      accounting: $a('plan-mod-accounting').checked,
+      coupons: $a('plan-mod-coupons').checked,
+      users: $a('plan-mod-users').checked,
+      settings: $a('plan-mod-settings').checked,
+      paymentSettings: $a('plan-mod-paymentSettings').checked,
+      pricing: $a('plan-mod-pricing').checked
+    },
+    checkout: {
+      enabled: $a('plan-mod-checkout-enabled').checked,
+      mode: 'cod_only'
+    }
+  };
+
+  try {
+    const res = await fetchWithStability('/api/store-plan', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (res && res.success) {
+      showAdminToast('✓ تم حفظ خطة المتجر بنجاح');
+      window.storePlan = res.plan;
+      applyStorePlanVisibility();
+      navigateTo('dashboard');
+    } else {
+      showAdminToast(res?.message || 'فشل حفظ خطة المتجر', 'error');
+    }
+  } catch (err) {
+    console.error('Error saving store plan:', err);
+    showAdminToast('حدث خطأ أثناء حفظ الخطة', 'error');
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function applyStorePlanVisibility() {
+  const session = Auth.getSession();
+  if (!session) return;
+
+  const isSuperAdmin = Auth.isSuperAdmin();
+  const plan = window.storePlan;
+
+  const navStorePlan = $a('nav-store-plan');
+  if (navStorePlan) {
+    navStorePlan.style.display = isSuperAdmin ? '' : 'none';
+  }
+
+  if (!plan || !plan.modules) return;
+
+  const modulePageMap = {
+    'products': 'products',
+    'categories': 'categories',
+    'orders': 'orders',
+    'direct-sale': 'directSales',
+    'stock-receiving': 'stockReceiving',
+    'users': 'users',
+    'accounting': 'accounting',
+    'coupons': 'coupons',
+    'settings': 'settings',
+    'open-store': 'storefront'
+  };
+
+  Object.keys(modulePageMap).forEach(pageKey => {
+    const moduleName = modulePageMap[pageKey];
+    const isEnabled = plan.modules[moduleName] !== false;
+    const navId = 'nav-' + pageKey;
+    const navEl = $a(navId);
+
+    if (navEl) {
+      if (isEnabled) {
+        const pagesPermissions = {
+          'products': 'view_products',
+          'categories': 'view_categories',
+          'orders': 'view_orders',
+          'direct-sale': 'update_orders',
+          'users': 'view_users',
+          'coupons': 'view_coupons',
+          'settings': 'view_settings'
+        };
+        const requiredPerm = pagesPermissions[pageKey];
+        if (!requiredPerm || Auth.can(requiredPerm)) {
+          navEl.style.display = '';
+        } else {
+          navEl.style.display = 'none';
+        }
+      } else {
+        navEl.style.display = isSuperAdmin ? '' : 'none';
+      }
+    }
+  });
+
+  const statOrdersEl = $a('stat-orders');
+  if (statOrdersEl) {
+    const card = statOrdersEl.closest('.stat-card');
+    if (card) {
+      const isEnabled = plan.modules.orders !== false;
+      card.style.display = (isEnabled || isSuperAdmin) ? '' : 'none';
+    }
+  }
+
+  const statRevenueEl = $a('stat-revenue');
+  if (statRevenueEl) {
+    const card = statRevenueEl.closest('.stat-card');
+    if (card) {
+      const isEnabled = plan.modules.accounting !== false;
+      card.style.display = (isEnabled || isSuperAdmin) ? '' : 'none';
+    }
+  }
+
+  const statProductsEl = $a('stat-products');
+  if (statProductsEl) {
+    const card = statProductsEl.closest('.stat-card');
+    if (card) {
+      const isEnabled = plan.modules.products !== false;
+      card.style.display = (isEnabled || isSuperAdmin) ? '' : 'none';
+    }
+  }
+
+  const qaAddProduct = document.querySelector('.qa-btn.action-add_products');
+  if (qaAddProduct) {
+    const isEnabled = plan.modules.products !== false;
+    qaAddProduct.style.display = (isEnabled || isSuperAdmin) ? '' : 'none';
+  }
+  const qaCoupon = document.querySelector('.qa-btn.action-manage_coupons');
+  if (qaCoupon) {
+    const isEnabled = plan.modules.coupons !== false;
+    qaCoupon.style.display = (isEnabled || isSuperAdmin) ? '' : 'none';
+  }
+  const qaUser = document.querySelector('.qa-btn.action-add_users');
+  if (qaUser) {
+    const isEnabled = plan.modules.users !== false;
+    qaUser.style.display = (isEnabled || isSuperAdmin) ? '' : 'none';
+  }
+
+  const paymentsTabBtn = document.querySelector('#settings-tabs button[data-tab="payments"]');
+  if (paymentsTabBtn) {
+    const isEnabled = plan.modules.paymentSettings !== false;
+    paymentsTabBtn.style.display = (isEnabled || isSuperAdmin) ? '' : 'none';
+  }
+
+  const paymentsDisabledWarning = $a('payments-disabled-warning');
+  if (paymentsDisabledWarning) {
+    const isEnabled = plan.modules.paymentSettings !== false;
+    paymentsDisabledWarning.style.display = isEnabled ? 'none' : 'block';
+  }
+
+  const isPaymentSettingsEnabled = plan.modules.paymentSettings !== false;
+  document.querySelectorAll('#stab-payments input, #stab-payments select').forEach(input => {
+    input.disabled = !isPaymentSettingsEnabled;
+  });
 }

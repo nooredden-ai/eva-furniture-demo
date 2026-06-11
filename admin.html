@@ -64,6 +64,9 @@
     <div class="nav-item" data-page="settings" id="nav-settings">
        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-settings" viewBox="0 0 24 24"><path d="M19.14 12.936a7.5 7.5 0 0 0 .06-.936 7.5 7.5 0 0 0-.06-.936l2.03-1.58a.5.5 0 0 0 .12-.63l-1.91-3.3a.5.5 0 0 0-.6-.22l-2.4.96a7.014 7.014 0 0 0-1.62-.936l-.36-2.54a.5.5 0 0 0-.5-.42h-3.82a.5.5 0 0 0-.5.42l-.36 2.54c-.58.22-1.12.51-1.62.936l-2.4-.96a.5.5 0 0 0-.6.22l-1.91 3.3a.5.5 0 0 0 .12.63l2.03 1.58c-.04.31-.06.63-.06.96s.02.65.06.96l-2.03 1.58a.5.5 0 0 0-.12.63l1.91 3.3c.14.24.44.33.68.22l2.4-.96c.5.426 1.04.716 1.62.936l.36 2.54c.02.24.24.42.5.42h3.82c.26 0 .48-.18.5-.42l.36-2.54c.58-.22 1.12-.51 1.62-.936l2.4.96c.24.11.54.02.68-.22l1.91-3.3a.5.5 0 0 0-.12-.63l-2.03-1.58zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg></span> إعدادات المتجر
     </div>
+    <div class="nav-item" data-page="store-plan" id="nav-store-plan" style="display:none">
+       <span class="nav-icon"><i data-lucide="shield-check" style="width:20px;height:20px"></i></span> إدارة خطة المتجر
+    </div>
 
     <div class="nav-section" style="margin-top:20px">روابط سريعة</div>
     <a class="nav-item" href="index.html?store=loulo-beauty" target="_blank" id="nav-open-store">
@@ -1397,6 +1400,9 @@
         <!-- ---- TAB: Payments ---- -->
         <div class="settings-tab-content" id="stab-payments">
           <div class="settings-section">
+            <div id="payments-disabled-warning" style="display:none; padding:12px 16px; background:rgba(245,158,11,0.1); border:1px solid #f59e0b; border-radius:8px; color:#d97706; font-weight:600; font-size:0.9rem; margin-bottom:16px;">
+              ⚠️ هذه الميزة معطلة ضمن خطة المتجر الحالية
+            </div>
             <h3><i data-lucide="credit-card" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>بوابات الدفع الإلكتروني</h3>
             <p style="color:var(--admin-text2); margin-bottom:20px; font-size:0.95rem">قم بتفعيل وإدارة طرق الدفع المتاحة في المتجر.</p>
             <div class="settings-grid">
@@ -1461,6 +1467,210 @@
         </div>
 
       </div><!-- /settings-wrap -->
+    </div>
+
+    <!-- ==================== STORE PLAN (SUPER ADMIN ONLY) ==================== -->
+    <div class="admin-page" id="admin-store-plan">
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <h3><i data-lucide="shield-check" style="width:18px;height:18px;vertical-align:middle;margin-left:6px;color:var(--admin-primary)"></i>إدارة خطة المتجر (Super Admin)</h3>
+          <p style="color:var(--admin-text2); font-size:0.9rem; margin-top:4px;">تفعيل وتعطيل الميزات والموديلات المتاحة لهذا المتجر.</p>
+        </div>
+
+        <div style="background:var(--admin-bg-alt); padding:24px; border-radius:8px; margin-top:20px;">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:20px; margin-bottom:24px;" id="store-plan-modules-grid">
+            
+            <!-- Storefront Toggle -->
+            <div style="padding:16px; border:1px solid var(--admin-border); border-radius:8px; background:var(--admin-bg); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h4 style="margin:0; font-weight:700; color:var(--admin-text);">تفعيل المتجر الإلكتروني</h4>
+                <p style="margin:4px 0 0 0; font-size:0.8rem; color:var(--admin-text2);">واجهة المتجر الخارجية (storefront)</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="plan-mod-storefront">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Orders Toggle -->
+            <div style="padding:16px; border:1px solid var(--admin-border); border-radius:8px; background:var(--admin-bg); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h4 style="margin:0; font-weight:700; color:var(--admin-text);">تفعيل الطلبات</h4>
+                <p style="margin:4px 0 0 0; font-size:0.8rem; color:var(--admin-text2);">الطلبات الإلكترونية والشراء (orders)</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="plan-mod-orders">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Products Toggle -->
+            <div style="padding:16px; border:1px solid var(--admin-border); border-radius:8px; background:var(--admin-bg); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h4 style="margin:0; font-weight:700; color:var(--admin-text);">تفعيل المنتجات</h4>
+                <p style="margin:4px 0 0 0; font-size:0.8rem; color:var(--admin-text2);">إدارة المنتجات في المتجر (products)</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="plan-mod-products">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Categories Toggle -->
+            <div style="padding:16px; border:1px solid var(--admin-border); border-radius:8px; background:var(--admin-bg); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h4 style="margin:0; font-weight:700; color:var(--admin-text);">تفعيل التصنيفات</h4>
+                <p style="margin:4px 0 0 0; font-size:0.8rem; color:var(--admin-text2);">إدارة تصنيفات المنتجات (categories)</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="plan-mod-categories">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Direct Sales Toggle -->
+            <div style="padding:16px; border:1px solid var(--admin-border); border-radius:8px; background:var(--admin-bg); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h4 style="margin:0; font-weight:700; color:var(--admin-text);">تفعيل البيع المباشر</h4>
+                <p style="margin:4px 0 0 0; font-size:0.8rem; color:var(--admin-text2);">نقاط البيع داخل المعرض (directSales)</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="plan-mod-directSales">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Inventory Toggle -->
+            <div style="padding:16px; border:1px solid var(--admin-border); border-radius:8px; background:var(--admin-bg); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h4 style="margin:0; font-weight:700; color:var(--admin-text);">تفعيل المخزون</h4>
+                <p style="margin:4px 0 0 0; font-size:0.8rem; color:var(--admin-text2);">مراقبة وجرد كميات المخزون (inventory)</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="plan-mod-inventory">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Stock Receiving Toggle -->
+            <div style="padding:16px; border:1px solid var(--admin-border); border-radius:8px; background:var(--admin-bg); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h4 style="margin:0; font-weight:700; color:var(--admin-text);">تفعيل التوريد</h4>
+                <p style="margin:4px 0 0 0; font-size:0.8rem; color:var(--admin-text2);">تسجيل وتوريد مخزون جديد (stockReceiving)</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="plan-mod-stockReceiving">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Accounting Toggle -->
+            <div style="padding:16px; border:1px solid var(--admin-border); border-radius:8px; background:var(--admin-bg); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h4 style="margin:0; font-weight:700; color:var(--admin-text);">تفعيل المحاسبة المالية</h4>
+                <p style="margin:4px 0 0 0; font-size:0.8rem; color:var(--admin-text2);">التقارير المالية المبسطة والأرباح (accounting)</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="plan-mod-accounting">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Coupons Toggle -->
+            <div style="padding:16px; border:1px solid var(--admin-border); border-radius:8px; background:var(--admin-bg); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h4 style="margin:0; font-weight:700; color:var(--admin-text);">تفعيل الكوبونات</h4>
+                <p style="margin:4px 0 0 0; font-size:0.8rem; color:var(--admin-text2);">كوبونات الخصم والعروض (coupons)</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="plan-mod-coupons">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Users Toggle -->
+            <div style="padding:16px; border:1px solid var(--admin-border); border-radius:8px; background:var(--admin-bg); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h4 style="margin:0; font-weight:700; color:var(--admin-text);">تفعيل المستخدمين</h4>
+                <p style="margin:4px 0 0 0; font-size:0.8rem; color:var(--admin-text2);">إدارة حسابات الموظفين والصلاحيات (users)</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="plan-mod-users">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Settings Toggle -->
+            <div style="padding:16px; border:1px solid var(--admin-border); border-radius:8px; background:var(--admin-bg); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h4 style="margin:0; font-weight:700; color:var(--admin-text);">تفعيل إعدادات المتجر</h4>
+                <p style="margin:4px 0 0 0; font-size:0.8rem; color:var(--admin-text2);">تعديل معلومات وتصميم المتجر (settings)</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="plan-mod-settings">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Payment Settings Toggle -->
+            <div style="padding:16px; border:1px solid var(--admin-border); border-radius:8px; background:var(--admin-bg); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h4 style="margin:0; font-weight:700; color:var(--admin-text);">تفعيل إعدادات الدفع</h4>
+                <p style="margin:4px 0 0 0; font-size:0.8rem; color:var(--admin-text2);">إدارة بوابات الدفع الإلكتروني (paymentSettings)</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="plan-mod-paymentSettings">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Pricing Toggle -->
+            <div style="padding:16px; border:1px solid var(--admin-border); border-radius:8px; background:var(--admin-bg); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h4 style="margin:0; font-weight:700; color:var(--admin-text);">تفعيل عرض الأسعار</h4>
+                <p style="margin:4px 0 0 0; font-size:0.8rem; color:var(--admin-text2);">عرض أو إخفاء الأسعار في واجهة المتجر (pricing)</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="plan-mod-pricing">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Checkout Toggle -->
+            <div style="padding:16px; border:1px solid var(--admin-border); border-radius:8px; background:var(--admin-bg); display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <h4 style="margin:0; font-weight:700; color:var(--admin-text);">تمكين إتمام الطلب</h4>
+                <p style="margin:4px 0 0 0; font-size:0.8rem; color:var(--admin-text2);">تفعيل عملية الشراء في السلة (checkout.enabled)</p>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="plan-mod-checkout-enabled">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+          </div>
+
+          <div style="display:flex; justify-content:flex-end;">
+            <button type="button" class="topbar-btn btn-primary" id="btn-save-store-plan" onclick="saveStorePlan(this)" style="padding:12px 24px; font-weight:700; font-size:15px; display:inline-flex; align-items:center; gap:8px;">
+              <i data-lucide="save" style="width:18px;height:18px"></i>
+              <span>حفظ خطة المتجر</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODULE DISABLED ==================== -->
+    <div class="admin-page" id="admin-module-disabled">
+      <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:80px 20px; text-align:center;">
+        <div style="width:80px; height:80px; border-radius:50%; background: #fffbeb; color: #f59e0b; display:flex; align-items:center; justify-content:center; margin-bottom:24px; box-shadow:0 4px 12px rgba(245,158,11,0.1)">
+          <i data-lucide="lock" style="width:40px; height:40px"></i>
+        </div>
+        <h2 style="font-size:24px; font-weight:800; color:var(--admin-text); margin-bottom:12px" id="module-disabled-title">هذه الميزة غير مفعّلة في خطة المتجر الحالية</h2>
+        <p style="color:var(--admin-text2); max-width:400px; line-height:1.6; margin-bottom:24px" id="module-disabled-text">يرجى التواصل مع الإدارة أو الـ Super Admin لترقية الخطة وتفعيل هذا القسم.</p>
+        <button class="topbar-btn btn-primary" onclick="navigateTo('dashboard')">العودة للرئيسية</button>
+      </div>
     </div>
 
     <!-- ==================== ACCESS DENIED ==================== -->
