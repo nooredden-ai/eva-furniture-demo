@@ -72,22 +72,32 @@ function isAllCategory(category) {
 
 async function initStore() {
   window.checkoutEnabled = true;
+  const overlay = document.getElementById('storefront-disabled-overlay');
   try {
     const planResponse = await fetch('/api/store-plan');
+    if (!planResponse.ok) {
+      throw new Error(`HTTP error! status: ${planResponse.status}`);
+    }
     const plan = await planResponse.json();
     if (plan && plan.storefront === false) {
-      const overlay = document.getElementById('storefront-disabled-overlay');
       if (overlay) {
         overlay.style.display = 'flex';
         if (window.lucide) lucide.createIcons();
       }
       return;
+    } else {
+      if (overlay) {
+        overlay.style.display = 'none';
+      }
     }
     if (plan && plan.checkoutEnabled === false) {
       window.checkoutEnabled = false;
     }
   } catch (err) {
     console.error('Error fetching store plan:', err);
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
   }
 
   const container = $('products-container');
