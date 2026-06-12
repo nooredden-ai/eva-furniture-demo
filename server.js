@@ -608,7 +608,8 @@ app.post('/api/orders/bulk-pdf', async (req, res) => {
 });
 
 app.put('/api/orders/:id/status', requirePerm('update_orders'), (req, res) => {
-  const result = orderRepository.updateStatus(req.params.id, req.body.status, req.headers['x-user-role'] || 'system');
+  const changedBy = req.headers['x-impersonated-by'] || req.headers['x-user-role'] || 'system';
+  const result = orderRepository.updateStatus(req.params.id, req.body.status, changedBy);
   if (result === null) return res.status(404).json({ success: false, message: 'Order not found' });
   if (result && result.error) return res.status(400).json({ success: false, message: result.error });
 
@@ -662,7 +663,8 @@ app.delete('/api/orders/:id', requirePerm('delete_orders'), (req, res) => {
 });
 
 app.post('/api/orders/:id/note', requirePerm('add_order_notes'), (req, res) => {
-  const updatedOrder = orderRepository.addNote(req.params.id, req.body.note, req.headers['x-user-role'] || 'system');
+  const changedBy = req.headers['x-impersonated-by'] || req.headers['x-user-role'] || 'system';
+  const updatedOrder = orderRepository.addNote(req.params.id, req.body.note, changedBy);
   if (!updatedOrder) return res.status(404).json({ success: false, message: 'Order not found' });
   res.json({ success: true, order: updatedOrder });
 });
@@ -865,7 +867,7 @@ app.put('/api/direct-sales/:id/cancel', (req, res) => {
     sale.saleStatus = 'cancelled';
     sale.cancelReason = cancelReason.trim();
     sale.cancelledAt = new Date().toISOString();
-    sale.cancelledBy = req.user?.role || 'admin';
+    sale.cancelledBy = req.headers['x-impersonated-by'] || req.user?.role || 'admin';
 
     writeJSON('direct-sales.json', directSales);
 

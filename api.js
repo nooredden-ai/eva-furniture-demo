@@ -31,6 +31,13 @@ function getAuthHeaders() {
       headers['x-user-id'] = session.id;
     } catch (e) {}
   }
+  // Impersonation: notify backend of real operator
+  if (typeof Auth !== 'undefined' && Auth.isImpersonating()) {
+    const impInfo = Auth.getImpersonationInfo();
+    if (impInfo) {
+      headers['x-impersonated-by'] = `${impInfo.originalUsername} impersonating ${impInfo.targetUsername}`;
+    }
+  }
   return headers;
 }
 

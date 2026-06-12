@@ -2651,18 +2651,34 @@ function renderUsersTable() {
   API.getUsers().then(users => {
     const tbody = $a('users-table-body');
     if (users.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state" style="margin:20px"><div class="empty-icon"><i data-lucide="users"></i></div><h3>لا يوجد مستخدمين</h3><p>لم يقم أحد بالتسجيل بعد.</p></div></td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="margin:20px"><div class="empty-icon"><i data-lucide="users"></i></div><h3>لا يوجد مستخدمين</h3><p>لم يقم أحد بالتسجيل بعد.</p></div></td></tr>`;
       if (window.lucide) lucide.createIcons();
       return;
     }
-    tbody.innerHTML = users.map(u => `
-      <tr>
-        <td><strong>${u.name}</strong></td>
+    const currentRole = Auth.getSession()?.role;
+    const isSuper = currentRole === 'super_admin';
+    const impTarget = Auth.isImpersonating() ? (Auth.getImpersonationInfo()?.targetUsername || '') : '';
+    tbody.innerHTML = users.map(u => {
+      const isSelfImpersonated = Auth.isImpersonating() && (u.username === impTarget || u.name === impTarget);
+      const showImpersonate = isSuper && u.active !== false && u.role !== 'super_admin' && !Auth.isImpersonating();
+      const showEndImpersonate = isSuper && isSelfImpersonated;
+      return `
+      <tr${isSelfImpersonated ? ' style="background:rgba(220,38,38,0.05);"' : ''}>
+        <td><strong>${u.name}</strong>${isSelfImpersonated ? ' <span style="color:#dc2626;font-size:0.75rem;">(جارٍ المحاكاة)</span>' : ''}</td>
+        <td>${u.username || ''}</td>
         <td>${u.email}</td>
         <td><span style="color:${Auth.getRoleColor(u.role)}">${Auth.getRoleLabel(u.role)}</span></td>
         <td>${u.createdAt}</td>
         <td><span class="status-badge ${u.active ? 'status-delivered' : 'status-cancelled'}">${u.active ? 'نشط' : 'موقوف'}</span></td>
-      </tr>`).join('');
+        <td>
+          <div style="display:flex;gap:6px;align-items:center;">
+            ${showImpersonate ? `<button class="topbar-btn btn-outline" style="padding:3px 10px;font-size:0.8rem;border-color:#b91c1c;color:#b91c1c;" onclick="startImpersonation('${u.id}')" title="الدخول كـ هذا المستخدم"><i data-lucide="log-in" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>الدخول كـ</button>` : ''}
+            ${showEndImpersonate ? `<button class="topbar-btn btn-outline" style="padding:3px 10px;font-size:0.8rem;border-color:#b91c1c;color:#b91c1c;" onclick="stopImpersonation()" title="إنهاء المحاكاة"><i data-lucide="log-out" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>إنهاء المحاكاة</button>` : ''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+    if (window.lucide) lucide.createIcons();
   });
 }
 
@@ -3182,6 +3198,18 @@ async function initAdmin() {
   if (userNameEl) userNameEl.textContent  = session.name;
   if (userRoleEl) userRoleEl.textContent  = Auth.getRoleLabel(session.role);
 
+  // Impersonation banner on load
+  updateImpersonationBanner();
+
+  // If impersonating, override user header with impersonated user
+  if (Auth.isImpersonating()) {
+    const impSession = Auth.getSession();
+    if (impSession) {
+      if (userNameEl) userNameEl.textContent = impSession.name;
+      if (userRoleEl) userRoleEl.textContent = Auth.getRoleLabel(impSession.role);
+    }
+  }
+
   // Permission-based nav visibility
   const navDashboard = $a('nav-dashboard');
   const navProducts = $a('nav-products');
@@ -3527,6 +3555,54 @@ async function deleteUser(id) {
     renderUsersTable();
   } else {
     showAdminToast(res?.message || 'فشل الحذف', 'error');
+  }
+}
+
+// ===== Impersonation =====
+async function startImpersonation(userId) {
+  if (Auth.isImpersonating()) {
+    showAdminToast('أنت بالفعل في وضع المحاكاة. أنهِ المحاكاة أولاً.', 'error');
+    return;
+  }
+  const users = await API.getUsers(true);
+  const target = users.find(u => String(u.id) === String(userId));
+  if (!target) { showAdminToast('المستخدم غير موجود', 'error'); return; }
+  if (target.role === 'super_admin') { showAdminToast('لا يمكن محاكاة مستخدم Super Admin', 'error'); return; }
+
+  if (!Auth.startImpersonation(target)) {
+    showAdminToast('فشل بدء المحاكاة. يجب أن تكون Super Admin.', 'error');
+    return;
+  }
+
+  updateImpersonationBanner();
+  showAdminToast(`دخلت كمستخدم: ${target.name} (${Auth.getRoleLabel(target.role)})`);
+  setTimeout(() => location.reload(), 600);
+}
+
+function stopImpersonation() {
+  if (!Auth.isImpersonating()) return;
+  const impInfo = Auth.getImpersonationInfo();
+  Auth.stopImpersonation();
+  updateImpersonationBanner();
+  if (impInfo) {
+    showAdminToast(`تم إنهاء محاكاة المستخدم ${impInfo.targetUsername}`);
+  }
+  setTimeout(() => location.reload(), 600);
+}
+
+function updateImpersonationBanner() {
+  const banner = $a('impersonation-banner');
+  if (!banner) return;
+  if (Auth.isImpersonating()) {
+    const imp = Auth.getImpersonationInfo();
+    const session = Auth.getSession();
+    if (imp && session) {
+      $a('imp-banner-target').textContent = session.name || imp.targetUsername;
+      $a('imp-banner-role').textContent = Auth.getRoleLabel(session.role);
+    }
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
   }
 }
 

@@ -86,6 +86,21 @@
 <!-- ===== MAIN ===== -->
 <div class="main-content">
 
+  <!-- ===== Impersonation Banner ===== -->
+  <div id="impersonation-banner" style="display:none; background:linear-gradient(135deg,#b91c1c,#dc2626); color:#fff; padding:0; text-align:center; font-size:0.9rem; font-weight:600; position:sticky; top:0; z-index:100; box-shadow:0 2px 12px rgba(185,28,28,0.35);">
+    <div style="display:flex; align-items:center; justify-content:center; gap:12px; padding:8px 16px; flex-wrap:wrap;">
+      <span style="display:inline-flex; align-items:center; gap:6px;">
+        <i data-lucide="alert-triangle" style="width:18px;height:18px;"></i>
+        أنت الآن تتصفح النظام كمستخدم:
+      </span>
+      <strong id="imp-banner-target" style="color:#fde68a; font-size:1rem;"></strong>
+      <span style="opacity:0.8;">/</span>
+      <span id="imp-banner-role" style="background:rgba(255,255,255,0.15); padding:2px 10px; border-radius:9999px; font-size:0.8rem;"></span>
+      <span style="opacity:0.7; font-size:0.8rem;">تم الدخول بواسطة Super Admin</span>
+      <button onclick="stopImpersonation()" style="background:#fff; color:#b91c1c; border:none; padding:4px 16px; border-radius:9999px; font-weight:700; font-size:0.8rem; cursor:pointer; transition:0.2s;">إنهاء المحاكاة</button>
+    </div>
+  </div>
+
   <!-- Top Bar -->
   <div class="topbar">
     <div class="topbar-title" id="topbar-title"><i data-lucide="bar-chart" style="width:20px;height:20px;vertical-align:middle;margin-left:8px"></i>لوحة المعلومات</div>
@@ -407,7 +422,7 @@
         <table class="admin-table">
           <thead>
             <tr>
-              <th>الاسم</th><th>اسم المستخدم</th><th>البريد الإلكتروني</th><th>الدور</th><th>تاريخ الانضمام</th><th>الحالة</th>
+              <th>الاسم</th><th>اسم المستخدم</th><th>البريد الإلكتروني</th><th>الدور</th><th>تاريخ الانضمام</th><th>الحالة</th><th>إجراءات</th>
             </tr>
           </thead>
           <tbody id="users-table-body"></tbody>

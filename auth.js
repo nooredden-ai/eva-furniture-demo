@@ -61,6 +61,9 @@ let PERMISSIONS = {
   ]
 };
 
+const IMPERSONATION_KEY = 'louloImpersonation';
+const ORIGINAL_SESSION_KEY = 'louloOriginalSession';
+
 const Auth = {
 
   // ===== Login =====
@@ -72,7 +75,6 @@ const Auth = {
         body: JSON.stringify({ username, password })
       });
       
-      // Check if response is ok (status 200-299)
       if (!response.ok) {
         try {
           const errorData = await response.json();
@@ -90,10 +92,8 @@ const Auth = {
       
       const user = result.data;
       
-      // Store session (exclude password if present)
       const session = { id: user.id, username: user.username || '', name: user.name, email: user.email, role: user.role, storeId: user.storeId };
       sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
-      // Persist JWT token for Authorization header usage
       if (result && result.token) {
         sessionStorage.setItem('louloToken', result.token);
       }
@@ -107,6 +107,8 @@ const Auth = {
   // ===== Logout =====
   logout() {
     sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(ORIGINAL_SESSION_KEY);
+    sessionStorage.removeItem(IMPERSONATION_KEY);
     window.location.href = 'login.html';
   },
 
@@ -146,12 +148,76 @@ const Auth = {
   isStoreManager()  { return this.getSession()?.role === 'store_manager'; },
   isStaff()       { return ['employee','support_agent'].includes(this.getSession()?.role); },
 
+  // ===== Impersonation =====
+  startImpersonation(targetUser) {
+    const currentSession = this.getSession();
+    if (!currentSession || currentSession.role !== 'super_admin') return false;
+
+    sessionStorage.setItem(ORIGINAL_SESSION_KEY, JSON.stringify(currentSession));
+    sessionStorage.setItem(IMPERSONATION_KEY, JSON.stringify({
+      originalUsername: currentSession.username || currentSession.name,
+      targetUsername: targetUser.username || targetUser.name,
+      targetRole: targetUser.role,
+      active: true
+    }));
+
+    const impersonatedSession = {
+      id: targetUser.id,
+      username: targetUser.username || '',
+      name: targetUser.name,
+      email: targetUser.email || '',
+      role: targetUser.role,
+      storeId: targetUser.storeId || currentSession.storeId
+    };
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(impersonatedSession));
+    return true;
+  },
+
+  stopImpersonation() {
+    const original = sessionStorage.getItem(ORIGINAL_SESSION_KEY);
+    if (!original) return false;
+
+    sessionStorage.setItem(SESSION_KEY, original);
+    sessionStorage.removeItem(ORIGINAL_SESSION_KEY);
+    sessionStorage.removeItem(IMPERSONATION_KEY);
+    return true;
+  },
+
+  isImpersonating() {
+    const data = sessionStorage.getItem(IMPERSONATION_KEY);
+    if (!data) return false;
+    try {
+      const imp = JSON.parse(data);
+      return imp.active === true;
+    } catch { return false; }
+  },
+
+  getImpersonationInfo() {
+    const data = sessionStorage.getItem(IMPERSONATION_KEY);
+    if (!data) return null;
+    try { return JSON.parse(data); } catch { return null; }
+  },
+
+  getOriginalAdmin() {
+    const data = sessionStorage.getItem(ORIGINAL_SESSION_KEY);
+    if (!data) return null;
+    try { return JSON.parse(data); } catch { return null; }
+  },
+
+  getEffectiveChangedBy() {
+    if (this.isImpersonating()) {
+      const imp = this.getImpersonationInfo();
+      if (imp) return `${imp.originalUsername} impersonating ${imp.targetUsername}`;
+    }
+    const s = this.getSession();
+    return s ? (s.username || s.name || s.role) : 'system';
+  },
+
   // ===== Store Isolation =====
-  // Returns which storeId the current user can access
   getAllowedStoreId() {
     const s = this.getSession();
     if (!s) return null;
-    if (s.role === 'super_admin') return null; // access all
+    if (s.role === 'super_admin') return null;
     return s.storeId;
   },
 
