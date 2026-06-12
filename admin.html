@@ -58,6 +58,7 @@
      <div class="nav-item" data-page="accounting" id="nav-accounting">
        <span class="nav-icon"><i data-lucide="credit-card" style="width:20px;height:20px"></i></span> المالية
      </div>
+    <div class="nav-item" data-page="invoices" id="nav-invoices"><span class="nav-icon"><i data-lucide="file-text" style="width:20px;height:20px"></i></span> الفواتير</div>
     <div class="nav-item" data-page="coupons" id="nav-coupons">
        <span class="nav-icon"><i data-lucide="gift" style="width:20px;height:20px"></i></span> الكوبونات
     </div>
@@ -591,6 +592,33 @@
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- ==================== INVOICES ==================== -->
+    <div class="admin-page" id="admin-invoices" style="display:none">
+      <div class="admin-table-wrap">
+        <div class="table-header">
+          <h3><i data-lucide="file-text" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i> الفواتير</h3>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>رقم الفاتورة</th>
+                <th>التاريخ</th>
+                <th>المصدر</th>
+                <th>العميل</th>
+                <th>الإجمالي</th>
+                <th>الحالة</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="invoices-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -1957,6 +1985,17 @@
       <button class="topbar-btn btn-outline" onclick="closeModal('direct-sale-cancel-modal')">إلغاء العملية</button>
       <button class="topbar-btn btn-danger" onclick="submitDirectSaleCancellation()">تأكيد إلغاء البيع</button>
     </div>
+  </div>
+</div>
+
+<!-- ===== Invoice Detail Modal ===== -->
+<div class="modal-overlay" id="invoice-view-modal" style="display:none">
+  <div class="modal" style="max-width:800px;">
+    <div class="modal-header">
+      <h3><i data-lucide="file-text"></i> تفاصيل الفاتورة</h3>
+      <button class="modal-close" onclick="closeModal('invoice-view-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="invoice-view-content" style="padding: 24px;"></div>
   </div>
 </div>
 

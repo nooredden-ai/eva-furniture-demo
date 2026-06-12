@@ -93,6 +93,7 @@ function navigateTo(page) {
     categories: 'view_categories',
     orders: 'view_orders',
     'direct-sale': 'update_orders',
+    invoices: 'view_orders',
     users: 'view_users',
     coupons: 'view_coupons',
     settings: 'view_settings'
@@ -120,6 +121,7 @@ function refreshPage(page) {
     categories: 'التصنيفات',
     orders:     'إدارة الطلبات',
     'direct-sale': 'بيع مباشر',
+    invoices:    'الفواتير',
     users:      'إدارة المستخدمين',
     accounting: 'ملخص المبيعات والمخزون',
     coupons:    'إدارة الكوبونات',
@@ -130,7 +132,7 @@ function refreshPage(page) {
   };
   const titleIcons = {
     dashboard: 'bar-chart', products: 'package', categories: 'tag',
-    orders: 'receipt', 'direct-sale': 'shopping-cart', users: 'users', accounting: 'credit-card', coupons: 'gift', settings: 'settings',
+    orders: 'receipt', 'direct-sale': 'shopping-cart', invoices: 'file-text', users: 'users', accounting: 'credit-card', coupons: 'gift', settings: 'settings',
     'store-plan': 'shield-check', 'module-disabled': 'lock',
     'access-denied': 'shield-alert'
   };
@@ -149,6 +151,7 @@ function refreshPage(page) {
     if (page === 'stock-receiving') { appState.products = null; }
     if (page === 'users')      { appState.users = null; }
     if (page === 'settings')   { appState.settings = null; appState.countries = null; }
+    if (page === 'invoices')   { appState.invoices = null; }
   }
   if (page === 'dashboard')       renderDashboard();
   else if (page === 'products')   renderProductsTable();
@@ -161,6 +164,7 @@ function refreshPage(page) {
   else if (page === 'coupons')    renderCouponsTable();
   else if (page === 'settings')   initSettingsPage();
   else if (page === 'store-plan') initStorePlanPage();
+  else if (page === 'invoices')   loadInvoices();
 }
 
 function toggleAdvancedTools() {
@@ -4771,4 +4775,162 @@ function applyStorePlanVisibility() {
   document.querySelectorAll('#stab-payments input, #stab-payments select').forEach(input => {
     input.disabled = !isPaymentSettingsEnabled;
   });
+}
+
+// ===== Invoicing System Integration =====
+async function loadInvoices() {
+  try {
+    const tbody = $a('invoices-table-body');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;">جاري تحميل الفواتير...</td></tr>`;
+
+    const invoices = await fetchWithStability('/api/invoices');
+    if (!Array.isArray(invoices)) {
+      throw new Error('بيانات الفواتير غير صالحة');
+    }
+
+    // Sort by createdAt descending
+    invoices.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    renderInvoicesTable(invoices);
+  } catch (err) {
+    console.error('Error loading invoices:', err);
+    showAdminToast(err.message || 'فشل تحميل قائمة الفواتير', 'error');
+    const tbody = $a('invoices-table-body');
+    if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--admin-danger);">فشل تحميل الفواتير</td></tr>`;
+  }
+}
+
+function renderInvoicesTable(invoices) {
+  const tbody = $a('invoices-table-body');
+  if (!tbody) return;
+
+  if (invoices.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;">لا يوجد فواتير حالياً.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = invoices.map(inv => {
+    const dateStr = inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('ar-EG') : '—';
+    const sourceText = inv.sourceType === 'order' ? 'طلب إلكتروني' : 'بيع مباشر';
+    const customerName = inv.customer?.name || 'عميل غير معروف';
+    const totalStr = `${Number(inv.total).toFixed(2)} ${inv.snapshot?.currency || ''}`;
+    
+    let badgeClass = 'badge-success';
+    let badgeText = 'نشطة';
+    if (inv.status === 'cancelled') {
+      badgeClass = 'badge-danger';
+      badgeText = 'ملغاة';
+    }
+
+    return `
+      <tr>
+        <td><strong>${inv.id}</strong></td>
+        <td>${dateStr}</td>
+        <td><span class="invoice-source-pill ${inv.sourceType}">${sourceText}</span></td>
+        <td>${customerName}</td>
+        <td><strong>${totalStr}</strong></td>
+        <td><span class="status-badge ${badgeClass}">${badgeText}</span></td>
+        <td>
+          <button class="topbar-btn btn-outline" style="padding: 4px 8px; font-size: 0.85rem;" onclick="viewInvoice('${inv.id}')">
+            <i data-lucide="eye" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>عرض التفاصيل
+          </button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+async function viewInvoice(id) {
+  try {
+    const inv = await fetchWithStability(`/api/invoices/${id}`);
+    if (!inv || !inv.id) {
+      throw new Error('الفاتورة غير موجودة');
+    }
+
+    const { snapshot, customer, items, total, status, createdAt, sourceType, sourceId, cancelledAt, cancelReason } = inv;
+    const currency = snapshot?.currency || '';
+
+    const contentEl = $a('invoice-view-content');
+    if (!contentEl) return;
+
+    contentEl.innerHTML = `
+      <div class="invoice-container-premium" style="direction: rtl; font-family: inherit;">
+        <div class="invoice-header-premium" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 24px;">
+          <div class="invoice-store-info">
+            ${snapshot?.logo ? `<img src="${snapshot.logo}" alt="Logo" class="invoice-logo" style="max-height:60px;margin-bottom:12px;display:block;" />` : ''}
+            <h2 class="invoice-store-name" style="margin:0;font-size:1.4rem;color:var(--admin-text);">${snapshot?.storeName || 'مفروشات EVA'}</h2>
+            <p class="invoice-store-meta" style="margin:4px 0 0;font-size:0.85rem;color:var(--admin-subtext);"><i data-lucide="phone" style="width:12px;height:12px;vertical-align:middle;margin-left:4px"></i>${snapshot?.phone || ''}</p>
+            <p class="invoice-store-meta" style="margin:4px 0 0;font-size:0.85rem;color:var(--admin-subtext);"><i data-lucide="mail" style="width:12px;height:12px;vertical-align:middle;margin-left:4px"></i>${snapshot?.email || ''}</p>
+            <p class="invoice-store-meta" style="margin:4px 0 0;font-size:0.85rem;color:var(--admin-subtext);"><i data-lucide="map-pin" style="width:12px;height:12px;vertical-align:middle;margin-left:4px"></i>${snapshot?.address || ''}</p>
+          </div>
+          <div class="invoice-meta-info" style="text-align:left;">
+            <div class="invoice-badge-status ${status}" style="display:inline-block;padding:4px 10px;border-radius:20px;font-size:0.8rem;font-weight:600;margin-bottom:8px;background:${status === 'cancelled' ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'};color:${status === 'cancelled' ? 'var(--admin-danger)' : 'var(--admin-success)'};">${status === 'cancelled' ? 'ملغاة' : 'نشطة'}</div>
+            <h1 class="invoice-id-title" style="margin:0;font-size:1.6rem;color:var(--admin-text);">${inv.id}</h1>
+            <p class="invoice-meta-date" style="margin:8px 0 0;font-size:0.85rem;color:var(--admin-subtext);"><strong>تاريخ الفاتورة:</strong> ${new Date(createdAt).toLocaleString('ar-EG')}</p>
+            <p class="invoice-meta-source" style="margin:4px 0 0;font-size:0.85rem;color:var(--admin-subtext);"><strong>المصدر:</strong> ${sourceType === 'order' ? 'طلب إلكتروني' : 'بيع مباشر'} (#${sourceId})</p>
+          </div>
+        </div>
+
+        <div class="invoice-divider" style="height:1px;background:var(--admin-border);margin:20px 0;"></div>
+
+        <div class="invoice-client-section" style="margin-bottom:20px;">
+          <h3 class="invoice-section-title" style="margin:0 0 10px 0;font-size:1.05rem;color:var(--admin-text);font-weight:600;">بيانات العميل</h3>
+          <div class="invoice-client-card" style="padding:15px;background:var(--admin-bg);border:1px solid var(--admin-border);border-radius:8px;">
+            <p style="margin:0;font-size:0.9rem;color:var(--admin-text);"><strong>الاسم:</strong> ${customer?.name || 'عميل غير معروف'}</p>
+            <p style="margin:6px 0 0;font-size:0.9rem;color:var(--admin-text);"><strong>الهاتف:</strong> ${customer?.phone || '—'}</p>
+            <p style="margin:6px 0 0;font-size:0.9rem;color:var(--admin-text);"><strong>العنوان:</strong> ${customer?.address || '—'}</p>
+          </div>
+        </div>
+
+        <div class="invoice-items-section" style="margin-bottom:20px;">
+          <h3 class="invoice-section-title" style="margin:0 0 10px 0;font-size:1.05rem;color:var(--admin-text);font-weight:600;">تفاصيل المنتجات</h3>
+          <table class="invoice-table-premium" style="width:100%;border-collapse:collapse;text-align:right;">
+            <thead>
+              <tr style="border-bottom:2px solid var(--admin-border);color:var(--admin-subtext);font-size:0.85rem;">
+                <th style="padding:10px 8px;">المنتج</th>
+                <th style="padding:10px 8px;text-align:center;">السعر</th>
+                <th style="padding:10px 8px;text-align:center;">الكمية</th>
+                <th style="padding:10px 8px;text-align:left;">المجموع</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(items || []).map(item => `
+                <tr style="border-bottom:1px solid var(--admin-border);font-size:0.9rem;color:var(--admin-text);">
+                  <td style="padding:12px 8px;"><strong>${item.name}</strong></td>
+                  <td style="padding:12px 8px;text-align:center;">${Number(item.price).toFixed(2)} ${currency}</td>
+                  <td style="padding:12px 8px;text-align:center;">${item.qty}</td>
+                  <td style="padding:12px 8px;text-align:left;font-weight:600;">${Number(item.total || (item.price * item.qty)).toFixed(2)} ${currency}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="invoice-totals-section" style="display:flex;justify-content:flex-end;margin-bottom:20px;padding:15px;background:var(--admin-bg);border:1px solid var(--admin-border);border-radius:8px;">
+          <div class="invoice-total-row" style="font-size:1.1rem;color:var(--admin-text);">
+            <span>المجموع الإجمالي:</span>
+            <strong style="color:var(--admin-primary);font-size:1.3rem;margin-right:8px;">${Number(total).toFixed(2)} ${currency}</strong>
+          </div>
+        </div>
+
+        ${status === 'cancelled' ? `
+          <div class="invoice-cancellation-card" style="padding:15px;background:rgba(239,68,68,0.08);border:1px solid var(--admin-danger);border-radius:8px;margin-top:15px;color:var(--admin-danger);">
+            <div class="cancellation-header" style="display:flex;align-items:center;gap:8px;font-weight:600;margin-bottom:8px;">
+              <i data-lucide="alert-triangle" style="width:18px;height:18px;"></i>
+              <span>تم إلغاء هذه الفاتورة تلقائياً</span>
+            </div>
+            <p style="margin:0;font-size:0.85rem;color:var(--admin-text);"><strong>تاريخ الإلغاء:</strong> ${cancelledAt ? new Date(cancelledAt).toLocaleString('ar-EG') : '—'}</p>
+            <p style="margin:4px 0 0;font-size:0.85rem;color:var(--admin-text);"><strong>السبب:</strong> ${cancelReason || 'إلغاء الطلب/البيع المرتبط'}</p>
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    $a('invoice-view-modal').classList.add('open');
+    if (window.lucide) lucide.createIcons();
+  } catch (err) {
+    console.error('Error fetching invoice details:', err);
+    showAdminToast(err.message || 'فشل تحميل تفاصيل الفاتورة', 'error');
+  }
 }

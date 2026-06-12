@@ -13,6 +13,8 @@ const couponRepository = require('./backend/src/repositories/couponRepository');
 const settingsRepository = require('./backend/src/repositories/settingsRepository');
 const permissionRepository = require('./backend/src/repositories/permissionRepository');
 const jsonStore = require('./backend/src/core/jsonStore');
+const invoiceRepository = require('./backend/src/repositories/invoiceRepository');
+const invoiceService = require('./backend/src/services/invoiceService');
 const { PrismaClient } = require('@prisma/client');
 const jwt = require('jsonwebtoken');
 
@@ -454,6 +456,30 @@ app.delete('/api/categories/:id', requirePerm('manage_categories'), (req, res) =
 });
 
 /* =========================
+   API: INVOICES
+========================= */
+app.get('/api/invoices', requirePerm('view_dashboard'), (req, res) => {
+  try {
+    const invoices = invoiceRepository.findAll();
+    res.json(invoices);
+  } catch (err) {
+    console.error('[INVOICES GET ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحميل الفواتير' });
+  }
+});
+
+app.get('/api/invoices/:id', requirePerm('view_orders'), (req, res) => {
+  try {
+    const invoice = invoiceRepository.findById(req.params.id);
+    if (!invoice) return res.status(404).json({ success: false, message: 'الفاتورة غير موجودة' });
+    res.json(invoice);
+  } catch (err) {
+    console.error('[INVOICE GET SINGLE ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحميل تفاصيل الفاتورة' });
+  }
+});
+
+/* =========================
    API: ORDERS
 ========================= */
 app.get('/api/orders', (req, res) => {
@@ -585,6 +611,41 @@ app.put('/api/orders/:id/status', requirePerm('update_orders'), (req, res) => {
   const result = orderRepository.updateStatus(req.params.id, req.body.status, req.headers['x-user-role'] || 'system');
   if (result === null) return res.status(404).json({ success: false, message: 'Order not found' });
   if (result && result.error) return res.status(400).json({ success: false, message: result.error });
+
+  // Invoice Hook: generate or cancel
+  if (req.body.status === 'confirmed') {
+    try {
+      invoiceService.createInvoice({
+        sourceType: 'order',
+        sourceId: result.id,
+        total: result.total,
+        items: (result.items || []).map(item => ({
+          productId: item.productId,
+          name: item.name || item.productName || 'Unknown Product',
+          qty: Number(item.qty) || 0,
+          price: Number(item.price) || 0,
+          total: (Number(item.price) || 0) * (Number(item.qty) || 0)
+        })),
+        customer: {
+          name: result.customer || '',
+          phone: result.phone || '',
+          address: result.address || ''
+        }
+      });
+    } catch (err) {
+      console.error('[INVOICE GENERATION ERROR FOR ORDER]', err);
+    }
+  } else if (req.body.status === 'cancelled') {
+    try {
+      const inv = invoiceRepository.findBySource('order', result.id);
+      if (inv && inv.status !== 'cancelled') {
+        invoiceService.cancelInvoice(inv.id, 'Order cancelled');
+      }
+    } catch (err) {
+      console.error('[INVOICE CANCELLATION ERROR FOR ORDER]', err);
+    }
+  }
+
   res.json({ success: true, order: result });
 });
 
@@ -681,6 +742,29 @@ app.post('/api/direct-sale', (req, res) => {
 
     directSales.push(saleRecord);
     writeJSON('direct-sales.json', directSales);
+
+    // Invoice Hook: generate direct sale invoice
+    try {
+      invoiceService.createInvoice({
+        sourceType: 'direct_sale',
+        sourceId: saleRecord.id,
+        total: saleRecord.total,
+        items: [{
+          productId: saleRecord.productId,
+          name: saleRecord.productName,
+          qty: saleRecord.quantity,
+          price: saleRecord.salePrice,
+          total: saleRecord.total
+        }],
+        customer: {
+          name: saleRecord.customerName,
+          phone: saleRecord.customerPhone,
+          address: saleRecord.customerAddress
+        }
+      });
+    } catch (err) {
+      console.error('[INVOICE GENERATION ERROR FOR DIRECT SALE]', err);
+    }
 
     console.log(`[DIRECT-SALE] ${product.name}: ${qty} unit(s) sold at ${price}. Stock: ${currentStock} → ${product.stock}`);
 
@@ -784,6 +868,16 @@ app.put('/api/direct-sales/:id/cancel', (req, res) => {
     sale.cancelledBy = req.user?.role || 'admin';
 
     writeJSON('direct-sales.json', directSales);
+
+    // Invoice Hook: cancel direct sale invoice
+    try {
+      const inv = invoiceRepository.findBySource('direct_sale', sale.id);
+      if (inv && inv.status !== 'cancelled') {
+        invoiceService.cancelInvoice(inv.id, cancelReason || 'Direct sale cancelled');
+      }
+    } catch (err) {
+      console.error('[INVOICE CANCELLATION ERROR FOR DIRECT SALE]', err);
+    }
 
     res.json({
       success: true,

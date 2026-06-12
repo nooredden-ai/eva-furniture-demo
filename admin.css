@@ -2065,3 +2065,151 @@ input, select, textarea {
   margin-right: 6px;
   vertical-align: middle;
 }
+
+/* ===== Invoicing Styles ===== */
+.invoice-source-pill {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.invoice-source-pill.order {
+  background: rgba(99, 102, 241, 0.12) !important;
+  color: #4f46e5 !important;
+}
+.invoice-source-pill.direct_sale {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #059669 !important;
+}
+
+.invoice-container-premium {
+  color: var(--admin-text);
+  line-height: 1.5;
+}
+
+.invoice-header-premium {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.invoice-store-info .invoice-logo {
+  max-height: 50px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+}
+
+.invoice-store-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  color: var(--admin-text);
+}
+
+.invoice-store-meta {
+  font-size: 0.85rem;
+  color: var(--admin-subtext);
+  margin: 3px 0 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.invoice-meta-info {
+  text-align: left;
+}
+
+.invoice-id-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0;
+  color: var(--admin-text);
+  letter-spacing: -0.5px;
+}
+
+.invoice-client-card {
+  padding: 16px;
+  background: var(--admin-surface2);
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  margin-top: 8px;
+}
+
+.invoice-client-card p {
+  margin: 0 0 6px 0;
+  font-size: 0.9rem;
+}
+.invoice-client-card p:last-child {
+  margin-bottom: 0;
+}
+
+.invoice-table-premium {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.invoice-table-premium th {
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  color: var(--admin-text2);
+  border-bottom: 2px solid var(--admin-border);
+  text-align: right;
+}
+
+.invoice-table-premium td {
+  padding: 12px 12px;
+  font-size: 0.9rem;
+  border-bottom: 1px solid var(--admin-border);
+  color: var(--admin-text);
+}
+
+.invoice-table-premium tr:last-child td {
+  border-bottom: none;
+}
+
+.invoice-totals-section {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 15px;
+  padding: 16px;
+  background: var(--admin-surface2);
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+}
+
+.invoice-total-row {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.invoice-total-row strong {
+  font-size: 1.25rem;
+  color: var(--admin-primary);
+  margin-right: 8px;
+}
+
+.invoice-cancellation-card {
+  padding: 16px;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 10px;
+  margin-top: 20px;
+  color: var(--admin-danger);
+}
+
+.invoice-cancellation-card .cancellation-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.invoice-cancellation-card p {
+  margin: 4px 0 0 0;
+  font-size: 0.85rem;
+  color: var(--admin-text);
+}
