@@ -2014,8 +2014,14 @@
       <button class="modal-close" onclick="closeModal('invoice-view-modal')">✕</button>
     </div>
     <div class="modal-body" id="invoice-view-content" style="padding: 24px;"></div>
+    <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-start;padding:12px 24px;border-top:1px solid var(--admin-border);">
+      <button class="topbar-btn btn-primary" onclick="printInvoice()"><i data-lucide="printer" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>طباعة الفاتورة</button>
+    </div>
   </div>
 </div>
+
+<!-- ===== Hidden Print Container ===== -->
+<div id="invoice-print-container" style="display:none;"></div>
 
 <!-- ===== Admin Toast ===== -->
 <div class="admin-toast" id="admin-toast"></div>

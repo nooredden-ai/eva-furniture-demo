@@ -4932,6 +4932,8 @@ function renderInvoicesTable(invoices) {
   if (window.lucide) lucide.createIcons();
 }
 
+let _currentPrintInvoice = null;
+
 async function viewInvoice(id) {
   try {
     const response = await fetchWithStability(`/api/invoices/${id}`);
@@ -4939,6 +4941,8 @@ async function viewInvoice(id) {
     if (!inv || !inv.id) {
       throw new Error('الفاتورة غير موجودة');
     }
+
+    _currentPrintInvoice = inv;
 
     const { snapshot, customer, items, total, status, createdAt, sourceType, sourceId, cancelledAt, cancelReason } = inv;
     const currency = snapshot?.currency || '';
@@ -5025,4 +5029,109 @@ async function viewInvoice(id) {
     console.error('Error fetching invoice details:', err);
     showAdminToast(err.message || 'فشل تحميل تفاصيل الفاتورة', 'error');
   }
+}
+
+function printInvoice() {
+  const inv = _currentPrintInvoice;
+  if (!inv || !inv.id) {
+    showAdminToast('الرجاء فتح الفاتورة أولاً', 'error');
+    return;
+  }
+
+  const { snapshot, customer, items, total, status, createdAt, sourceType, sourceId, cancelledAt, cancelReason } = inv;
+  const currency = snapshot?.currency || '';
+  const sourceLabel = sourceType === 'order' ? 'طلب إلكتروني' : 'بيع مباشر';
+  const statusLabel = status === 'cancelled' ? 'ملغاة' : 'نشطة';
+  const subtotal = (items || []).reduce((sum, item) => sum + Number(item.total || (item.price * item.qty)), 0);
+
+  const printEl = $a('invoice-print-container');
+  if (!printEl) return;
+
+  printEl.innerHTML = `
+    <div class="invoice-print-a4">
+      <div class="invoice-print-watermark ${status}">${status === 'cancelled' ? 'فاتورة ملغاة' : ''}</div>
+      <div class="invoice-print-header">
+        <div class="invoice-print-store">
+          ${snapshot?.logo ? `<img src="${snapshot.logo}" alt="Logo" class="invoice-print-logo" />` : ''}
+          <div class="invoice-print-store-name">${snapshot?.storeName || ''}</div>
+          <div class="invoice-print-store-info">${snapshot?.phone || ''}</div>
+          <div class="invoice-print-store-info">${snapshot?.email || ''}</div>
+          <div class="invoice-print-store-info">${snapshot?.address || ''}</div>
+        </div>
+        <div class="invoice-print-meta">
+          <div class="invoice-print-id">${inv.id}</div>
+          <div class="invoice-print-date">${new Date(createdAt).toLocaleString('ar-EG')}</div>
+          <div class="invoice-print-type">${sourceLabel}</div>
+          <div class="invoice-print-status ${status}">${statusLabel}</div>
+        </div>
+      </div>
+
+      <div class="invoice-print-divider"></div>
+
+      <div class="invoice-print-customer">
+        <div class="invoice-print-section-title">بيانات العميل</div>
+        <table class="invoice-print-customer-table">
+          <tr><td class="label">الاسم</td><td>${customer?.name || '—'}</td></tr>
+          <tr><td class="label">الهاتف</td><td>${customer?.phone || '—'}</td></tr>
+          <tr><td class="label">العنوان</td><td>${customer?.address || '—'}</td></tr>
+        </table>
+      </div>
+
+      <div class="invoice-print-divider"></div>
+
+      <div class="invoice-print-items">
+        <div class="invoice-print-section-title">التفاصيل</div>
+        <table class="invoice-print-items-table">
+          <thead>
+            <tr>
+              <th class="col-product">المنتج</th>
+              <th class="col-price">سعر الوحدة</th>
+              <th class="col-qty">الكمية</th>
+              <th class="col-total">المجموع</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(items || []).map(item => `
+              <tr>
+                <td class="col-product">${item.name}</td>
+                <td class="col-price">${Number(item.price).toFixed(2)} ${currency}</td>
+                <td class="col-qty">${item.qty}</td>
+                <td class="col-total">${Number(item.total || (item.price * item.qty)).toFixed(2)} ${currency}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="invoice-print-totals">
+        <table class="invoice-print-totals-table">
+          <tr><td class="label">المجموع الفرعي</td><td class="value">${subtotal.toFixed(2)} ${currency}</td></tr>
+          <tr><td class="label">الخصم</td><td class="value">0.00 ${currency}</td></tr>
+          <tr><td class="label">الشحن</td><td class="value">0.00 ${currency}</td></tr>
+          <tr class="grand-total"><td class="label">الإجمالي</td><td class="value">${Number(total).toFixed(2)} ${currency}</td></tr>
+        </table>
+      </div>
+
+      ${status === 'cancelled' ? `
+        <div class="invoice-print-cancel-info">
+          <div class="invoice-print-section-title">معلومات الإلغاء</div>
+          <table class="invoice-print-customer-table">
+            <tr><td class="label">تاريخ الإلغاء</td><td>${cancelledAt ? new Date(cancelledAt).toLocaleString('ar-EG') : '—'}</td></tr>
+            <tr><td class="label">السبب</td><td>${cancelReason || '—'}</td></tr>
+          </table>
+        </div>
+      ` : ''}
+
+      <div class="invoice-print-footer">
+        <div class="invoice-print-footer-text">شكراً لتعاملكم معنا</div>
+        <div class="invoice-print-footer-sub">Generated by EVA System</div>
+      </div>
+    </div>
+  `;
+
+  printEl.style.display = 'block';
+  setTimeout(() => {
+    window.print();
+    printEl.style.display = 'none';
+  }, 100);
 }
