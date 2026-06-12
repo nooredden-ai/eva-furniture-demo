@@ -1010,6 +1010,8 @@ input, select, textarea {
 .status-shipped { background: rgba(109, 40, 217, 0.08); color: var(--admin-primary); }
 .status-delivered { background: rgba(5, 150, 105, 0.08); color: var(--admin-success); }
 .status-cancelled { background: rgba(220, 38, 38, 0.08); color: var(--admin-danger); }
+.badge-success { background: rgba(5, 150, 105, 0.08); color: var(--admin-success); }
+.badge-danger { background: rgba(220, 38, 38, 0.08); color: var(--admin-danger); }
 .status-new { background: rgba(109, 40, 217, 0.08); color: var(--admin-primary); }
 
 /* Products Table Specifics */

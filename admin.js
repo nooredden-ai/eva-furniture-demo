@@ -4804,13 +4804,16 @@ async function loadInvoices() {
 
 function renderInvoicesTable(invoices) {
   const tbody = $a('invoices-table-body');
+  const emptyState = $a('invoices-empty-state');
   if (!tbody) return;
 
   if (invoices.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;">لا يوجد فواتير حالياً.</td></tr>`;
+    tbody.innerHTML = '';
+    if (emptyState) emptyState.style.display = 'block';
     return;
   }
 
+  if (emptyState) emptyState.style.display = 'none';
   tbody.innerHTML = invoices.map(inv => {
     const dateStr = inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('ar-EG') : '—';
     const sourceText = inv.sourceType === 'order' ? 'طلب إلكتروني' : 'بيع مباشر';
