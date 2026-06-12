@@ -209,6 +209,19 @@ const API = {
     }
     return appState.orders || [];
   },
+  downloadInvoicePdf: async (id) => {
+    try {
+      const response = await fetch(`/api/invoices/${encodeURIComponent(id)}/pdf`);
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        return { success: false, message: payload?.message || `فشل تحميل PDF للفاتورة ${id}` };
+      }
+      const blob = await response.blob();
+      return { success: true, blob };
+    } catch (err) {
+      return { success: false, message: 'فشل الاتصال بالخادم لتنزيل PDF.' };
+    }
+  },
   downloadOrderPdf: async (id, type = 'invoice') => {
     try {
       const response = await fetch(`/api/orders/${encodeURIComponent(id)}/pdf?type=${encodeURIComponent(type)}`);
