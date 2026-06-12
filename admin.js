@@ -257,14 +257,9 @@ const accountingTerms = {
   'الدائنون': 'مستحقات الموردين'
 };
 
-function renderAccountingPage() {
-  const home = $a('accounting-home');
-  const panel = $a('accounting-table-panel');
-  if (home) home.style.display = 'block';
-  if (panel) panel.style.display = 'none';
-
-  const currentDate = $a('accounting-current-date');
-  const lastUpdate = $a('accounting-last-update');
+async function renderAccountingPage() {
+  const currentDate = $a('fin-current-date');
+  const lastUpdate = $a('fin-last-update');
   const now = new Date();
   if (currentDate) {
     currentDate.textContent = now.toLocaleDateString('ar-EG', {
@@ -272,15 +267,163 @@ function renderAccountingPage() {
     });
   }
   if (lastUpdate) {
-    lastUpdate.textContent = 'قبل لحظات';
+    lastUpdate.textContent = 'تحميل...';
   }
 
-  if (window.lucide) lucide.createIcons();
-  
-  // تحديث KPIs والأقسام السريعة وتنبيهات الأعمال
-  updateAccountingKPIs();
-  renderQuickBusinessInsights();
-  renderBusinessAlerts();
+  try {
+    const data = await fetchWithStability('/api/accounting/financial-summary');
+    if (!data || data.success === false) {
+      showAdminToast(data?.message || 'فشل تحميل الخلاصة المالية', 'error');
+      if (lastUpdate) lastUpdate.textContent = 'خطأ';
+      return;
+    }
+
+    if (lastUpdate) {
+      lastUpdate.textContent = 'قبل لحظات';
+    }
+
+    // Populate KPIs
+    if ($a('fin-kpi-inventory-value')) {
+      $a('fin-kpi-inventory-value').textContent = (data.inventoryValue || 0).toLocaleString('ar-SA') + ' ₪';
+    }
+    if ($a('fin-kpi-current-capital')) {
+      $a('fin-kpi-current-capital').textContent = (data.currentCapital || 0).toLocaleString('ar-SA') + ' ₪';
+    }
+    if ($a('fin-kpi-today-sales')) {
+      $a('fin-kpi-today-sales').textContent = (data.todaySales || 0).toLocaleString('ar-SA') + ' ₪';
+    }
+    if ($a('fin-kpi-monthly-sales')) {
+      $a('fin-kpi-monthly-sales').textContent = (data.monthlySales || 0).toLocaleString('ar-SA') + ' ₪';
+    }
+    if ($a('fin-kpi-operations-count')) {
+      $a('fin-kpi-operations-count').textContent = (data.operationsCount || 0).toLocaleString('ar-SA');
+    }
+
+    const profitValEl = $a('fin-kpi-monthly-profit');
+    const profitLabelEl = $a('fin-label-monthly-profit');
+    if (profitValEl) {
+      profitValEl.textContent = (data.monthlyProfit || 0).toLocaleString('ar-SA') + ' ₪';
+    }
+    if (profitLabelEl) {
+      if (data.isMonthlyProfitEstimated) {
+        profitLabelEl.innerHTML = 'ربح الشهر <span class="badge-estimate">تقديري</span>';
+      } else {
+        profitLabelEl.innerHTML = 'ربح الشهر <span class="badge-status" data-status="completed">نهائي</span>';
+      }
+    }
+
+    // Populate Financial Summary Bar
+    if ($a('fin-summary-total-sales')) {
+      $a('fin-summary-total-sales').textContent = (data.allTime?.totalSales || 0).toLocaleString('ar-SA') + ' ₪';
+    }
+    if ($a('fin-summary-total-cogs')) {
+      $a('fin-summary-total-cogs').textContent = (data.allTime?.totalCOGS || 0).toLocaleString('ar-SA') + ' ₪';
+    }
+    if ($a('fin-summary-total-pieces')) {
+      $a('fin-summary-total-pieces').textContent = (data.allTime?.totalPiecesSold || 0).toLocaleString('ar-SA');
+    }
+
+    const totalProfitValEl = $a('fin-summary-total-profit');
+    const totalProfitLabelEl = $a('fin-label-total-profit');
+    if (totalProfitValEl) {
+      totalProfitValEl.textContent = (data.allTime?.totalProfit || 0).toLocaleString('ar-SA') + ' ₪';
+    }
+    if (totalProfitLabelEl) {
+      if (data.allTime?.isTotalProfitEstimated) {
+        totalProfitLabelEl.innerHTML = 'إجمالي الأرباح <span class="badge-estimate">تقديري</span>';
+      } else {
+        totalProfitLabelEl.innerHTML = 'إجمالي الأرباح <span class="badge-status" data-status="completed">نهائي</span>';
+      }
+    }
+
+    // Populate Best Sellers
+    const bestSellersBody = $a('fin-best-sellers-body');
+    if (bestSellersBody) {
+      if (data.bestSellers && data.bestSellers.length > 0) {
+        bestSellersBody.innerHTML = data.bestSellers.map(p => {
+          const profitLabel = p.isProfitEstimated ?
+            `${p.totalProfit.toLocaleString('ar-SA')} ₪ <span class="badge-estimate">تقديري</span>` :
+            `${p.totalProfit.toLocaleString('ar-SA')} ₪`;
+          return `
+            <tr>
+              <td><strong>${escapeHtml(p.name)}</strong></td>
+              <td>${p.quantitySold.toLocaleString('ar-SA')}</td>
+              <td>${p.totalSales.toLocaleString('ar-SA')} ₪</td>
+              <td>${profitLabel}</td>
+            </tr>
+          `;
+        }).join('');
+      } else {
+        bestSellersBody.innerHTML = `<tr><td colspan="4" style="text-align:center;">لا توجد مبيعات مسجلة بعد.</td></tr>`;
+      }
+    }
+
+    // Populate Low Stock
+    const lowStockList = $a('fin-low-stock-list');
+    if (lowStockList) {
+      if (data.lowStock && data.lowStock.length > 0) {
+        lowStockList.innerHTML = data.lowStock.map(p => `
+          <div class="low-stock-item">
+            <span>${escapeHtml(p.name)}</span>
+            <strong>المخزون: ${p.stock}</strong>
+          </div>
+        `).join('');
+      } else {
+        lowStockList.innerHTML = `<div style="text-align:center;color:var(--admin-text2);padding:10px;">كل المنتجات بمخزون جيد.</div>`;
+      }
+    }
+
+    // Populate Recent Sales
+    const recentSalesBody = $a('fin-recent-sales-body');
+    if (recentSalesBody) {
+      if (data.recentSales && data.recentSales.length > 0) {
+        recentSalesBody.innerHTML = data.recentSales.map(s => {
+          const typeBadge = s.type === 'online' ?
+            `<span class="badge-online">متجر إلكتروني</span>` :
+            `<span class="badge-direct">بيع مباشر</span>`;
+          
+          let statusText = s.status;
+          if (s.status === 'completed') statusText = 'مكتمل';
+          else if (s.status === 'cancelled') statusText = 'ملغى';
+          else if (s.status === 'pending') statusText = 'قيد الانتظار';
+          else if (s.status === 'confirmed') statusText = 'مؤكد';
+          else if (s.status === 'shipped') statusText = 'مشحون';
+          else if (s.status === 'delivered') statusText = 'تم التسليم';
+
+          const statusBadge = `<span class="badge-status" data-status="${s.status}">${statusText}</span>`;
+          
+          let formattedDate = '';
+          try {
+            formattedDate = new Date(s.createdAt).toLocaleDateString('ar-EG', {
+              day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+            });
+          } catch(e) {
+            formattedDate = s.createdAt || '';
+          }
+
+          return `
+            <tr>
+              <td>#${s.orderNumber || s.id}</td>
+              <td>${typeBadge}</td>
+              <td>${escapeHtml(s.customerName)}</td>
+              <td><strong>${s.total.toLocaleString('ar-SA')} ₪</strong></td>
+              <td>${formattedDate}</td>
+              <td>${statusBadge}</td>
+            </tr>
+          `;
+        }).join('');
+      } else {
+        recentSalesBody.innerHTML = `<tr><td colspan="6" style="text-align:center;">لا توجد عمليات مبيعات مسجلة مؤخراً.</td></tr>`;
+      }
+    }
+
+    if (window.lucide) lucide.createIcons();
+
+  } catch (error) {
+    console.error('Error rendering accounting page:', error);
+    if (lastUpdate) lastUpdate.textContent = 'خطأ اتصال';
+    showAdminToast('خطأ في الاتصال بالخادم عند تحميل الصفحة المالية', 'error');
+  }
 }
 
 function showAccountingHome() {

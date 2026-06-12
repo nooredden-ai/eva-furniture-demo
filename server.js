@@ -1211,6 +1211,268 @@ app.post('/api/upload', (req, res) => {
 });
 
 /* =========================
+   API: ACCOUNTING FINANCIAL SUMMARY
+========================= */
+app.get('/api/accounting/financial-summary', requirePerm('view_dashboard'), (req, res) => {
+  try {
+    const plan = readJSON('store-plan.json');
+    if (plan && plan.modules && plan.modules.accounting === false) {
+      return res.status(403).json({ success: false, message: 'الميزة غير مفعّلة في خطة المتجر الحالية' });
+    }
+
+    // 1. Fetch data
+    const products = productRepository.findAll();
+    const orders = orderRepository.findAll();
+    const directSales = readJSON('direct-sales.json') || [];
+
+    // 2. Calculations
+    let inventoryValue = 0;
+    products.forEach(p => {
+      const stock = Number(p.stock) || 0;
+      const costPrice = Number(p.costPrice) || 0;
+      inventoryValue += stock * costPrice;
+    });
+
+    const currentCapital = inventoryValue;
+
+    // Filters for non-cancelled
+    const activeOrders = orders.filter(o => o.status !== 'cancelled');
+    const activeDirectSales = directSales.filter(s => s.saleStatus !== 'cancelled');
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const currentMonthStr = todayStr.substring(0, 7);
+
+    let todaySales = 0;
+    let monthlySales = 0;
+    let monthlyCOGS = 0;
+    let isMonthlyProfitEstimated = false;
+
+    let totalSales = 0;
+    let totalCOGS = 0;
+    let isTotalProfitEstimated = false;
+    let totalPiecesSold = 0;
+
+    // Helper to calculate cost for product and update estimate flag
+    const getProductCost = (productId, name) => {
+      const p = products.find(prod => String(prod.id) === String(productId)) ||
+                products.find(prod => String(prod.name).toLowerCase().trim() === String(name || '').toLowerCase().trim());
+      if (p && p.costPrice !== undefined && p.costPrice !== null) {
+        return { cost: Number(p.costPrice) || 0, isEstimated: false };
+      }
+      return { cost: 0, isEstimated: true };
+    };
+
+    // Keep track of best sellers: aggregated by product ID or name
+    const productSalesMap = {};
+
+    // Helper to aggregate best sellers
+    const addProductSale = (productId, name, qty, revenue, profit, isEstimated) => {
+      const key = productId ? String(productId) : String(name || '').toLowerCase().trim();
+      if (!key) return;
+      if (!productSalesMap[key]) {
+        productSalesMap[key] = {
+          productId: productId || null,
+          name: name || '',
+          quantitySold: 0,
+          totalSales: 0,
+          totalProfit: 0,
+          isProfitEstimated: false
+        };
+      }
+      productSalesMap[key].quantitySold += qty;
+      productSalesMap[key].totalSales += revenue;
+      productSalesMap[key].totalProfit += profit;
+      if (isEstimated) {
+        productSalesMap[key].isProfitEstimated = true;
+      }
+    };
+
+    // Process orders
+    activeOrders.forEach(o => {
+      const orderTotal = Number(o.total) || 0;
+      const orderDate = o.date || (o.createdAt ? o.createdAt.split('T')[0] : '');
+
+      const isToday = orderDate === todayStr || (o.createdAt && o.createdAt.startsWith(todayStr));
+      const isCurrentMonth = orderDate.startsWith(currentMonthStr) || (o.createdAt && o.createdAt.startsWith(currentMonthStr));
+
+      if (isToday) {
+        todaySales += orderTotal;
+      }
+      if (isCurrentMonth) {
+        monthlySales += orderTotal;
+      }
+      totalSales += orderTotal;
+
+      let orderCOGS = 0;
+      let orderIsEstimated = false;
+
+      (o.items || []).forEach(item => {
+        const qty = Number(item.qty || item.quantity) || 0;
+        const itemPrice = Number(item.price) || 0;
+        const itemTotal = itemPrice * qty;
+        
+        let unitCost = 0;
+        let itemIsEstimated = false;
+
+        if (item.costAtSale !== undefined && item.costAtSale !== null) {
+          unitCost = Number(item.costAtSale) || 0;
+        } else if (item.unitCostAtSale !== undefined && item.unitCostAtSale !== null) {
+          unitCost = Number(item.unitCostAtSale) || 0;
+        } else {
+          const lookup = getProductCost(item.productId, item.name);
+          unitCost = lookup.cost;
+          itemIsEstimated = true;
+          orderIsEstimated = true;
+        }
+
+        const itemCost = unitCost * qty;
+        const itemProfit = itemTotal - itemCost;
+
+        orderCOGS += itemCost;
+        totalPiecesSold += qty;
+
+        addProductSale(item.productId, item.name || item.productName, qty, itemTotal, itemProfit, itemIsEstimated);
+      });
+
+      if (isCurrentMonth) {
+        monthlyCOGS += orderCOGS;
+        if (orderIsEstimated) {
+          isMonthlyProfitEstimated = true;
+        }
+      }
+      totalCOGS += orderCOGS;
+      if (orderIsEstimated) {
+        isTotalProfitEstimated = true;
+      }
+    });
+
+    // Process direct sales
+    activeDirectSales.forEach(s => {
+      const saleTotal = Number(s.total) || 0;
+      const saleDate = s.createdAt ? s.createdAt.split('T')[0] : '';
+
+      const isToday = saleDate === todayStr || (s.createdAt && s.createdAt.startsWith(todayStr));
+      const isCurrentMonth = saleDate.startsWith(currentMonthStr) || (s.createdAt && s.createdAt.startsWith(currentMonthStr));
+
+      if (isToday) {
+        todaySales += saleTotal;
+      }
+      if (isCurrentMonth) {
+        monthlySales += saleTotal;
+      }
+      totalSales += saleTotal;
+
+      const qty = Number(s.quantity) || 0;
+      let unitCost = 0;
+      let saleIsEstimated = false;
+
+      if (s.costAtSale !== undefined && s.costAtSale !== null) {
+        unitCost = Number(s.costAtSale) || 0;
+      } else if (s.unitCostAtSale !== undefined && s.unitCostAtSale !== null) {
+        unitCost = Number(s.unitCostAtSale) || 0;
+      } else {
+        const lookup = getProductCost(s.productId, s.productName);
+        unitCost = lookup.cost;
+        saleIsEstimated = true;
+      }
+
+      const saleCost = unitCost * qty;
+      const saleProfit = saleTotal - saleCost;
+
+      totalPiecesSold += qty;
+
+      if (isCurrentMonth) {
+        monthlyCOGS += saleCost;
+        if (saleIsEstimated) {
+          isMonthlyProfitEstimated = true;
+        }
+      }
+      totalCOGS += saleCost;
+      if (saleIsEstimated) {
+        isTotalProfitEstimated = true;
+      }
+
+      addProductSale(s.productId, s.productName, qty, saleTotal, saleProfit, saleIsEstimated);
+    });
+
+    const monthlyProfit = monthlySales - monthlyCOGS;
+    const totalProfit = totalSales - totalCOGS;
+
+    // Operations count
+    const operationsCount = activeOrders.length + activeDirectSales.length;
+
+    // Low stock active products
+    const lowStock = products
+      .filter(p => p.active !== false && (p.stock !== undefined && p.stock !== null && Number(p.stock) <= 3))
+      .map(p => ({
+        id: p.id,
+        name: p.name,
+        stock: p.stock,
+        price: p.price
+      }));
+
+    // Best Sellers Top 10
+    const bestSellers = Object.values(productSalesMap)
+      .sort((a, b) => b.quantitySold - a.quantitySold)
+      .slice(0, 10);
+
+    // Consolidated recent sales (last 10)
+    const unifiedSales = [];
+
+    activeOrders.forEach(o => {
+      unifiedSales.push({
+        id: o.id,
+        orderNumber: o.orderNumber || o.id,
+        type: 'online',
+        customerName: o.customer || '',
+        total: Number(o.total) || 0,
+        createdAt: o.createdAt || (o.date ? `${o.date}T00:00:00.000Z` : new Date().toISOString()),
+        status: o.status || 'pending'
+      });
+    });
+
+    activeDirectSales.forEach(s => {
+      unifiedSales.push({
+        id: s.id,
+        type: 'direct',
+        customerName: s.customerName || 'زبون مباشر',
+        total: Number(s.total) || 0,
+        createdAt: s.createdAt || new Date().toISOString(),
+        status: s.saleStatus || 'completed'
+      });
+    });
+
+    const recentSales = unifiedSales
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 10);
+
+    res.json({
+      success: true,
+      inventoryValue,
+      currentCapital,
+      todaySales,
+      monthlySales,
+      monthlyProfit,
+      isMonthlyProfitEstimated,
+      operationsCount,
+      allTime: {
+        totalSales,
+        totalCOGS,
+        totalProfit,
+        isTotalProfitEstimated,
+        totalPiecesSold
+      },
+      bestSellers,
+      lowStock,
+      recentSales
+    });
+  } catch (error) {
+    console.error('[FINANCIAL SUMMARY GET]', error);
+    res.status(500).json({ success: false, message: 'فشل في تحميل الخلاصة المالية.' });
+  }
+});
+
+/* =========================
    API: ACCOUNTING CUSTOMERS
 ========================= */
 app.get('/api/accounting/customers', async (req, res) => {
