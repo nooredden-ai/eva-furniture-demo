@@ -3407,21 +3407,28 @@ let editingUser = null;
 async function renderUsersTable() {
   const tbody = $a('users-table-body');
   if (!tbody) return;
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">جاري التحميل...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">جاري التحميل...</td></tr>';
   try {
     const users = await API.getUsers();
     if (!users || users.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--admin-text2);">لا يوجد مستخدمين.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--admin-text2);">لا يوجد مستخدمين.</td></tr>';
       return;
     }
     
+    const currentRole = Auth.getSession()?.role;
+    const isSuper = currentRole === 'super_admin';
+    const impTarget = Auth.isImpersonating() ? (Auth.getImpersonationInfo()?.targetUsername || '') : '';
+
     tbody.innerHTML = users.map(u => {
       const roleBadge = Auth.getRoleLabel(u.role);
       const roleColor = Auth.getRoleColor(u.role);
-      
+      const isSelfImpersonated = Auth.isImpersonating() && (u.username === impTarget || u.name === impTarget);
+      const showImpersonate = isSuper && u.active !== false && u.role !== 'super_admin' && !Auth.isImpersonating();
+      const showEndImpersonate = isSuper && isSelfImpersonated;
+
       return `
-        <tr>
-          <td><div style="font-weight:700;">${u.name}</div></td>
+        <tr${isSelfImpersonated ? ' style="background:rgba(220,38,38,0.05);"' : ''}>
+          <td><div style="font-weight:700;">${u.name}</div>${isSelfImpersonated ? ' <span style="color:#dc2626;font-size:0.75rem;">(جارٍ المحاكاة)</span>' : ''}</td>
           <td><code>${u.username || '-'}</code></td>
           <td>${u.email}</td>
           <td><span class="status-chip" style="background-color:${roleColor}22;color:${roleColor};">${roleBadge}</span></td>
@@ -3431,6 +3438,8 @@ async function renderUsersTable() {
               <span class="status-chip ${u.active ? 'delivered' : 'cancelled'}">${u.active ? 'نشط' : 'موقوف'}</span>
               <button class="icon-btn action-edit_users" onclick="openEditUser('${u.id}')" title="تعديل" style="color:var(--admin-primary)"><i data-lucide="edit-2" style="width:16px;height:16px"></i></button>
               <button class="icon-btn action-delete_users" onclick="deleteUser('${u.id}')" title="حذف" style="color:#ef4444"><i data-lucide="trash-2" style="width:16px;height:16px"></i></button>
+              ${showImpersonate ? `<button class="topbar-btn btn-outline" style="padding:3px 10px;font-size:0.8rem;border-color:#b91c1c;color:#b91c1c;" onclick="startImpersonation('${u.id}')" title="الدخول كـ هذا المستخدم"><i data-lucide="log-in" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>الدخول كـ</button>` : ''}
+              ${showEndImpersonate ? `<button class="topbar-btn btn-outline" style="padding:3px 10px;font-size:0.8rem;border-color:#b91c1c;color:#b91c1c;" onclick="stopImpersonation()" title="إنهاء المحاكاة"><i data-lucide="log-out" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>إنهاء المحاكاة</button>` : ''}
             </div>
           </td>
         </tr>
@@ -3439,7 +3448,7 @@ async function renderUsersTable() {
     if (window.lucide) lucide.createIcons();
     enforceUI_RBAC();
   } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#ef4444;">حدث خطأ في التحميل.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#ef4444;">حدث خطأ في التحميل.</td></tr>';
   }
 }
 
@@ -4925,7 +4934,8 @@ function renderInvoicesTable(invoices) {
 
 async function viewInvoice(id) {
   try {
-    const inv = await fetchWithStability(`/api/invoices/${id}`);
+    const response = await fetchWithStability(`/api/invoices/${id}`);
+    const inv = (response && response.success && response.data) ? response.data : response;
     if (!inv || !inv.id) {
       throw new Error('الفاتورة غير موجودة');
     }
