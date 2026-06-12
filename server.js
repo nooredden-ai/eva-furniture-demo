@@ -461,7 +461,7 @@ app.delete('/api/categories/:id', requirePerm('manage_categories'), (req, res) =
 app.get('/api/invoices', requirePerm('view_dashboard'), (req, res) => {
   try {
     const invoices = invoiceRepository.findAll();
-    res.json(invoices);
+    res.json({ success: true, invoices });
   } catch (err) {
     console.error('[INVOICES GET ERROR]', err);
     res.status(500).json({ success: false, message: 'فشل تحميل الفواتير' });

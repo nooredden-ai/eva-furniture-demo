@@ -4783,7 +4783,10 @@ async function loadInvoices() {
     const tbody = $a('invoices-table-body');
     if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px;">جاري تحميل الفواتير...</td></tr>`;
 
-    const invoices = await fetchWithStability('/api/invoices');
+    const invResponse = await fetchWithStability('/api/invoices');
+    const invoices = (invResponse && invResponse.success && Array.isArray(invResponse.invoices))
+      ? invResponse.invoices
+      : (Array.isArray(invResponse) ? invResponse : []);
     if (!Array.isArray(invoices)) {
       throw new Error('بيانات الفواتير غير صالحة');
     }
