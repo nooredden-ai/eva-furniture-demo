@@ -211,7 +211,7 @@ const API = {
   },
   downloadInvoicePdf: async (id) => {
     try {
-      const response = await fetch(`/api/invoices/${encodeURIComponent(id)}/pdf`);
+      const response = await fetch(`/api/invoices/${encodeURIComponent(id)}/pdf`, { headers: getAuthHeaders() });
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
         return { success: false, message: payload?.message || `فشل تحميل PDF للفاتورة ${id}` };
@@ -224,7 +224,7 @@ const API = {
   },
   downloadOrderPdf: async (id, type = 'invoice') => {
     try {
-      const response = await fetch(`/api/orders/${encodeURIComponent(id)}/pdf?type=${encodeURIComponent(type)}`);
+      const response = await fetch(`/api/orders/${encodeURIComponent(id)}/pdf?type=${encodeURIComponent(type)}`, { headers: getAuthHeaders() });
       if (!response.ok) {
         const payload = await response.json().catch(() => null);
         return { success: false, message: payload?.message || `فشل تحميل ${type} للطلب ${id}` };
@@ -239,7 +239,7 @@ const API = {
     try {
       const response = await fetch('/api/orders/bulk-pdf', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ ids, type }),
       });
       if (!response.ok) {
