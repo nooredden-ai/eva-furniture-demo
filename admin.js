@@ -2135,7 +2135,8 @@ function renderOrdersTable() {
             <div style="display:inline-flex;gap:6px;flex-wrap:wrap;align-items:center">
               <button class="topbar-btn btn-primary btn-sm" onclick="downloadOrderPdf(this,'${orderKey}','invoice')">فاتورة PDF</button>
               <button class="topbar-btn btn-outline btn-sm" onclick="printOrder('${orderKey}','invoice')">طباعة فاتورة</button>
-              <button class="topbar-btn btn-outline btn-sm" onclick="printOrder('${orderKey}','label')">طباعة ملصق</button>
+              <button class="topbar-btn btn-outline btn-sm" onclick="printOrder('${orderKey}','label')">طباعة ليبل</button>
+              <button class="topbar-btn btn-outline btn-sm" onclick="downloadOrderPdf(this,'${orderKey}','label')">تحميل PDF</button>
               <button class="topbar-btn btn-outline btn-sm" onclick="printOrder('${orderKey}','packing')">طباعة Packing</button>
             </div>
             <button class="topbar-btn btn-danger btn-sm action-manage_users" onclick="confirmDeleteOrder('${o.id}')"><i data-lucide="trash-2" style="width:14px;height:14px;vertical-align:middle;margin-left:2px"></i> حذف</button>
@@ -4946,6 +4947,9 @@ async function viewInvoice(id) {
 
     const { snapshot, customer, items, total, status, createdAt, sourceType, sourceId, cancelledAt, cancelReason } = inv;
     const currency = snapshot?.currency || '';
+    const subtotal = inv.subtotal ?? (items || []).reduce((sum, item) => sum + Number(item.total || (item.price * item.qty)), 0);
+    const shipping = inv.shipping ?? 0;
+    const discount = inv.discount ?? 0;
 
     const contentEl = $a('invoice-view-content');
     if (!contentEl) return;
@@ -5004,9 +5008,11 @@ async function viewInvoice(id) {
         </div>
 
         <div class="invoice-totals-section" style="display:flex;justify-content:flex-end;margin-bottom:20px;padding:15px;background:var(--admin-bg);border:1px solid var(--admin-border);border-radius:8px;">
-          <div class="invoice-total-row" style="font-size:1.1rem;color:var(--admin-text);">
-            <span>المجموع الإجمالي:</span>
-            <strong style="color:var(--admin-primary);font-size:1.3rem;margin-right:8px;">${Number(total).toFixed(2)} ${currency}</strong>
+          <div style="text-align:left;min-width:200px;">
+            <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.9rem;color:var(--admin-subtext);"><span>المجموع الفرعي</span><span>${Number(subtotal).toFixed(2)} ${currency}</span></div>
+            ${discount > 0 ? `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.9rem;color:var(--admin-subtext);"><span>الخصم</span><span style="color:var(--admin-success)">-${Number(discount).toFixed(2)} ${currency}</span></div>` : ''}
+            <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.9rem;color:var(--admin-subtext);"><span>الشحن</span><span>${Number(shipping).toFixed(2)} ${currency}</span></div>
+            <div style="display:flex;justify-content:space-between;padding:8px 0 4px;border-top:2px solid var(--admin-border);margin-top:4px;font-size:1.1rem;color:var(--admin-text);font-weight:700;"><span>الإجمالي</span><span style="color:var(--admin-primary);font-size:1.3rem;">${Number(total).toFixed(2)} ${currency}</span></div>
           </div>
         </div>
 
@@ -5042,7 +5048,9 @@ function printInvoice() {
   const currency = snapshot?.currency || '';
   const sourceLabel = sourceType === 'order' ? 'طلب إلكتروني' : 'بيع مباشر';
   const statusLabel = status === 'cancelled' ? 'ملغاة' : 'نشطة';
-  const subtotal = (items || []).reduce((sum, item) => sum + Number(item.total || (item.price * item.qty)), 0);
+  const subtotal = inv.subtotal ?? (items || []).reduce((sum, item) => sum + Number(item.total || (item.price * item.qty)), 0);
+  const shipping = inv.shipping ?? 0;
+  const discount = inv.discount ?? 0;
 
   const printEl = $a('invoice-print-container');
   if (!printEl) return;
@@ -5105,9 +5113,9 @@ function printInvoice() {
 
       <div class="invoice-print-totals">
         <table class="invoice-print-totals-table">
-          <tr><td class="label">المجموع الفرعي</td><td class="value">${subtotal.toFixed(2)} ${currency}</td></tr>
-          <tr><td class="label">الخصم</td><td class="value">0.00 ${currency}</td></tr>
-          <tr><td class="label">الشحن</td><td class="value">0.00 ${currency}</td></tr>
+          <tr><td class="label">المجموع الفرعي</td><td class="value">${Number(subtotal).toFixed(2)} ${currency}</td></tr>
+          <tr><td class="label">الخصم</td><td class="value">${Number(discount).toFixed(2)} ${currency}</td></tr>
+          <tr><td class="label">الشحن</td><td class="value">${Number(shipping).toFixed(2)} ${currency}</td></tr>
           <tr class="grand-total"><td class="label">الإجمالي</td><td class="value">${Number(total).toFixed(2)} ${currency}</td></tr>
         </table>
       </div>
@@ -5134,4 +5142,35 @@ function printInvoice() {
     window.print();
     printEl.style.display = 'none';
   }, 100);
+}
+
+function downloadInvoicePdf(btn) {
+  const inv = _currentPrintInvoice;
+  if (!inv || !inv.id) {
+    showAdminToast('الرجاء فتح الفاتورة أولاً', 'error');
+    return;
+  }
+  const originalHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.classList.add('btn-loading');
+    btn.innerHTML = 'جارٍ التنزيل...';
+  }
+  API.downloadInvoicePdf(inv.id).then(res => {
+    if (!res.success) {
+      throw new Error(res.message || 'فشل تنزيل PDF');
+    }
+    const filename = `${inv.id}.pdf`;
+    downloadBlobFile(res.blob, filename);
+    showAdminToast('تم تنزيل PDF بنجاح');
+  }).catch(err => {
+    console.error('[PDF DOWNLOAD]', err);
+    showAdminToast(err.message || 'فشل تنزيل PDF', 'error');
+  }).finally(() => {
+    if (btn) {
+      btn.disabled = false;
+      btn.classList.remove('btn-loading');
+      btn.innerHTML = originalHtml;
+    }
+  });
 }

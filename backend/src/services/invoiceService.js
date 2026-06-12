@@ -20,7 +20,7 @@ function createSnapshot() {
   };
 }
 
-function createInvoice({ sourceType, sourceId, total, items, customer }) {
+function createInvoice({ sourceType, sourceId, total, items, customer, subtotal, shipping, discount }) {
   // Prevent duplicate
   if (invoiceRepository.findBySource(sourceType, sourceId)) {
     return null; // duplicate prevented
@@ -32,6 +32,9 @@ function createInvoice({ sourceType, sourceId, total, items, customer }) {
     total,
     items,
     customer,
+    subtotal: subtotal ?? 0,
+    shipping: shipping ?? 0,
+    discount: discount ?? 0,
     snapshot: createSnapshot(),
     status: 'active',
     createdAt: new Date().toISOString()

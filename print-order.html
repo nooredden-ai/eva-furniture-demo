@@ -101,7 +101,10 @@
         document.getElementById('print-mode').value = selectedMode;
 
         async function fetchStore(){ try{ const res = await fetch('/api/settings'); if(!res.ok) throw new Error('settings fetch failed'); return await res.json(); }catch(e){ console.error(e); return null; } }
-        async function fetchOrder(id){ try{ const res = await fetch(`/api/orders/${encodeURIComponent(id)}`); if(!res.ok) return null; return await res.json(); }catch(e){ console.error(e); return null; }
+        async function fetchOrder(id){ try{ const res = await fetch(`/api/orders/${encodeURIComponent(id)}`); if(!res.ok) return null; return await res.json(); }catch(e){ console.error(e); return null; } }
+        async function fetchInvoiceForOrder(orderId){
+          try{ const res = await fetch('/api/invoices'); if(!res.ok) return null; const all = await res.json(); const arr = Array.isArray(all) ? all : (all.data || []); return arr.find(inv => inv.sourceType === 'order' && String(inv.sourceId) === String(orderId)) || null;
+          }catch(e){ console.error(e); return null; }
         }
 
         function formatCurrency(v, symbol){ try{ return Number(v).toLocaleString('ar-SA') + ' ' + (symbol||''); }catch(e){return v} }
@@ -154,19 +157,39 @@
           return doc;
         }
 
-        function buildLabel(order, store){
+        function buildLabel(order, store, invoice){
+          const currency = store?.currencySymbol || store?.currency || '';
+          const invId = invoice?.id || '-';
+          const total = order.total || 0;
+          const date = order.date || '-';
+          const payMethod = order.paymentMethod || '-';
+          const qrPayload = `Order: ${order.id}\nCustomer: ${order.customer||'-'}\nPhone: ${order.phone||'-'}\nAddress: ${order.address||'-'}`;
           const doc = document.createElement('article'); doc.className='doc';
           doc.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:800">${store?.name||'متجرك'}</div><div style="font-weight:900;font-size:1.35rem">${order.id}</div></div>
-            <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center"><div><strong>العميل:</strong> ${order.customer||'-'}</div><div><strong>الهاتف:</strong> ${order.phone||'-'}</div></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+              <div style="font-weight:800;font-size:1.1rem">${store?.name||'متجرك'}</div>
+              <div style="font-weight:900;font-size:1.35rem">${order.id}</div>
+            </div>
+            <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">
+              <div><strong>العميل:</strong> ${order.customer||'-'}</div>
+              <div><strong>الهاتف:</strong> ${order.phone||'-'}</div>
+            </div>
             <div style="margin-top:8px"><strong>المنطقة:</strong> ${order.zoneName||order.zone||'-'}</div>
             <div style="margin-top:8px;font-weight:700;font-size:1rem">العنوان: ${order.address||'-'}</div>
+            <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">
+              <div style="color:var(--muted);font-size:0.9rem"><strong>رقم الفاتورة:</strong> ${invId}</div>
+              <div style="color:var(--muted);font-size:0.9rem"><strong>طريقة الدفع:</strong> ${payMethod}</div>
+            </div>
+            <div style="margin-top:6px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">
+              <div style="color:var(--muted);font-size:0.9rem"><strong>تاريخ الطلب:</strong> ${date}</div>
+              <div style="color:var(--muted);font-size:0.9rem"><strong>الإجمالي:</strong> ${formatCurrency(total,currency)}</div>
+            </div>
             <div style="margin-top:8px"><strong>ملاحظات:</strong> ${order.notes && order.notes.length ? order.notes.join(' | ') : '-'}</div>
             <div style="margin-top:8px"><strong>عدد القطع:</strong> ${(order.items||[]).reduce((s,i)=>s+(i.qty||1),0)}</div>
             <div style="margin-top:12px;text-align:center"><svg id="bc-l-${order.id}"></svg><div id="qr-l-${order.id}"></div></div>
             <div class="shipping-label" style="margin-top:12px">مساحة خاصة لشركة التوصيل: ضع هنا ملصق الشركة أو ختمها</div>
           `;
-          setTimeout(()=>{ try{ createBarcode(order.id, document.getElementById(`bc-l-${order.id}`)); createQRCode(order.id, document.getElementById(`qr-l-${order.id}`)); }catch(e){} },50);
+          setTimeout(()=>{ try{ createBarcode(order.id, document.getElementById(`bc-l-${order.id}`)); createQRCode(qrPayload, document.getElementById(`qr-l-${order.id}`)); }catch(e){} },50);
           return doc;
         }
 
@@ -199,8 +222,10 @@
             // choose builder
             let node;
             const mode = (qParam('type') || document.getElementById('print-mode')?.value || 'invoice');
-            if (mode === 'label') node = buildLabel(order, store);
-            else if (mode === 'packing') node = buildPackingSlip(order, store);
+            if (mode === 'label') {
+              const invoice = await fetchInvoiceForOrder(id);
+              node = buildLabel(order, store, invoice);
+            } else if (mode === 'packing') node = buildPackingSlip(order, store);
             else node = buildInvoice(order, store);
             root.appendChild(node);
           }

@@ -32,6 +32,32 @@ try {
   console.warn('Puppeteer is not installed. PDF generation will be disabled.');
 }
 
+function getPuppeteerExecutablePath() {
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    console.log('[PDF] Using PUPPETEER_EXECUTABLE_PATH:', process.env.PUPPETEER_EXECUTABLE_PATH);
+    return process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
+  if (process.env.CHROME_PATH) {
+    console.log('[PDF] Using CHROME_PATH:', process.env.CHROME_PATH);
+    return process.env.CHROME_PATH;
+  }
+  const candidates = [
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
+    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+  ];
+  for (const candidate of candidates) {
+    try {
+      if (fs.existsSync(candidate)) {
+        console.log('[PDF] Found browser at:', candidate);
+        return candidate;
+      }
+    } catch (_) {}
+  }
+  return null;
+}
+
 // ===== Crash Protection (Light Only) =====
 process.on('uncaughtException', (err) => {
   console.error('[FATAL ERROR] Uncaught Exception:', err);
@@ -167,11 +193,15 @@ async function createPdfFromPrintPage({ ids, type = 'invoice', saveToDisk = fals
   if (!puppeteer) {
     throw new Error('Puppeteer is not available.');
   }
-  const browser = await puppeteer.launch({
+  const execPath = getPuppeteerExecutablePath();
+  const launchOpts = {
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    ...(process.env.CHROME_PATH ? { executablePath: process.env.CHROME_PATH } : {}),
-  });
+  };
+  if (execPath) {
+    launchOpts.executablePath = execPath;
+  }
+  const browser = await puppeteer.launch(launchOpts);
 
   try {
     const page = await browser.newPage();
@@ -191,7 +221,7 @@ async function createPdfFromPrintPage({ ids, type = 'invoice', saveToDisk = fals
       console.warn('[PDF] printOrderReady not detected in time, continuing anyway');
     }
 
-    await page.waitForTimeout(600);
+    await new Promise(r => setTimeout(r, 600));
 
     const pdfOptions = {
       printBackground: true,
@@ -484,6 +514,140 @@ app.get('/api/invoices/:id', requirePerm('view_orders'), (req, res) => {
   }
 });
 
+app.get('/api/invoices/:id/pdf', requirePerm('view_orders'), async (req, res) => {
+  if (!puppeteer) {
+    return res.status(503).json({
+      success: false,
+      message: 'PDF generation is currently unavailable because Puppeteer is not installed.'
+    });
+  }
+  try {
+    const invoice = invoiceRepository.findById(req.params.id);
+    if (!invoice) return res.status(404).json({ success: false, message: 'الفاتورة غير موجودة' });
+
+    const { snapshot, customer, items, total, status, createdAt, sourceType, sourceId, cancelledAt, cancelReason } = invoice;
+    const currency = snapshot?.currency || '';
+    const sourceLabel = sourceType === 'order' ? 'طلب إلكتروني' : 'بيع مباشر';
+    const statusLabel = status === 'cancelled' ? 'ملغاة' : 'نشطة';
+    const subtotal = invoice.subtotal ?? (items || []).reduce((sum, item) => sum + Number(item.total || (item.price * item.qty)), 0);
+    const shipping = invoice.shipping ?? 0;
+    const discount = invoice.discount ?? 0;
+
+    const html = `<!DOCTYPE html>
+<html dir="rtl">
+<head><meta charset="utf-8"><title>${invoice.id}</title>
+<style>
+  @page { size: A4; margin: 12mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; color: #222; font-size: 13px; line-height: 1.5; direction: rtl; background: #fff; }
+  .invoice-print-watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-30deg); font-size: 80px; font-weight: 900; color: rgba(220,38,38,0.1); white-space: nowrap; pointer-events: none; z-index: 0; }
+  .invoice-print-watermark.active { display: none; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; position: relative; z-index: 1; }
+  .store { text-align: right; }
+  .store-logo { max-height: 70px; margin-bottom: 10px; display: block; }
+  .store-name { font-size: 22px; font-weight: 700; color: #111; margin-bottom: 4px; }
+  .store-info { font-size: 12px; color: #555; line-height: 1.6; }
+  .meta { text-align: left; }
+  .inv-id { font-size: 20px; font-weight: 700; color: #111; margin-bottom: 6px; }
+  .inv-info { font-size: 12px; color: #555; line-height: 1.6; }
+  .status-badge { display: inline-block; margin-top: 6px; padding: 3px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .status-badge.active { background: #dcfce7; color: #166534; }
+  .status-badge.cancelled { background: #fee2e2; color: #991b1b; }
+  .divider { height: 1px; background: #ddd; margin: 16px 0; }
+  .section-title { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 8px; }
+  .cust-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .cust-table td { padding: 3px 0; border: none; }
+  .cust-table td.lbl { width: 100px; font-weight: 600; color: #555; }
+  .items-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .items-table th { background: #f5f5f5; padding: 8px 6px; font-weight: 600; color: #333; border-bottom: 2px solid #ddd; text-align: center; }
+  .items-table td { padding: 8px 6px; border-bottom: 1px solid #eee; text-align: center; }
+  .items-table .col-product { text-align: right; font-weight: 600; }
+  .totals { display: flex; justify-content: flex-end; margin-top: 16px; }
+  .totals-table { width: 260px; border-collapse: collapse; font-size: 13px; }
+  .totals-table td { padding: 4px 8px; border: none; }
+  .totals-table td.lbl { text-align: right; color: #555; }
+  .totals-table td.val { text-align: left; font-weight: 600; }
+  .totals-table .grand td { border-top: 2px solid #333; padding-top: 8px; font-size: 15px; font-weight: 700; }
+  .cancel-info { margin-top: 20px; padding: 12px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; }
+  .footer { text-align: center; margin-top: 40px; padding-top: 16px; border-top: 1px solid #ddd; }
+  .footer-text { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 4px; }
+  .footer-sub { font-size: 11px; color: #888; }
+</style></head>
+<body>
+  <div class="invoice-print-watermark ${status}">${status === 'cancelled' ? 'فاتورة ملغاة' : ''}</div>
+  <div class="header">
+    <div class="store">
+      ${snapshot?.logo ? `<img src="${snapshot.logo}" class="store-logo" />` : ''}
+      <div class="store-name">${snapshot?.storeName || ''}</div>
+      <div class="store-info">${snapshot?.phone || ''}</div>
+      <div class="store-info">${snapshot?.email || ''}</div>
+      <div class="store-info">${snapshot?.address || ''}</div>
+    </div>
+    <div class="meta">
+      <div class="inv-id">${invoice.id}</div>
+      <div class="inv-info">${new Date(createdAt).toLocaleString('ar-EG')}</div>
+      <div class="inv-info">${sourceLabel}</div>
+      <div class="status-badge ${status}">${statusLabel}</div>
+    </div>
+  </div>
+  <div class="divider"></div>
+  <div class="section-title">بيانات العميل</div>
+  <table class="cust-table">
+    <tr><td class="lbl">الاسم</td><td>${customer?.name || '—'}</td></tr>
+    <tr><td class="lbl">الهاتف</td><td>${customer?.phone || '—'}</td></tr>
+    <tr><td class="lbl">العنوان</td><td>${customer?.address || '—'}</td></tr>
+  </table>
+  <div class="divider"></div>
+  <div class="section-title">التفاصيل</div>
+  <table class="items-table">
+    <thead><tr><th class="col-product">المنتج</th><th>سعر الوحدة</th><th>الكمية</th><th>المجموع</th></tr></thead>
+    <tbody>${(items || []).map(item => `<tr><td class="col-product">${item.name}</td><td>${Number(item.price).toFixed(2)} ${currency}</td><td>${item.qty}</td><td>${Number(item.total || (item.price * item.qty)).toFixed(2)} ${currency}</td></tr>`).join('')}</tbody>
+  </table>
+  <div class="totals">
+    <table class="totals-table">
+      <tr><td class="lbl">المجموع الفرعي</td><td class="val">${Number(subtotal).toFixed(2)} ${currency}</td></tr>
+      <tr><td class="lbl">الخصم</td><td class="val">${Number(discount).toFixed(2)} ${currency}</td></tr>
+      <tr><td class="lbl">الشحن</td><td class="val">${Number(shipping).toFixed(2)} ${currency}</td></tr>
+      <tr class="grand"><td class="lbl">الإجمالي</td><td class="val">${Number(total).toFixed(2)} ${currency}</td></tr>
+    </table>
+  </div>
+  ${status === 'cancelled' ? `<div class="cancel-info"><div class="section-title">معلومات الإلغاء</div><table class="cust-table"><tr><td class="lbl">تاريخ الإلغاء</td><td>${cancelledAt ? new Date(cancelledAt).toLocaleString('ar-EG') : '—'}</td></tr><tr><td class="lbl">السبب</td><td>${cancelReason || '—'}</td></tr></table></div>` : ''}
+  <div class="footer"><div class="footer-text">شكراً لتعاملكم معنا</div><div class="footer-sub">Generated by EVA System</div></div>
+</body></html>`;
+
+    const execPath = getPuppeteerExecutablePath();
+    const launchOpts = {
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    };
+    if (execPath) {
+      launchOpts.executablePath = execPath;
+    }
+    const browser = await puppeteer.launch(launchOpts);
+    try {
+      const page = await browser.newPage();
+      await page.setViewport({ width: 1200, height: 900 });
+      await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
+      await page.emulateMediaType('print');
+      const buffer = await page.pdf({
+        format: 'A4',
+        margin: { top: '0mm', bottom: '0mm', left: '0mm', right: '0mm' },
+        printBackground: true,
+        preferCSSPageSize: true,
+      });
+      const filename = `${invoice.id}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } finally {
+      if (browser) await browser.close();
+    }
+  } catch (err) {
+    console.error('[INVOICE PDF ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل توليد PDF الفاتورة' });
+  }
+});
+
 /* =========================
    API: ORDERS
 ========================= */
@@ -636,7 +800,10 @@ app.put('/api/orders/:id/status', requirePerm('update_orders'), (req, res) => {
           name: result.customer || '',
           phone: result.phone || '',
           address: result.address || ''
-        }
+        },
+        subtotal: result.subtotal,
+        shipping: result.shipping,
+        discount: result.discount
       });
     } catch (err) {
       console.error('[INVOICE GENERATION ERROR FOR ORDER]', err);
