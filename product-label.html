@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width,initial-scale=1" />
+      <title>طباعة ليبل المنتج</title>
+      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+      <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+      <style>
+        :root{--text:#0f172a;--muted:#6b7280;--border:#e5e7eb}
+        html,body{height:100%;margin:0;font-family:'Cairo',sans-serif;color:var(--text);background:#f3f4f6}
+        .toolbar{padding:10px 14px;background:#fff;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;justify-content:space-between}
+        .btn{padding:8px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;cursor:pointer;font-weight:600}
+        .btn.primary{background:#0ea5e9;color:#fff;border-color:transparent}
+        .print-container{display:flex;flex-wrap:wrap;gap:12px;padding:12px;justify-content:center}
+
+        /* Label card: 70mm x 40mm */
+        .label-card{
+          width:70mm;height:40mm;background:#fff;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,0.08);
+          padding:4mm 5mm;display:flex;flex-direction:column;justify-content:space-between;
+          -webkit-print-color-adjust:exact;print-color-adjust:exact;page-break-inside:avoid;
+          position:relative;overflow:hidden
+        }
+        .label-top{display:flex;justify-content:space-between;align-items:center;gap:4px}
+        .label-store{font-size:10px;font-weight:700;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
+        .label-store img{height:14px;width:auto;vertical-align:middle;margin-left:4px}
+        .label-price{font-size:16px;font-weight:900;color:#059669;white-space:nowrap}
+        .label-mid{display:flex;justify-content:space-between;align-items:center;gap:6px;flex:1;min-height:0}
+        .label-info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:1px}
+        .label-name{font-size:12px;font-weight:700;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+        .label-sku{font-size:9px;color:var(--muted)}
+        .label-cat{font-size:8px;color:var(--muted)}
+        .label-qr{flex-shrink:0;width:42px;height:42px;display:flex;align-items:center;justify-content:center}
+        .label-qr img,.label-qr canvas{width:42px!important;height:42px!important}
+        .label-barcode{text-align:center;margin-top:2px;line-height:0}
+        .label-barcode svg{max-width:100%;height:18px}
+        .label-barcode svg rect{height:18px!important}
+
+        @page{size:70mm 40mm;margin:0}
+        @media print{
+          body{background:transparent}
+          .toolbar{display:none!important}
+          .print-container{padding:0;gap:0}
+          .label-card{box-shadow:none;border-radius:0;page-break-inside:avoid;break-inside:avoid;margin:0}
+        }
+      </style>
+    </head>
+    <body>
+      <div class="toolbar no-print">
+        <button class="btn" onclick="goBack()"><i data-lucide="arrow-right"></i> العودة</button>
+        <div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px"><input type="checkbox" id="auto-print"/> طباعة تلقائية</label>
+          <button class="btn primary" onclick="doPrint()"><i data-lucide="printer"></i> طباعة / حفظ PDF</button>
+        </div>
+      </div>
+      <main class="print-container" id="print-root"></main>
+      <script>
+        function qParam(k){const u=new URL(window.location.href);return u.searchParams.get(k)}
+        function goBack(){try{if(window.opener&&!window.opener.closed){window.close();window.opener.focus()}else{location.href='/admin'}}catch(e){location.href='/admin'}}
+        function doPrint(){window.print()}
+
+        async function fetchStore(){try{const r=await fetch('/api/settings');if(!r.ok)throw Error();return await r.json()}catch(e){return null}}
+        async function fetchProduct(id){try{const r=await fetch('/api/products/'+encodeURIComponent(id));if(!r.ok)return null;return await r.json()}catch(e){return null}}
+        function fmtPrice(v,sym){try{return Number(v).toLocaleString('ar-SA')+' '+(sym||'')}catch(e){return v}}
+        function createBarcode(txt,target){try{JsBarcode(target,String(txt),{format:'CODE128',displayValue:true,height:20,fontSize:8,margin:0})}catch(e){}}
+        function createQRCode(txt,container){try{new QRCode(container,{text:txt,width:84,height:84})}catch(e){}}
+        function placeholderImg(){return '/images/branding/placeholder.png'}
+
+        function buildLabel(product,store){
+          const doc=document.createElement('div');doc.className='label-card';
+          const sym=store?.currencySymbol||store?.currency||'';
+          const price=product.price||0;
+          const sku=product.sku||product.id||'-';
+          const cat=product.categoryName||product.category||'-';
+          const qrData='Product ID: '+(product.id||'')+'\nProduct Name: '+(product.name||'')+'\nPrice: '+price+' '+(sym||'');
+          doc.innerHTML=`
+            <div class="label-top">
+              <div class="label-store">${store?.branding?.logo?`<img src="${store.branding.logo}" onerror="this.style.display='none'"/>`:''}${store?.name||''}</div>
+              <div class="label-price">${fmtPrice(price,sym)}</div>
+            </div>
+            <div class="label-mid">
+              <div class="label-info">
+                <div class="label-name">${product.name||'-'}</div>
+                <div class="label-sku">${sku}</div>
+                <div class="label-cat">${cat}</div>
+              </div>
+              <div class="label-qr"><div id="qr-${product.id}"></div></div>
+            </div>
+            <div class="label-barcode"><svg id="bc-${product.id}"></svg></div>
+          `;
+          setTimeout(()=>{
+            try{createBarcode(sku,document.getElementById('bc-'+product.id))}catch(e){}
+            try{createQRCode(qrData,document.getElementById('qr-'+product.id))}catch(e){}
+          },50);
+          return doc;
+        }
+
+        async function init(){
+          const root=document.getElementById('print-root');
+          const store=await fetchStore();
+          const id=qParam('id');
+          if(!id){root.innerHTML='<div class="label-card" style="align-items:center;justify-content:center;font-size:14px;color:var(--muted)">لم يتم تحديد منتج</div>';return}
+          const product=await fetchProduct(id);
+          if(!product){root.innerHTML='<div class="label-card" style="align-items:center;justify-content:center;font-size:14px;color:var(--muted)">المنتج غير موجود</div>';return}
+          root.appendChild(buildLabel(product,store));
+          if(document.getElementById('auto-print')?.checked) setTimeout(()=>window.print(),400);
+        }
+        (async()=>{await init()})();
+      </script>
+    </body>
+</html>

@@ -1635,10 +1635,14 @@ async function renderProductsTable() {
         </span>
       </td>
       <td>
-        ${canEdit ? `
-        <button class="topbar-btn btn-outline btn-sm" onclick="openEditProduct(${p.id})"><i data-lucide="edit" style="width:14px;height:14px;vertical-align:middle;margin-left:2px"></i> تعديل</button>
-        <button class="topbar-btn btn-danger btn-sm" onclick="deleteProduct(${p.id})" style="margin-right:4px"><i data-lucide="trash-2" style="width:14px;height:14px;vertical-align:middle"></i></button>
-        ` : '-'}
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          ${canEdit ? `
+          <button class="topbar-btn btn-outline btn-sm" onclick="openEditProduct(${p.id})"><i data-lucide="edit" style="width:14px;height:14px;vertical-align:middle;margin-left:2px"></i> تعديل</button>
+          <button class="topbar-btn btn-danger btn-sm" onclick="deleteProduct(${p.id})" style="margin-right:4px"><i data-lucide="trash-2" style="width:14px;height:14px;vertical-align:middle"></i></button>
+          ` : ''}
+          <button class="topbar-btn btn-outline btn-sm" onclick="printProductLabel(${p.id})"><i data-lucide="printer" style="width:14px;height:14px;vertical-align:middle;margin-left:2px"></i> طباعة ليبل</button>
+          <button class="topbar-btn btn-outline btn-sm" onclick="downloadProductLabelPdf(this,${p.id})">تحميل PDF</button>
+        </div>
       </td>
     </tr>`;
   }).join('');
@@ -2153,6 +2157,10 @@ function printOrder(orderId, type = 'invoice') {
   window.open(`/print-order?id=${orderId}&type=${type}`, '_blank');
 }
 
+function printProductLabel(productId) {
+  window.open(`/product-label?id=${productId}`, '_blank');
+}
+
 function downloadBlobFile(blob, filename) {
   if (!blob) return;
   const url = URL.createObjectURL(blob);
@@ -2184,6 +2192,36 @@ async function downloadOrderPdf(button, orderId, type = 'invoice') {
       showAdminToast('تم تنزيل الملف بنجاح');
     } catch (err) {
       console.error('[PDF DOWNLOAD]', err);
+      showAdminToast(err.message || 'فشل تنزيل PDF، يرجى المحاولة لاحقاً', 'error');
+    } finally {
+      if (button) {
+        button.disabled = false;
+        button.classList.remove('btn-loading');
+        button.innerHTML = originalHtml;
+      }
+    }
+  });
+}
+
+async function downloadProductLabelPdf(button, productId) {
+  if (!productId) return;
+  return withLock(`download-product-label-${productId}`, async () => {
+    const originalHtml = button ? button.innerHTML : '';
+    if (button) {
+      button.disabled = true;
+      button.classList.add('btn-loading');
+      button.innerHTML = 'جارٍ التنزيل...';
+    }
+    try {
+      const res = await API.downloadProductLabelPdf(productId);
+      if (!res.success) {
+        throw new Error(res.message || 'فشل تنزيل PDF');
+      }
+      const filename = `PRODUCT-LABEL-${productId}.pdf`;
+      downloadBlobFile(res.blob, filename);
+      showAdminToast('تم تنزيل الملف بنجاح');
+    } catch (err) {
+      console.error('[PRODUCT LABEL PDF DOWNLOAD]', err);
       showAdminToast(err.message || 'فشل تنزيل PDF، يرجى المحاولة لاحقاً', 'error');
     } finally {
       if (button) {

@@ -466,6 +466,50 @@ app.delete('/api/products/:id', requirePerm('delete_products'), (req, res) => {
   res.json({ ok: true });
 });
 
+app.get('/api/products/:id', (req, res) => {
+  const product = productRepository.findById(req.params.id);
+  if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+  res.json(product);
+});
+
+app.get('/api/products/:id/label/pdf', requirePerm('view_products'), async (req, res) => {
+  if (!puppeteer) {
+    return res.status(503).json({ success: false, message: 'PDF generation unavailable - Puppeteer not installed.' });
+  }
+  try {
+    const product = productRepository.findById(req.params.id);
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+    const productId = String(product.id).replace(/[^a-zA-Z0-9_-]/g, '');
+    const filename = `PRODUCT-LABEL-${productId}.pdf`;
+    const printUrl = `http://127.0.0.1:${PORT}/product-label?id=${encodeURIComponent(req.params.id)}`;
+    const execPath = getPuppeteerExecutablePath();
+    const launchOpts = { headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] };
+    if (execPath) launchOpts.executablePath = execPath;
+    const browser = await puppeteer.launch(launchOpts);
+    try {
+      const page = await browser.newPage();
+      await page.setViewport({ width: 800, height: 600 });
+      await page.goto(printUrl, { waitUntil: 'networkidle2', timeout: PUPPETEER_TIMEOUT });
+      await page.emulateMediaType('print');
+      await new Promise(r => setTimeout(r, 600));
+      const buffer = await page.pdf({
+        width: '70mm', height: '40mm',
+        margin: { top: '0mm', bottom: '0mm', left: '0mm', right: '0mm' },
+        printBackground: true,
+        preferCSSPageSize: true,
+      });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(buffer);
+    } finally {
+      await browser.close();
+    }
+  } catch (err) {
+    console.error('[PRODUCT LABEL PDF ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل توليد PDF ليبل المنتج' });
+  }
+});
+
 /* =========================
    API: CATEGORIES
 ========================= */
