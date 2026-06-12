@@ -15,10 +15,15 @@ const permissionRepository = require('./backend/src/repositories/permissionRepos
 const jsonStore = require('./backend/src/core/jsonStore');
 const invoiceRepository = require('./backend/src/repositories/invoiceRepository');
 const invoiceService = require('./backend/src/services/invoiceService');
-const { PrismaClient } = require('@prisma/client');
 const jwt = require('jsonwebtoken');
 
-const prisma = new PrismaClient();
+let prisma = null;
+try {
+  const { PrismaClient } = require('@prisma/client');
+  prisma = new PrismaClient();
+} catch (err) {
+  console.warn('Prisma not available (DATABASE_URL missing or @prisma/client not installed). Proceeding with JSON-based features only.');
+}
 
 let puppeteer = null;
 try {
@@ -1098,11 +1103,19 @@ app.post('/api/login', async (req, res) => {
 
   // --- JWT issuance ---
   // TODO: replace with authenticated user's companyId later.
-  const company = await prisma.company.findFirst();
+  let companyId = null;
+  try {
+    if (prisma) {
+      const company = await prisma.company.findFirst();
+      companyId = company ? company.id : null;
+    }
+  } catch (err) {
+    console.warn('Prisma query failed, proceeding without companyId:', err.message);
+  }
   const payload = {
     userId: user.id,
     role: user.role,
-    companyId: company ? company.id : null,
+    companyId,
   };
   const token = jwt.sign(payload, process.env.JWT_SECRET || 'fallback-secret-key', { expiresIn: '24h' });
 
