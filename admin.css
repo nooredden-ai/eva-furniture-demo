@@ -428,6 +428,117 @@ input, select, textarea {
   transform: translateY(-1px);
 }
 
+/* ===== SIMPLIFIED MERCHANT DASHBOARD ===== */
+.merchant-welcome {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, var(--admin-primary), #4f46e5);
+  border-radius: var(--admin-radius);
+  padding: 24px 32px;
+  margin-bottom: 28px;
+  color: #fff;
+}
+.merchant-welcome-text h2 { margin:0 0 4px 0; font-size:1.4rem; font-weight:800; }
+.merchant-subtitle { margin:0; opacity:0.85; font-size:0.9rem; }
+.merchant-welcome-actions { display:flex; gap:10px; }
+.merchant-btn {
+  border:none; border-radius:var(--admin-radius-sm);
+  padding:10px 18px; font-size:0.85rem; font-weight:700;
+  cursor:pointer; transition:all var(--admin-transition);
+  display:flex; align-items:center;
+}
+.merchant-btn-primary { background:#fff; color:var(--admin-primary); }
+.merchant-btn-primary:hover { background:#f0f0ff; transform:translateY(-1px); }
+.merchant-btn-secondary { background:rgba(255,255,255,0.15); color:#fff; }
+.merchant-btn-secondary:hover { background:rgba(255,255,255,0.25); transform:translateY(-1px); }
+
+.merchant-snapshot {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.ms-card {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+}
+.ms-card-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ms-card-orders .ms-card-icon { background:#fef3c7; color:#d97706; }
+.ms-card-revenue .ms-card-icon { background:#d1fae5; color:#059669; }
+.ms-card-products .ms-card-icon { background:#dbeafe; color:#2563eb; }
+.ms-card-invoices .ms-card-icon { background:#fce7f3; color:#db2777; }
+.ms-card-body { display:flex; flex-direction:column; }
+.ms-card-value { font-size:1.4rem; font-weight:800; color:var(--admin-text); line-height:1.2; }
+.ms-card-label { font-size:0.8rem; color:var(--admin-text2); }
+
+.merchant-actions {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 28px;
+}
+.merchant-actions h3 { font-size:0.95rem; font-weight:700; color:var(--admin-text); margin-bottom:16px; display:flex; align-items:center; }
+.merchant-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+.ma-btn {
+  background: var(--admin-surface2);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  padding: 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  color: var(--admin-text); font-size: 0.85rem; font-weight: 700;
+  cursor: pointer; transition: all var(--admin-transition); text-align: center;
+}
+.ma-btn-icon { color: var(--admin-primary); }
+.ma-btn-text { font-size:0.9rem; }
+.ma-btn-desc { font-size:0.75rem; color:var(--admin-text2); font-weight:400; }
+.ma-btn:hover {
+  background: #fff; border-color: var(--admin-primary);
+  box-shadow: var(--shadow-sm); transform: translateY(-1px);
+}
+
+.merchant-activity {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px;
+}
+.merchant-activity-card {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+  padding: 20px; box-shadow: var(--shadow-sm);
+}
+.merchant-activity-card h4 {
+  font-size:0.9rem; font-weight:700; color:var(--admin-text);
+  margin:0 0 12px 0; display:flex; align-items:center;
+}
+.ms-activity-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 0; border-bottom:1px solid var(--admin-border);
+  transition:background var(--admin-transition);
+}
+.ms-activity-row:hover { background:var(--admin-surface2); border-radius:4px; padding:10px 8px; margin:0 -8px; }
+.ms-activity-row:last-child { border-bottom:none; }
+.ms-activity-info { display:flex; flex-direction:column; gap:2px; }
+.ms-activity-info strong { font-size:0.85rem; color:var(--admin-text); }
+.ms-activity-customer { font-size:0.75rem; color:var(--admin-text2); }
+.ms-activity-meta { display:flex; align-items:center; gap:10px; }
+.ms-activity-total { font-weight:700; font-size:0.85rem; color:var(--admin-text); }
+.ms-empty { text-align:center; padding:24px; color:var(--admin-muted); font-size:0.85rem; }
+
 /* ===== CHARTS & ANALYTICS SECTION ===== */
 .charts-grid {
   display: grid;

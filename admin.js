@@ -10,6 +10,35 @@ let directSaleLog = []; // Track direct sales for UI display
 let stockReceiptsLog = []; // Track stock receipts for UI display
 let storePlan = null; // Track active modules plan for this store
 
+// ===== UX Simplification (Merchant Dashboard) =====
+let isSimplifiedMode = false;
+
+function determineSimplifiedMode() {
+  const s = Auth.getSession();
+  return s && s.role !== 'super_admin';
+}
+
+function applySimplifiedUI() {
+  isSimplifiedMode = determineSimplifiedMode();
+  const nA = $a('sidebar-nav-advanced');
+  const nS = $a('sidebar-nav-simple');
+  const dA = $a('admin-dashboard-advanced');
+  const dS = $a('admin-dashboard-simple');
+  if (nA) nA.style.display = isSimplifiedMode ? 'none' : '';
+  if (nS) nS.style.display = isSimplifiedMode ? '' : 'none';
+  if (dA) dA.style.display = isSimplifiedMode ? 'none' : '';
+  if (dS) dS.style.display = isSimplifiedMode ? '' : 'none';
+}
+
+function toggleSimplifiedMode() {
+  if (!Auth.isSuperAdmin()) return;
+  isSimplifiedMode = !isSimplifiedMode;
+  applySimplifiedUI();
+  if (currentAdminPage === 'dashboard') navigateTo('dashboard');
+  const bt = $a('toggle-simplified-text');
+  if (bt) bt.textContent = isSimplifiedMode ? 'عرض متقدم' : 'عرض مبسط';
+}
+
 // Temp settings state (before save)
 let _settingsTempPrimary     = null;
 let _settingsTempSecondary   = null;
@@ -105,9 +134,21 @@ function navigateTo(page) {
   }
 
   currentAdminPage = page;
+  // Show the correct dashboard version without extra fetch
+  if (page === 'dashboard') {
+    const dA = $a('admin-dashboard-advanced');
+    const dS = $a('admin-dashboard-simple');
+    if (isSimplifiedMode) { if (dA) dA.style.display = 'none'; if (dS) dS.style.display = ''; }
+    else                 { if (dA) dA.style.display = ''; if (dS) dS.style.display = 'none'; }
+  }
   document.querySelectorAll('.admin-page').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  const pageEl = $a('admin-' + page);
+  let pageEl;
+  if (page === 'dashboard') {
+    pageEl = isSimplifiedMode ? $a('admin-dashboard-simple') : $a('admin-dashboard-advanced');
+  } else {
+    pageEl = $a('admin-' + page);
+  }
   const navEl  = document.querySelector(`.nav-item[data-page="${page}"]`);
   if (pageEl) pageEl.classList.add('active');
   if (navEl)  navEl.classList.add('active');
@@ -116,22 +157,23 @@ function navigateTo(page) {
 
 function refreshPage(page) {
   const titles = {
-    dashboard:  'لوحة المعلومات',
-    products:   'إدارة المنتجات',
+    dashboard:  isSimplifiedMode ? 'الرئيسية' : 'لوحة المعلومات',
+    products:   'المنتجات',
     categories: 'التصنيفات',
-    orders:     'إدارة الطلبات',
+    orders:     'الطلبات',
     'direct-sale': 'بيع مباشر',
     invoices:    'الفواتير',
-    users:      'إدارة المستخدمين',
-    accounting: 'ملخص المبيعات والمخزون',
-    coupons:    'إدارة الكوبونات',
-    settings:   'إعدادات المتجر',
+    users:      'المستخدمين',
+    accounting: 'المالية',
+    coupons:    'الكوبونات',
+    settings:   'المتجر',
     'store-plan': 'إدارة خطة المتجر',
     'module-disabled': 'ميزة غير مفعلة',
     'access-denied': 'وصول مرفوض'
   };
   const titleIcons = {
-    dashboard: 'bar-chart', products: 'package', categories: 'tag',
+    dashboard: isSimplifiedMode ? 'home' : 'bar-chart',
+    products: 'package', categories: 'tag',
     orders: 'receipt', 'direct-sale': 'shopping-cart', invoices: 'file-text', users: 'users', accounting: 'credit-card', coupons: 'gift', settings: 'settings',
     'store-plan': 'shield-check', 'module-disabled': 'lock',
     'access-denied': 'shield-alert'
@@ -141,9 +183,8 @@ function refreshPage(page) {
     titleEl.innerHTML = `<i data-lucide="${titleIcons[page] || 'layout'}" style="width:20px;height:20px;vertical-align:middle;margin-left:8px"></i>${titles[page] || ''}`;
     if (window.lucide) lucide.createIcons();
   }
-  // Force-refresh data from server on navigation
+  // Force-refresh data from server on navigation (except dashboard — uses appState caching)
   if (window.appState) {
-    if (page === 'dashboard')  { appState.orders = null; appState.products = null; }
     if (page === 'products')   { appState.products = null; appState.categories = null; }
     if (page === 'categories') { appState.categories = null; }
     if (page === 'orders')     { appState.orders = null; }
@@ -153,7 +194,7 @@ function refreshPage(page) {
     if (page === 'settings')   { appState.settings = null; appState.countries = null; }
     if (page === 'invoices')   { appState.invoices = null; }
   }
-  if (page === 'dashboard')       renderDashboard();
+  if (page === 'dashboard') { if (isSimplifiedMode) renderMerchantDashboard(); else renderDashboard(); }
   else if (page === 'products')   renderProductsTable();
   else if (page === 'categories') renderCategoriesPage();
   else if (page === 'orders')     renderOrdersTable();
@@ -1387,6 +1428,8 @@ async function updatePendingBadge() {
     const pending = (orders || []).filter(o => o.status === 'pending').length;
     const badge = $a('orders-badge');
     if (badge) { badge.textContent = pending; badge.style.display = pending > 0 ? 'inline' : 'none'; }
+    const badgeSimple = $a('orders-badge-simple');
+    if (badgeSimple) { badgeSimple.textContent = pending; badgeSimple.style.display = pending > 0 ? 'inline' : 'none'; }
   } catch(e) { console.error('Badge update failed', e); }
 }
 
@@ -1585,6 +1628,91 @@ async function renderDashboard() {
 
 function statusText(s) {
   return { pending: 'قيد الانتظار', processing: 'جاري التجهيز', shipped: 'تم الشحن', delivered: 'تم التوصيل', cancelled: 'ملغي' }[s] || s;
+}
+
+// ===== Simplified Merchant Dashboard (with caching) =====
+let _merchantOrdersCache = [];
+
+async function renderMerchantDashboard() {
+  try {
+    const [orders, products, store] = await Promise.all([
+      API.getOrders(),         // uses appState cache — no re-fetch if updatePendingBadge already loaded
+      API.getProducts(),       // uses appState cache
+      API.getStoreSettings()   // uses appState cache
+    ]);
+    _merchantOrdersCache = orders;
+    const sym = store.currencySymbol || store.currency || 'USD';
+
+    const today = new Date().toDateString();
+    const todayOrders = orders.filter(o => {
+      const d = o.date || o.createdAt;
+      return d && new Date(d).toDateString() === today;
+    });
+    const revenueToday = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+    const invoicesToday = todayOrders.filter(o => o.status !== 'cancelled').length;
+
+    const safeSet = (id, val) => { const el = $a(id); if(el) el.textContent = val; };
+    safeSet('ms-orders-today', todayOrders.length);
+    safeSet('ms-revenue-today', revenueToday.toLocaleString('ar-SA') + ` ${sym}`);
+    safeSet('ms-products-active', products.length);
+    safeSet('ms-invoices-today', invoicesToday);
+
+    // Recent orders
+    const recentOrders = orders.slice(0, 5);
+    const tbody = $a('ms-recent-orders');
+    if (!recentOrders.length) {
+      tbody.innerHTML = '<div class="ms-empty"><p>لا توجد طلبات حتى الآن</p></div>';
+    } else {
+      tbody.innerHTML = recentOrders.map(o => `
+        <div class="ms-activity-row" onclick="navigateTo('orders')" style="cursor:pointer;">
+          <div class="ms-activity-info">
+            <strong>#${o.id || o.orderNumber || ''}</strong>
+            <span class="ms-activity-customer">${o.customer || 'عميل'}</span>
+          </div>
+          <div class="ms-activity-meta">
+            <span class="status-badge status-${o.status}">${statusText(o.status)}</span>
+            <span class="ms-activity-total">${Number(o.total).toLocaleString('ar-SA')} ${sym}</span>
+          </div>
+        </div>`).join('');
+    }
+
+    // Recent invoices — cached in appState.invoices to avoid extra fetch each render
+    let invoices = appState.invoices || [];
+    if (!invoices.length) {
+      try {
+        const invRes = await fetchWithStability('/api/invoices');
+        if (invRes && invRes.success && Array.isArray(invRes.invoices)) {
+          invoices = invRes.invoices;
+          appState.invoices = invoices; // cache it
+        } else if (Array.isArray(invRes)) {
+          invoices = invRes;
+          appState.invoices = invoices;
+        }
+      } catch(e) { invoices = []; }
+    }
+    invoices.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const recentInvoices = invoices.slice(0, 5);
+    const tbodyInv = $a('ms-recent-invoices');
+    if (!recentInvoices.length) {
+      tbodyInv.innerHTML = '<div class="ms-empty"><p>لا توجد فواتير حتى الآن</p></div>';
+    } else {
+      tbodyInv.innerHTML = recentInvoices.map(inv => `
+        <div class="ms-activity-row" onclick="navigateTo('invoices')" style="cursor:pointer;">
+          <div class="ms-activity-info">
+            <strong>#${inv.id}</strong>
+            <span class="ms-activity-customer">${inv.customer?.name || 'عميل'}</span>
+          </div>
+          <div class="ms-activity-meta">
+            <span>${inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('ar-EG') : '—'}</span>
+            <span class="ms-activity-total">${Number(inv.total).toFixed(2)} ${sym}</span>
+          </div>
+        </div>`).join('');
+    }
+
+    if (window.lucide) lucide.createIcons();
+  } catch(e) {
+    console.error('Merchant dashboard render failed', e);
+  }
 }
 
 async function renderProductsTable() {
@@ -2622,7 +2750,9 @@ async function handleWorkflowStatusTransition(nextStatus) {
     openOrderDetails(currentViewOrder.id);
     renderOrdersTable();
     updatePendingBadge();
-    if (currentAdminPage === 'dashboard') renderDashboard();
+    if (currentAdminPage === 'dashboard') {
+      if (isSimplifiedMode) renderMerchantDashboard(); else renderDashboard();
+    }
   } else {
     showAdminToast(res?.message || 'لا يمكن الانتقال لهذه الحالة مباشرة.', 'error');
     if (actionsContainer) actionsContainer.innerHTML = originalHtml;
@@ -2664,7 +2794,9 @@ async function submitOrderCancellation() {
     openOrderDetails(currentViewOrder.id);
     renderOrdersTable();
     updatePendingBadge();
-    if (currentAdminPage === 'dashboard') renderDashboard();
+    if (currentAdminPage === 'dashboard') {
+      if (isSimplifiedMode) renderMerchantDashboard(); else renderDashboard();
+    }
   } else {
     showAdminToast(res?.message || 'فشل إلغاء الطلب.', 'error');
     openOrderDetails(currentViewOrder.id); // restore UI
@@ -3249,7 +3381,14 @@ async function initAdmin() {
     }
   }
 
-  // Permission-based nav visibility
+  // Apply UX simplification (sidebar + dashboard toggle)
+  applySimplifiedUI();
+
+  // Show toggle button only for super_admin
+  const toggleBtn = $a('toggle-simplified-btn');
+  if (toggleBtn) toggleBtn.style.display = Auth.isSuperAdmin() ? '' : 'none';
+
+  // Permission-based nav visibility — advanced nav
   const navDashboard = $a('nav-dashboard');
   const navProducts = $a('nav-products');
   const navCategories = $a('nav-categories');
@@ -3268,9 +3407,27 @@ async function initAdmin() {
   if (navCoupons) navCoupons.style.display = Auth.can('view_coupons') ? '' : 'none';
   if (navSettings) navSettings.style.display = Auth.can('view_settings') ? '' : 'none';
 
-  // Set store link
+  // Permission-based nav visibility — simplified nav
+  const sNavDashboard = $a('nav-s-dashboard');
+  const sNavOrders = $a('nav-s-orders');
+  const sNavProducts = $a('nav-s-products');
+  const sNavDirectSale = $a('nav-s-direct-sale');
+  const sNavInvoices = $a('nav-s-invoices');
+  const sNavAccounting = $a('nav-s-accounting');
+  const sNavSettings = $a('nav-s-settings');
+  if (sNavDashboard) sNavDashboard.style.display = Auth.can('view_dashboard') ? '' : 'none';
+  if (sNavOrders) sNavOrders.style.display = Auth.can('view_orders') ? '' : 'none';
+  if (sNavProducts) sNavProducts.style.display = Auth.can('view_products') ? '' : 'none';
+  if (sNavDirectSale) sNavDirectSale.style.display = Auth.can('update_orders') ? '' : 'none';
+  if (sNavInvoices) sNavInvoices.style.display = Auth.can('view_orders') ? '' : 'none';
+  if (sNavAccounting) sNavAccounting.style.display = '';
+  if (sNavSettings) sNavSettings.style.display = Auth.can('view_settings') ? '' : 'none';
+
+  // Set store link for both navs
   const navOpenStore = $a('nav-open-store');
   if (navOpenStore) navOpenStore.href = `index.html?store=${STORE_ID}`;
+  const navSOpenStore = $a('nav-s-open-store');
+  if (navSOpenStore) navSOpenStore.href = `index.html?store=${STORE_ID}`;
 
   // Fetch Store Plan & Apply visibility rules
   try {
@@ -3303,13 +3460,17 @@ async function initAdmin() {
 
   updatePendingBadge();
   
-  // Find first allowed page
-  const pagesOrder = ['dashboard', 'products', 'categories', 'orders', 'users', 'coupons', 'settings'];
+  // Find first allowed page (simplified order for non-super-admin)
+  const pagesOrder = isSimplifiedMode
+    ? ['dashboard', 'orders', 'products', 'direct-sale', 'invoices', 'accounting', 'settings']
+    : ['dashboard', 'products', 'categories', 'orders', 'users', 'coupons', 'settings'];
   const pagesPermissions = {
     dashboard: 'view_dashboard',
     products: 'view_products',
     categories: 'view_categories',
     orders: 'view_orders',
+    'direct-sale': 'update_orders',
+    invoices: 'view_orders',
     users: 'view_users',
     coupons: 'view_coupons',
     settings: 'view_settings'
@@ -4898,6 +5059,38 @@ function applyStorePlanVisibility() {
   const isPaymentSettingsEnabled = plan.modules.paymentSettings !== false;
   document.querySelectorAll('#stab-payments input, #stab-payments select').forEach(input => {
     input.disabled = !isPaymentSettingsEnabled;
+  });
+
+  // Apply module visibility to simplified nav: storefront
+  const nsOpenStore = $a('nav-s-open-store');
+  if (nsOpenStore) {
+    const sfEnabled = plan.modules.storefront !== false;
+    nsOpenStore.style.display = (sfEnabled || isSuperAdmin) ? '' : 'none';
+  }
+
+  // Apply module visibility to simplified nav items
+  const sModuleNavMap = {
+    'products': 'nav-s-products',
+    'orders': 'nav-s-orders',
+    'direct-sale': 'nav-s-direct-sale',
+    'invoices': 'nav-s-invoices',
+    'accounting': 'nav-s-accounting',
+    'settings': 'nav-s-settings'
+  };
+  Object.keys(sModuleNavMap).forEach(pageKey => {
+    const moduleName = modulePageMap[pageKey];
+    if (!moduleName) return;
+    const isEnabled = plan.modules[moduleName] !== false;
+    const navEl = $a(sModuleNavMap[pageKey]);
+    if (navEl) {
+      if (isEnabled) {
+        const sPerms = { 'products':'view_products','orders':'view_orders','direct-sale':'update_orders','invoices':'view_orders','settings':'view_settings' };
+        const requiredPerm = sPerms[pageKey];
+        navEl.style.display = (!requiredPerm || Auth.can(requiredPerm)) ? '' : 'none';
+      } else {
+        navEl.style.display = isSuperAdmin ? '' : 'none';
+      }
+    }
   });
 }
 
