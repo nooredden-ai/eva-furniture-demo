@@ -89,6 +89,20 @@ const Validator = {
   category: (data) => {
     if (!data.name || data.name.trim() === '') return 'اسم التصنيف مطلوب';
     return null;
+  },
+  categoryParent: (categoryId, parentId, allCategories) => {
+    if (!parentId || String(parentId).trim() === '') return null;
+    if (String(parentId) === String(categoryId)) return 'لا يمكن أن يكون التصنيف أباً لنفسه';
+    const visited = new Set();
+    let current = String(parentId);
+    while (current) {
+      if (current === String(categoryId)) return 'لا يمكن أن يكون التصنيف فرعاً من تصنيف فرعي تابع له';
+      if (visited.has(current)) return null;
+      visited.add(current);
+      const parent = allCategories.find(c => String(c.id) === current);
+      current = parent && parent.parentId ? String(parent.parentId) : null;
+    }
+    return null;
   }
 };
 

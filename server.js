@@ -529,9 +529,13 @@ app.put('/api/categories/:id', requirePerm('manage_categories'), (req, res) => {
 });
 
 app.delete('/api/categories/:id', requirePerm('manage_categories'), (req, res) => {
+  const children = categoryRepository.findChildren(req.params.id);
+  if (children.length > 0) {
+    categoryRepository.reassignChildrenToRoot(req.params.id);
+  }
   const deleted = categoryRepository.delete(req.params.id);
   if (!deleted) return res.status(404).json({ error: 'Category not found' });
-  res.json({ ok: true });
+  res.json({ ok: true, childrenReassigned: children.length });
 });
 
 /* =========================

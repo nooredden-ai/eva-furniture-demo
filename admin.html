@@ -982,6 +982,8 @@
                   <option value="signature">Signature - بتوقيع لويلو</option>
                   <option value="noorlabs-signature">NoorLabs Signature - بتوقيع نور لابس</option>
                   <option value="eva-flow">EVA Flow - متجر عصري سريع</option>
+                  <option value="eva-express">EVA Express - متجر سريع للموبايل</option>
+                  <option value="eva-mega">EVA Mega - متجر الكبير للقسم</option>
                 </select>
 
                 <div class="theme-gallery-grid">
@@ -1129,6 +1131,47 @@
                     <div class="theme-card-actions">
                       <button type="button" class="btn-theme-action btn-preview-theme" onclick="previewTheme('eva-flow')">معاينة</button>
                       <button type="button" class="btn-theme-action btn-select-theme" onclick="selectThemeCard('eva-flow')">تفعيل الثيم</button>
+                    </div>
+                  </div>
+                </div>
+                <!-- Card 8: EVA Express -->
+                <div class="theme-gallery-card" data-theme-id="eva-express">
+                  <div class="theme-card-preview">
+                    <div class="preview-palette">
+                      <span style="background:#0891B2"></span>
+                      <span style="background:#06B6D4"></span>
+                      <span style="background:#F8FAFC"></span>
+                    </div>
+                  </div>
+                  <div class="theme-card-info">
+                    <div class="theme-card-header">
+                      <h5>EVA Express - متجر سريع للموبايل</h5>
+                      <span class="theme-active-badge"><i data-lucide="check" style="width:12px;height:12px;margin-left:4px"></i>مفعّل حالياً</span>
+                    </div>
+                    <p>تصميم بسيط وسريع للتجارة الإلكترونية، مستوحى من Temu وSHEIN مع شريط سفلي للموبايل وتجربة شراء فورية.</p>
+                    <div class="theme-card-actions">
+                      <button type="button" class="btn-theme-action btn-preview-theme" onclick="previewTheme('eva-express')">معاينة</button>
+                      <button type="button" class="btn-theme-action btn-select-theme" onclick="selectThemeCard('eva-express')">تفعيل الثيم</button>
+                    </div>
+                  </div>
+                <!-- Card 9: EVA Mega -->
+                <div class="theme-gallery-card" data-theme-id="eva-mega">
+                  <div class="theme-card-preview">
+                    <div class="preview-palette">
+                      <span style="background:#1E3A5F"></span>
+                      <span style="background:#2D5A8E"></span>
+                      <span style="background:#F0F4F8"></span>
+                    </div>
+                  </div>
+                  <div class="theme-card-info">
+                    <div class="theme-card-header">
+                      <h5>EVA Mega - متجر الكبير للقسم</h5>
+                      <span class="theme-active-badge"><i data-lucide="check" style="width:12px;height:12px;margin-left:4px"></i>مفعّل حالياً</span>
+                    </div>
+                    <p>تصميم ضخم للتجارة الإلكترونية مع شريط تصنيفات علوي ثابت، مستوحى من المتاجر الكبرى مع تجربة تسوق احترافية.</p>
+                    <div class="theme-card-actions">
+                      <button type="button" class="btn-theme-action btn-preview-theme" onclick="previewTheme('eva-mega')">معاينة</button>
+                      <button type="button" class="btn-theme-action btn-select-theme" onclick="selectThemeCard('eva-mega')">تفعيل الثيم</button>
                     </div>
                   </div>
                 </div>
@@ -1774,6 +1817,12 @@
       <div class="form-row">
         <label>اسم التصنيف *</label>
         <input type="text" id="cm-name" placeholder="مثال: العناية بالبشرة"/>
+      </div>
+      <div class="form-row">
+        <label>التصنيف الأب</label>
+        <select id="cm-parentId">
+          <option value="">بدون — تصنيف رئيسي</option>
+        </select>
       </div>
       <div class="form-row">
         <label>صورة التصنيف (اختياري)</label>

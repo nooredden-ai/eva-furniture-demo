@@ -20,7 +20,7 @@ const ZONES = [
 
 // DOM Elements
 const $ = id => document.getElementById(id);
-const AVAILABLE_THEMES = ['calm', 'modern', 'luxury', 'minimal', 'signature', 'noorlabs-signature', 'eva-flow'];
+const AVAILABLE_THEMES = ['calm', 'modern', 'luxury', 'minimal', 'signature', 'noorlabs-signature', 'eva-flow', 'eva-express', 'eva-mega'];
 
 function normalizeThemeName(theme) {
   if (!theme || typeof theme !== 'string') return 'noorlabs-signature';
@@ -61,7 +61,12 @@ function normalizeCategoryForStore(category) {
     name: category.name || 'غير مصنف',
     image: category.image || '',
     emoji: category.emoji || '',
+    parentId: category.parentId && String(category.parentId).trim() ? String(category.parentId).trim() : null,
   };
+}
+
+function isRootCategory(category) {
+  return !normalizeCategoryForStore(category).parentId;
 }
 
 function isAllCategory(category) {
@@ -432,6 +437,7 @@ function renderCategories() {
 
   const categoriesToRender = allCategories
     .filter(c => !isAllCategory(c))
+    .filter(c => isRootCategory(c))
     .filter((c, idx, arr) => {
       const normalizedId = String(c.id || '').trim();
       return normalizedId && arr.findIndex(item => String(item.id || '').trim() === normalizedId) === idx;

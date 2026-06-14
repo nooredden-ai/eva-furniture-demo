@@ -1990,6 +1990,58 @@ async function processSaveProduct() {
   });
 }
 
+// ===== Category Helpers =====
+function normalizeCategory(cat) {
+  return {
+    id: cat.id,
+    name: cat.name || 'غير مصنف',
+    image: cat.image || '',
+    emoji: cat.emoji || '',
+    parentId: cat.parentId && String(cat.parentId).trim() ? String(cat.parentId).trim() : null,
+    sortOrder: typeof cat.sortOrder === 'number' ? cat.sortOrder : undefined
+  };
+}
+
+function getRootCategories(cats) {
+  return cats.filter(c => !normalizeCategory(c).parentId);
+}
+
+function getChildCategories(cats, parentId) {
+  return cats.filter(c => normalizeCategory(c).parentId === String(parentId));
+}
+
+function buildCategoryTree(cats) {
+  const root = getRootCategories(cats);
+  const sorted = [...root].sort((a, b) => {
+    const aOrder = normalizeCategory(a).sortOrder;
+    const bOrder = normalizeCategory(b).sortOrder;
+    if (aOrder !== undefined && bOrder !== undefined) return aOrder - bOrder;
+    return 0;
+  });
+  return sorted.map(c => ({
+    ...normalizeCategory(c),
+    children: getChildCategories(cats, c.id).map(child => ({
+      ...normalizeCategory(child),
+      children: getChildCategories(cats, child.id)
+    }))
+  }));
+}
+
+function wouldCreateCategoryLoop(cats, categoryId, proposedParentId) {
+  if (!proposedParentId || String(proposedParentId).trim() === '') return false;
+  if (String(proposedParentId) === String(categoryId)) return true;
+  const visited = new Set();
+  let current = String(proposedParentId);
+  while (current) {
+    if (current === String(categoryId)) return true;
+    if (visited.has(current)) return false;
+    visited.add(current);
+    const parent = cats.find(c => String(c.id) === current);
+    current = parent && normalizeCategory(parent).parentId ? normalizeCategory(parent).parentId : null;
+  }
+  return false;
+}
+
 // ===== Categories =====
 function renderCategoriesPage() {
   API.getCategories().then(cats => {
@@ -2000,31 +2052,59 @@ function renderCategoriesPage() {
       if (window.lucide) lucide.createIcons();
       return;
     }
-    container.innerHTML = cats.map(c => `
-      <div class="store-card" style="min-height:auto;padding:20px">
-        <div style="display:flex;align-items:center;gap:14px;justify-content:space-between">
-          <div style="display:flex;align-items:center;gap:12px">
-            <div style="width:48px;height:48px;border-radius:12px;background:var(--admin-surface2);display:flex;align-items:center;justify-content:center;font-size:1.5rem;overflow:hidden">
-              ${c.image ? `<img src="${c.image}" alt="${c.name}" style="width:100%;height:100%;object-fit:cover" />` : `<i data-lucide="folder" style="width:24px;height:24px;opacity:0.6"></i>`}
+    const tree = buildCategoryTree(cats);
+    function renderNode(node, depth) {
+      const indent = depth * 20;
+      const hasChildren = node.children && node.children.length > 0;
+      const prefix = depth === 0 ? '' : (hasChildren ? '└─ ' : '├─ ');
+      const isAll = node.id === 'all';
+      return `
+        <div class="store-card" style="min-height:auto;padding:12px 20px;margin-bottom:2px;border-right:${depth > 0 ? '2px solid var(--admin-border)' : 'none'};margin-right:${indent}px">
+          <div style="display:flex;align-items:center;gap:14px;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:12px">
+              ${depth > 0 ? `<span style="color:var(--admin-text2);font-size:0.85rem;margin-left:4px">${prefix}</span>` : ''}
+              <div style="width:40px;height:40px;border-radius:10px;background:var(--admin-surface2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;overflow:hidden">
+                ${node.image ? `<img src="${node.image}" alt="${node.name}" style="width:100%;height:100%;object-fit:cover" />` : `<i data-lucide="folder" style="width:20px;height:20px;opacity:0.6"></i>`}
+              </div>
+              <div>
+                <div style="font-weight:700;font-size:0.95rem">${node.name}</div>
+                <div style="font-size:0.75rem;color:var(--admin-text2)">المعرّف: ${node.id}${node.parentId ? ` | الأب: ${(cats.find(p => p.id === node.parentId) || {}).name || node.parentId}` : ''}</div>
+              </div>
             </div>
-            <div>
-              <div style="font-weight:700;font-size:1rem">${c.name}</div>
-              <div style="font-size:0.8rem;color:var(--admin-text2)">المعرّف: ${c.id}</div>
+            ${!isAll ? `
+            <div style="display:flex;gap:6px">
+              <button class="topbar-btn btn-outline btn-sm" onclick="openEditCategory('${node.id}')"><i data-lucide="edit" style="width:14px;height:14px"></i></button>
+              <button class="topbar-btn btn-danger btn-sm" onclick="deleteCategory('${node.id}')"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>
             </div>
+            ` : `<span style="font-size:0.75rem;color:var(--admin-text2);background:var(--admin-surface2);padding:4px 10px;border-radius:20px">تصنيف افتراضي</span>`}
           </div>
-          ${c.id !== 'all' ? `
-          <div style="display:flex;gap:6px">
-            <button class="topbar-btn btn-outline btn-sm" onclick="openEditCategory('${c.id}')"><i data-lucide="edit" style="width:14px;height:14px"></i></button>
-            <button class="topbar-btn btn-danger btn-sm" onclick="deleteCategory('${c.id}')"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>
-          </div>
-          ` : `<span style="font-size:0.75rem;color:var(--admin-text2);background:var(--admin-surface2);padding:4px 10px;border-radius:20px">تصنيف افتراضي</span>`}
         </div>
-      </div>`).join('');
+        ${hasChildren ? node.children.map(child => renderNode(child, depth + 1)).join('') : ''}
+      `;
+    }
+    container.innerHTML = tree.map(node => renderNode(node, 0)).join('');
     if (window.lucide) lucide.createIcons();
   });
 }
 
-let categoryImageMarkedForRemoval = false;
+function populateCategoryParentSelect(selectedParentId, excludeId) {
+  const select = $a('cm-parentId');
+  if (!select) return;
+  API.getCategories().then(cats => {
+    const filtered = cats.filter(c => c.id !== 'all' && c.id !== excludeId);
+    const rootLabel = 'بدون — تصنيف رئيسي';
+    let html = `<option value="">${rootLabel}</option>`;
+    filtered.forEach(c => {
+      const isChildOfExcluded = wouldCreateCategoryLoop(cats, excludeId, c.id);
+      if (excludeId && (c.id === excludeId || isChildOfExcluded)) return;
+      const parentName = c.parentId ? (cats.find(p => p.id === c.parentId)?.name || '') + ' / ' : '';
+      const label = parentName + c.name;
+      const selected = selectedParentId && String(c.id) === String(selectedParentId) ? 'selected' : '';
+      html += `<option value="${c.id}" ${selected}>${label}</option>`;
+    });
+    select.innerHTML = html;
+  });
+}
 
 function openAddCategory() {
   editingCategory = null;
@@ -2032,6 +2112,7 @@ function openAddCategory() {
   $a('category-modal-title').innerHTML = '<i data-lucide="plus-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة تصنيف جديد';
   $a('cm-name').value = '';
   clearCategoryImagePreview();
+  populateCategoryParentSelect(null, null);
   $a('category-modal').classList.add('open');
   if (window.lucide) lucide.createIcons();
 }
@@ -2044,6 +2125,7 @@ function openEditCategory(catId) {
     categoryImageMarkedForRemoval = false;
     $a('category-modal-title').innerHTML = '<i data-lucide="edit" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> تعديل التصنيف';
     $a('cm-name').value  = cat.name;
+    populateCategoryParentSelect(cat.parentId || '', catId);
     if (cat.image) {
       showCategoryImagePreview(cat.image);
     } else {
@@ -2073,7 +2155,18 @@ async function processSaveCategory() {
   const name  = $a('cm-name').value.trim();
   if (!name) { showAdminToast('اسم التصنيف مطلوب', 'error'); return; }
 
+  const parentId = $a('cm-parentId') ? $a('cm-parentId').value.trim() : '';
   const data = { name };
+  if (parentId) data.parentId = parentId;
+
+  if (editingCategory) {
+    const cats = await API.getCategories(true);
+    if (wouldCreateCategoryLoop(cats, editingCategory, parentId)) {
+      showAdminToast('لا يمكن جعل هذا التصنيف أباً لنفسه أو فرعاً من تصنيف فرعي تابع له', 'error');
+      return;
+    }
+  }
+
   const fileInput = $a('cm-image-file');
   const file = fileInput ? fileInput.files[0] : null;
 
@@ -2172,15 +2265,34 @@ function removeCategoryImage() {
 
 function deleteCategory(catId) {
   if (catId === 'all') return;
-  showConfirmModal('تأكيد الحذف', 'هل أنت متأكد من حذف هذا التصنيف؟', () => {
-    withLock('delete-category-' + catId, () => {
-      return API.deleteCategory(catId).then(res => {
-        if (res && res.success === false) { showAdminToast(res.message || 'فشل الحذف', 'error'); return; }
-        appState.categories = null;
-        renderCategoriesPage();
-        showAdminToast('تم حذف التصنيف');
+  API.getCategories().then(cats => {
+    const children = cats.filter(c => String(c.parentId) === String(catId));
+    if (children.length > 0) {
+      showConfirmModal('تأكيد الحذف',
+        'هذا التصنيف يحتوي على تصنيفات فرعية. سيتم نقل التصنيفات الفرعية إلى المستوى الرئيسي قبل حذف التصنيف. هل تريد المتابعة؟',
+        () => {
+          withLock('delete-category-' + catId, () => {
+            return API.deleteCategory(catId).then(res => {
+              if (res && res.success === false) { showAdminToast(res.message || 'فشل الحذف', 'error'); return; }
+              appState.categories = null;
+              renderCategoriesPage();
+              showAdminToast('تم حذف التصنيف');
+            });
+          });
+        }
+      );
+    } else {
+      showConfirmModal('تأكيد الحذف', 'هل أنت متأكد من حذف هذا التصنيف؟', () => {
+        withLock('delete-category-' + catId, () => {
+          return API.deleteCategory(catId).then(res => {
+            if (res && res.success === false) { showAdminToast(res.message || 'فشل الحذف', 'error'); return; }
+            appState.categories = null;
+            renderCategoriesPage();
+            showAdminToast('تم حذف التصنيف');
+          });
+        });
       });
-    });
+    }
   });
 }
 
