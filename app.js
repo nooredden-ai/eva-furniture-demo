@@ -23,9 +23,9 @@ const $ = id => document.getElementById(id);
 const AVAILABLE_THEMES = ['calm', 'modern', 'luxury', 'minimal', 'signature', 'noorlabs-signature'];
 
 function normalizeThemeName(theme) {
-  if (!theme || typeof theme !== 'string') return 'calm';
+  if (!theme || typeof theme !== 'string') return 'noorlabs-signature';
   const normalized = theme.trim().toLowerCase();
-  return AVAILABLE_THEMES.includes(normalized) ? normalized : 'calm';
+  return AVAILABLE_THEMES.includes(normalized) ? normalized : 'noorlabs-signature';
 }
 
 function setThemeStylesheet(theme) {
@@ -340,7 +340,7 @@ function applyStoreSettings(s) {
   // Apply theme file first, then brand colors if needed
   const urlParams = new URLSearchParams(window.location.search);
   const previewTheme = urlParams.get('theme');
-  setThemeStylesheet(previewTheme || s.theme || 'calm');
+  setThemeStylesheet(previewTheme || s.theme || 'noorlabs-signature');
   document.documentElement.style.setProperty('--primary', s.primaryColor || '#6C3CE1');
   document.documentElement.style.setProperty('--secondary', s.secondaryColor || '#E84393');
   document.documentElement.style.setProperty('--text', s.textColor || '#0F172A');
