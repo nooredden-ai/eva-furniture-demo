@@ -20,7 +20,7 @@ const ZONES = [
 
 // DOM Elements
 const $ = id => document.getElementById(id);
-const AVAILABLE_THEMES = ['calm', 'modern', 'luxury', 'minimal', 'signature', 'noorlabs-signature'];
+const AVAILABLE_THEMES = ['calm', 'modern', 'luxury', 'minimal', 'signature', 'noorlabs-signature', 'eva-flow'];
 
 function normalizeThemeName(theme) {
   if (!theme || typeof theme !== 'string') return 'noorlabs-signature';
