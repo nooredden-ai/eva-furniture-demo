@@ -248,12 +248,12 @@ input, select, textarea { font-family: var(--font); }
 .hero-shapes .shape:nth-child(3) { width: 120px; height: 120px; top: 50%; left: 55%; background: rgba(96,126,157,0.1); transform: translate(-50%, -50%); }
 
 /* ===== Sections ===== */
-.section { max-width: 1180px; margin: 0 auto; padding: 40px 24px 16px !important; }
+.section { max-width: 1180px; margin: 0 auto; padding: 28px 24px 12px !important; }
 .section-title {
   font-size: 1.55rem; font-weight: 900; margin-bottom: 6px;
   display: flex; align-items: center; gap: 8px;
 }
-.section-subtitle { color: var(--text-light); margin-bottom: 20px; font-size: 0.95rem; max-width: 780px; }
+.section-subtitle { color: var(--text-light); margin-bottom: 14px; font-size: 0.95rem; max-width: 780px; }
 
 /* ===== Categories ===== */
 .categories-scroll {

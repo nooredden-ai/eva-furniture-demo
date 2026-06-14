@@ -175,13 +175,13 @@ body[data-theme="noorlabs-signature"]::before {
   display: grid !important;
   grid-template-columns: 1.2fr 1fr !important;
   background: var(--surface-strong) !important;
-  min-height: 480px !important;
-  padding: 48px !important;
+  min-height: 420px !important;
+  padding: 32px 40px !important;
   border-radius: 16px !important;
-  margin: 32px auto !important;
+  margin: 16px auto !important;
   max-width: 1200px !important;
   overflow: hidden !important;
-  gap: 48px !important;
+  gap: 32px !important;
   align-items: center !important;
   border: 1px solid var(--border) !important;
   box-shadow: var(--shadow-sm) !important;
@@ -214,7 +214,7 @@ body[data-theme="noorlabs-signature"]::before {
   padding: 6px 14px !important;
   font-weight: 700 !important;
   font-size: 0.82rem !important;
-  margin-bottom: 20px !important;
+  margin-bottom: 12px !important;
 }
 
 [data-theme="noorlabs-signature"] .hero h1 {
@@ -222,7 +222,7 @@ body[data-theme="noorlabs-signature"]::before {
   font-weight: 800 !important;
   line-height: 1.35 !important;
   color: var(--text-strong) !important;
-  margin-bottom: 20px !important;
+  margin-bottom: 12px !important;
 }
 
 [data-theme="noorlabs-signature"] .hero h1 em {
@@ -234,9 +234,9 @@ body[data-theme="noorlabs-signature"]::before {
 
 [data-theme="noorlabs-signature"] .hero p {
   font-size: 1.05rem !important;
-  line-height: 1.8 !important;
+  line-height: 1.7 !important;
   color: var(--text-light) !important;
-  margin-bottom: 32px !important;
+  margin-bottom: 16px !important;
   max-width: 520px !important;
 }
 
@@ -268,7 +268,7 @@ body[data-theme="noorlabs-signature"]::before {
   grid-row: 1 !important;
   width: 100% !important;
   height: 100% !important;
-  min-height: 340px !important;
+  min-height: 280px !important;
   border-radius: var(--radius) !important;
   border: 1px solid var(--border) !important;
   background-size: cover !important;
@@ -281,21 +281,21 @@ body[data-theme="noorlabs-signature"]::before {
   [data-theme="noorlabs-signature"] .hero {
     grid-template-columns: 1fr !important;
     min-height: auto !important;
-    padding: 32px 20px !important;
-    gap: 24px !important;
-    margin: 20px auto !important;
+    padding: 24px 16px !important;
+    gap: 16px !important;
+    margin: 12px auto !important;
   }
   [data-theme="noorlabs-signature"] .hero-content {
     align-items: center !important;
     text-align: center !important;
   }
   [data-theme="noorlabs-signature"] .hero p {
-    margin-bottom: 24px !important;
+    margin-bottom: 14px !important;
   }
   [data-theme="noorlabs-signature"] .hero-banner {
     grid-column: 1 !important;
     grid-row: 2 !important;
-    min-height: 240px !important;
+    min-height: 200px !important;
   }
 }
 
@@ -308,9 +308,9 @@ body[data-theme="noorlabs-signature"]::before {
 /* ===== CATEGORIES SCROLL ===== */
 [data-theme="noorlabs-signature"] .categories-scroll {
   display: flex !important;
-  gap: 20px !important;
+  gap: 16px !important;
   overflow-x: auto !important;
-  padding: 16px 4px 20px !important;
+  padding: 10px 4px 16px !important;
   scroll-behavior: smooth !important;
   scrollbar-width: none !important;
 }
@@ -323,10 +323,10 @@ body[data-theme="noorlabs-signature"]::before {
   display: flex !important;
   flex-direction: column !important;
   align-items: center !important;
-  gap: 10px !important;
+  gap: 8px !important;
   cursor: pointer !important;
   transition: transform var(--transition) !important;
-  width: 90px !important;
+  width: 84px !important;
   flex-shrink: 0 !important;
 }
 
@@ -381,8 +381,8 @@ body[data-theme="noorlabs-signature"]::before {
 [data-theme="noorlabs-signature"] .products-grid {
   display: grid !important;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)) !important;
-  gap: 24px !important;
-  margin-top: 24px !important;
+  gap: 20px !important;
+  margin-top: 16px !important;
 }
 
 [data-theme="noorlabs-signature"] .product-card {
@@ -459,10 +459,10 @@ body[data-theme="noorlabs-signature"]::before {
 }
 
 [data-theme="noorlabs-signature"] .product-info {
-  padding: 20px !important;
+  padding: 14px 14px 16px !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
+  gap: 6px !important;
   flex-grow: 1 !important;
 }
 
@@ -473,16 +473,16 @@ body[data-theme="noorlabs-signature"]::before {
 }
 
 [data-theme="noorlabs-signature"] .product-name {
-  font-size: 0.95rem !important;
+  font-size: 1rem !important;
   font-weight: 700 !important;
   color: var(--text-strong) !important;
-  line-height: 1.43 !important;
-  height: 2.86em !important;
+  line-height: 1.4 !important;
+  height: 2.8em !important;
   margin-bottom: 2px !important;
 }
 
 [data-theme="noorlabs-signature"] .product-price {
-  font-size: 1.2rem !important;
+  font-size: 1.25rem !important;
   font-weight: 800 !important;
   color: var(--text-strong) !important;
   display: flex !important;
@@ -511,10 +511,10 @@ body[data-theme="noorlabs-signature"]::before {
   color: #ffffff !important;
   border: none !important;
   border-radius: var(--radius-sm) !important;
-  padding: 12px 16px !important;
-  font-size: 0.88rem !important;
+  padding: 14px 16px !important;
+  font-size: 0.9rem !important;
   font-weight: 700 !important;
-  margin-top: 10px !important;
+  margin-top: 6px !important;
   box-shadow: 0 4px 10px rgba(109, 40, 217, 0.1) !important;
   transition: all var(--transition) !important;
 }
