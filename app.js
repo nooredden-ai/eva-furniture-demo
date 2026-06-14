@@ -75,6 +75,40 @@ function isAllCategory(category) {
   return id === 'all' || name === 'الكل' || name === 'all products' || name === 'all';
 }
 
+function getCategoryById(id) {
+  return allCategories.find(c => c.id === id);
+}
+
+function getChildCategories(parentId) {
+  return allCategories.filter(c => c.parentId === String(parentId));
+}
+
+function getDescendantCategoryIds(parentId) {
+  const ids = [];
+  const stack = [String(parentId)];
+  const visited = new Set();
+  while (stack.length) {
+    const current = stack.pop();
+    if (visited.has(current)) continue;
+    visited.add(current);
+    if (current !== String(parentId)) ids.push(current);
+    const children = getChildCategories(current);
+    children.forEach(child => {
+      if (!visited.has(child.id)) stack.push(child.id);
+    });
+  }
+  return ids;
+}
+
+let currentSubCategory = null;
+
+function selectSubCategory(subCatId) {
+  currentSubCategory = subCatId;
+  renderSubCategories();
+  renderProducts();
+  renderBreadcrumb();
+}
+
 async function initStore() {
   window.checkoutEnabled = true;
   const overlay = document.getElementById('storefront-disabled-overlay');
@@ -469,10 +503,60 @@ function renderCategories() {
   if (window.lucide) lucide.createIcons();
 }
 
+function renderSubCategories() {
+  const container = $('subcategories-container');
+  if (!container) return;
+  if (currentCategory === 'all') {
+    container.innerHTML = '';
+    container.style.display = 'none';
+    return;
+  }
+  const children = getChildCategories(currentCategory);
+  if (children.length === 0) {
+    container.innerHTML = '';
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'flex';
+  const parentName = getCategoryName(currentCategory);
+  const allChildLabel = `الكل داخل ${parentName}`;
+  const cards = children.map(c => `
+    <div class="sub-cat-card ${currentSubCategory === String(c.id) ? 'active' : ''}" onclick="selectSubCategory('${c.id}')">
+      <span class="sub-cat-name">${c.name}</span>
+    </div>
+  `).join('');
+  container.innerHTML = `
+    <div class="sub-cat-card ${currentSubCategory === null ? 'active' : ''}" onclick="selectSubCategory(null)">
+      <span class="sub-cat-name">${allChildLabel}</span>
+    </div>
+    ${cards}
+  `;
+}
+
+function renderBreadcrumb() {
+  const container = $('category-breadcrumb');
+  if (!container) return;
+  if (currentCategory === 'all') {
+    container.innerHTML = '';
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'block';
+  const catName = getCategoryName(currentCategory);
+  let html = `<span class="breadcrumb-label">أنت تتصفح: </span><span class="breadcrumb-cat">${catName}</span>`;
+  if (currentSubCategory) {
+    html += ` <span class="breadcrumb-sep">/</span> <span class="breadcrumb-cat breadcrumb-cat-active">${getCategoryName(currentSubCategory)}</span>`;
+  }
+  container.innerHTML = html;
+}
+
 function selectCategory(catId) {
   currentCategory = catId;
+  currentSubCategory = null;
   renderCategories();
+  renderSubCategories();
   renderProducts();
+  renderBreadcrumb();
 }
 
 function getCurrency() {
@@ -483,9 +567,15 @@ function renderProducts() {
   const container = $('products-container');
   if (!container) return;
   
-  const filtered = currentCategory === 'all' 
-    ? allProducts 
-    : allProducts.filter(p => p.category === currentCategory);
+  let filtered;
+  if (currentCategory === 'all') {
+    filtered = allProducts;
+  } else if (currentSubCategory) {
+    filtered = allProducts.filter(p => p.category === currentSubCategory);
+  } else {
+    const descendantIds = [currentCategory, ...getDescendantCategoryIds(currentCategory)];
+    filtered = allProducts.filter(p => descendantIds.includes(p.category));
+  }
   const sortedProducts = filtered.slice().sort((a, b) => {
     const score = item => item.badge ? (item.badge === 'تخفيض' ? 2 : 1) : 0;
     return score(b) - score(a);
