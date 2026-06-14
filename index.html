@@ -153,8 +153,42 @@
   <section class="section" id="products">
     <h2 class="section-title"><i data-lucide="sparkles" style="width:24px;height:24px;color:var(--primary);vertical-align:middle;margin-left:8px"></i>منتجاتنا المميزة</h2>
     <p class="section-subtitle">تصفّح قطع الأثاث والديكور المختارة بعناية لتجربة منزلية متكاملة</p>
+    <div class="filters-bar" id="filters-bar">
+      <div class="filters-row" id="filters-row">
+        <div class="filter-group filter-group-price">
+          <input type="number" class="filter-input" id="filter-price-min" placeholder="السعر من" min="0" oninput="onFilterChange()" />
+          <span class="filter-sep">–</span>
+          <input type="number" class="filter-input" id="filter-price-max" placeholder="السعر إلى" min="0" oninput="onFilterChange()" />
+        </div>
+        <div class="filter-group" id="filter-brand-group" style="display:none">
+          <select class="filter-select" id="filter-brand" onchange="onFilterChange()"><option value="">الماركة</option></select>
+        </div>
+        <div class="filter-group" id="filter-size-group" style="display:none">
+          <select class="filter-select" id="filter-size" onchange="onFilterChange()"><option value="">المقاس</option></select>
+        </div>
+        <div class="filter-group" id="filter-color-group" style="display:none">
+          <select class="filter-select" id="filter-color" onchange="onFilterChange()"><option value="">اللون</option></select>
+        </div>
+        <button class="filter-reset-btn" id="filter-reset-btn" style="display:none" onclick="resetFilters()">إزالة الفلاتر</button>
+      </div>
+      <div class="filter-count" id="filter-count"></div>
+      <button class="filter-mobile-toggle" id="filter-mobile-toggle" onclick="toggleMobileFilters()"><i data-lucide="sliders-horizontal" style="width:16px;height:16px"></i> فلترة</button>
+    </div>
     <div class="products-grid" id="products-container"></div>
   </section>
+  <!-- Mobile Filter Drawer -->
+  <div class="filter-drawer-overlay" id="filter-drawer-overlay" onclick="closeMobileFilters()"></div>
+  <div class="filter-drawer" id="filter-drawer">
+    <div class="filter-drawer-header">
+      <h3>فلاتر البحث</h3>
+      <button class="filter-drawer-close" onclick="closeMobileFilters()">✕</button>
+    </div>
+    <div class="filter-drawer-body" id="filter-drawer-body"></div>
+    <div class="filter-drawer-footer">
+      <button class="filter-drawer-apply" onclick="applyMobileFilters()">تطبيق</button>
+      <button class="filter-drawer-reset" onclick="resetFilters()">إزالة الكل</button>
+    </div>
+  </div>
 
   <!-- FOOTER -->
   <footer class="footer">

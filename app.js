@@ -109,6 +109,160 @@ function selectSubCategory(subCatId) {
   renderBreadcrumb();
 }
 
+// ===== Filter State =====
+let filterPriceMin = '';
+let filterPriceMax = '';
+let filterBrand = '';
+let filterSize = '';
+let filterColor = '';
+
+function getAvailableBrands() {
+  const brands = new Set();
+  allProducts.forEach(p => { if (p.brand) brands.add(p.brand); });
+  return [...brands].sort();
+}
+
+function getAvailableSizes() {
+  const sizes = new Set();
+  allProducts.forEach(p => {
+    if (p.size) sizes.add(p.size);
+    if (Array.isArray(p.sizes)) p.sizes.forEach(s => sizes.add(s));
+  });
+  return [...sizes].sort();
+}
+
+function getAvailableColors() {
+  const colors = new Set();
+  allProducts.forEach(p => {
+    if (p.color) colors.add(p.color);
+    if (Array.isArray(p.colors)) p.colors.forEach(c => colors.add(c));
+  });
+  return [...colors].sort();
+}
+
+function onFilterChange() {
+  filterPriceMin = ($('filter-price-min') || {}).value || '';
+  filterPriceMax = ($('filter-price-max') || {}).value || '';
+  filterBrand = ($('filter-brand') || {}).value || '';
+  filterSize = ($('filter-size') || {}).value || '';
+  filterColor = ($('filter-color') || {}).value || '';
+  renderProducts();
+  renderFilters();
+}
+
+function resetFilters() {
+  filterPriceMin = '';
+  filterPriceMax = '';
+  filterBrand = '';
+  filterSize = '';
+  filterColor = '';
+  const ids = ['filter-price-min','filter-price-max','filter-brand','filter-size','filter-color'];
+  ids.forEach(id => { const el = $(id); if (el) el.value = ''; });
+  renderProducts();
+  renderFilters();
+  closeMobileFilters();
+}
+
+function renderFilters() {
+  const row = $('filters-row');
+  if (!row) return;
+  const brands = getAvailableBrands();
+  const sizes = getAvailableSizes();
+  const colors = getAvailableColors();
+  const brandGroup = $('filter-brand-group');
+  const sizeGroup = $('filter-size-group');
+  const colorGroup = $('filter-color-group');
+  const brandSelect = $('filter-brand');
+  const sizeSelect = $('filter-size');
+  const colorSelect = $('filter-color');
+  const resetBtn = $('filter-reset-btn');
+  if (brandGroup && brandSelect) {
+    if (brands.length) {
+      brandGroup.style.display = '';
+      brandSelect.innerHTML = '<option value="">الماركة</option>' + brands.map(b => `<option value="${b}" ${filterBrand === b ? 'selected' : ''}>${b}</option>`).join('');
+    } else { brandGroup.style.display = 'none'; }
+  }
+  if (sizeGroup && sizeSelect) {
+    if (sizes.length) {
+      sizeGroup.style.display = '';
+      sizeSelect.innerHTML = '<option value="">المقاس</option>' + sizes.map(s => `<option value="${s}" ${filterSize === s ? 'selected' : ''}>${s}</option>`).join('');
+    } else { sizeGroup.style.display = 'none'; }
+  }
+  if (colorGroup && colorSelect) {
+    if (colors.length) {
+      colorGroup.style.display = '';
+      colorSelect.innerHTML = '<option value="">اللون</option>' + colors.map(c => `<option value="${c}" ${filterColor === c ? 'selected' : ''}>${c}</option>`).join('');
+    } else { colorGroup.style.display = 'none'; }
+  }
+  const hasFilters = filterPriceMin || filterPriceMax || filterBrand || filterSize || filterColor;
+  if (resetBtn) resetBtn.style.display = hasFilters ? '' : 'none';
+  // Mobile drawer body
+  const drawerBody = $('filter-drawer-body');
+  if (drawerBody) {
+    let html = '';
+    html += `<div class="filter-group"><div class="filter-group-title">السعر</div><div class="filter-group filter-group-price">`;
+    html += `<input type="number" class="filter-input" id="mob-filter-price-min" placeholder="من" min="0" value="${filterPriceMin}" />`;
+    html += `<span class="filter-sep">–</span>`;
+    html += `<input type="number" class="filter-input" id="mob-filter-price-max" placeholder="إلى" min="0" value="${filterPriceMax}" />`;
+    html += `</div></div>`;
+    if (brands.length) {
+      html += `<div class="filter-group"><div class="filter-group-title">الماركة</div><select class="filter-select" id="mob-filter-brand"><option value="">الكل</option>`;
+      brands.forEach(b => { html += `<option value="${b}" ${filterBrand === b ? 'selected' : ''}>${b}</option>`; });
+      html += `</select></div>`;
+    }
+    if (sizes.length) {
+      html += `<div class="filter-group"><div class="filter-group-title">المقاس</div><select class="filter-select" id="mob-filter-size"><option value="">الكل</option>`;
+      sizes.forEach(s => { html += `<option value="${s}" ${filterSize === s ? 'selected' : ''}>${s}</option>`; });
+      html += `</select></div>`;
+    }
+    if (colors.length) {
+      html += `<div class="filter-group"><div class="filter-group-title">اللون</div><select class="filter-select" id="mob-filter-color"><option value="">الكل</option>`;
+      colors.forEach(c => { html += `<option value="${c}" ${filterColor === c ? 'selected' : ''}>${c}</option>`; });
+      html += `</select></div>`;
+    }
+    drawerBody.innerHTML = html;
+  }
+}
+
+function toggleMobileFilters() {
+  const overlay = $('filter-drawer-overlay');
+  const drawer = $('filter-drawer');
+  if (!overlay || !drawer) return;
+  const isOpen = drawer.classList.contains('open');
+  if (isOpen) { closeMobileFilters(); } else { openMobileFilters(); }
+}
+
+function openMobileFilters() {
+  const overlay = $('filter-drawer-overlay');
+  const drawer = $('filter-drawer');
+  if (overlay) overlay.classList.add('open');
+  if (drawer) drawer.classList.add('open');
+  renderFilters();
+}
+
+function closeMobileFilters() {
+  const overlay = $('filter-drawer-overlay');
+  const drawer = $('filter-drawer');
+  if (overlay) overlay.classList.remove('open');
+  if (drawer) drawer.classList.remove('open');
+}
+
+function applyMobileFilters() {
+  const mMin = $('mob-filter-price-min');
+  const mMax = $('mob-filter-price-max');
+  const mBrand = $('mob-filter-brand');
+  const mSize = $('mob-filter-size');
+  const mColor = $('mob-filter-color');
+  if (mMin) { filterPriceMin = mMin.value; if ($('filter-price-min')) $('filter-price-min').value = filterPriceMin; }
+  if (mMax) { filterPriceMax = mMax.value; if ($('filter-price-max')) $('filter-price-max').value = filterPriceMax; }
+  if (mBrand) { filterBrand = mBrand.value; if ($('filter-brand')) $('filter-brand').value = filterBrand; }
+  if (mSize) { filterSize = mSize.value; if ($('filter-size')) $('filter-size').value = filterSize; }
+  if (mColor) { filterColor = mColor.value; if ($('filter-color')) $('filter-color').value = filterColor; }
+  closeMobileFilters();
+  renderProducts();
+  renderFilters();
+}
+
 async function initStore() {
   window.checkoutEnabled = true;
   const overlay = document.getElementById('storefront-disabled-overlay');
@@ -169,6 +323,7 @@ async function initStore() {
 
     renderCategories();
     renderProducts();
+    renderFilters();
     loadCartFromStorage();
     populateZones();
     if (window.lucide) lucide.createIcons();
@@ -228,7 +383,8 @@ function setupStoreSearch() {
 function searchProducts(q) {
   q = (q || '').toLowerCase();
   showPage('home');
-  if (!q) { renderProducts(); return; }
+  resetFilters();
+  if (!q) { renderProducts(); renderFilters(); return; }
   const container = $('products-container');
   if (!container) return;
   const results = allProducts.filter(p => {
@@ -557,10 +713,24 @@ function selectCategory(catId) {
   renderSubCategories();
   renderProducts();
   renderBreadcrumb();
+  renderFilters();
 }
 
 function getCurrency() {
   return storeSettings?.currencySymbol || '₪';
+}
+
+function applyProductFilters(products) {
+  let filtered = products;
+  if (filterPriceMin || filterPriceMax) {
+    const min = parseFloat(filterPriceMin) || 0;
+    const max = parseFloat(filterPriceMax) || Infinity;
+    filtered = filtered.filter(p => p.price >= min && p.price <= max);
+  }
+  if (filterBrand) filtered = filtered.filter(p => p.brand === filterBrand);
+  if (filterSize) filtered = filtered.filter(p => p.size === filterSize || (Array.isArray(p.sizes) && p.sizes.includes(filterSize)));
+  if (filterColor) filtered = filtered.filter(p => p.color === filterColor || (Array.isArray(p.colors) && p.colors.includes(filterColor)));
+  return filtered;
 }
 
 function renderProducts() {
@@ -576,17 +746,23 @@ function renderProducts() {
     const descendantIds = [currentCategory, ...getDescendantCategoryIds(currentCategory)];
     filtered = allProducts.filter(p => descendantIds.includes(p.category));
   }
+  filtered = applyProductFilters(filtered);
   const sortedProducts = filtered.slice().sort((a, b) => {
     const score = item => item.badge ? (item.badge === 'تخفيض' ? 2 : 1) : 0;
     return score(b) - score(a);
   });
+
+  const countEl = $('filter-count');
+  if (countEl) countEl.textContent = `تم العثور على ${sortedProducts.length} منتج`;
     
   if (sortedProducts.length === 0) {
+    const hasFilters = filterPriceMin || filterPriceMax || filterBrand || filterSize || filterColor;
     container.innerHTML = `
       <div class="empty-state" style="grid-column: 1/-1">
-        <div class="empty-icon"><i data-lucide="package-x" style="width:64px;height:64px;opacity:0.4"></i></div>
-        <h3>لا توجد منتجات</h3>
-        <p>لا توجد منتجات متاحة في هذا القسم حالياً.</p>
+        <div class="empty-icon"><i data-lucide="search-x" style="width:64px;height:64px;opacity:0.4"></i></div>
+        <h3>${hasFilters ? 'لا توجد منتجات مطابقة للفلاتر المحددة' : 'لا توجد منتجات'}</h3>
+        <p>${hasFilters ? 'حاول تعديل الفلاتر أو إزالتها لعرض المزيد من المنتجات.' : 'لا توجد منتجات متاحة في هذا القسم حالياً.'}</p>
+        ${hasFilters ? '<button class="filter-reset-btn" onclick="resetFilters()" style="margin-top:12px">إزالة الفلاتر</button>' : ''}
       </div>
     `;
     if (window.lucide) lucide.createIcons();

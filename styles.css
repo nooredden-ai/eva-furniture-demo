@@ -412,6 +412,158 @@ input, select, textarea { font-family: var(--font); }
   opacity: 0.4;
 }
 
+/* ===== Smart Filters ===== */
+.filters-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0 16px;
+  flex-wrap: wrap;
+}
+.filters-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.filter-group-price {
+  background: var(--surface2, #f3f4f6);
+  border-radius: 10px;
+  padding: 4px 10px;
+}
+.filter-input {
+  width: 80px;
+  padding: 6px 8px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.82rem;
+  text-align: center;
+  direction: ltr;
+}
+.filter-input:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+.filter-sep { color: var(--text-light); font-size: 0.85rem; }
+.filter-select {
+  padding: 6px 10px;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.82rem;
+  cursor: pointer;
+  max-width: 130px;
+}
+.filter-select:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+.filter-reset-btn {
+  padding: 5px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.filter-reset-btn:hover { background: var(--primary); color: #fff; }
+.filter-count {
+  font-size: 0.82rem;
+  color: var(--text-light);
+  white-space: nowrap;
+}
+.filter-mobile-toggle {
+  display: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border, #e5e7eb);
+  background: var(--surface2, #f3f4f6);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  gap: 6px;
+  align-items: center;
+  white-space: nowrap;
+}
+.filter-mobile-toggle:hover { background: var(--surface1, #e5e7eb); }
+
+/* Mobile Filter Drawer */
+.filter-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 999;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.filter-drawer-overlay.open { display: block; opacity: 1; }
+.filter-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  z-index: 1000;
+  border-radius: 16px 16px 0 0;
+  padding: 0;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+.filter-drawer.open { transform: translateY(0); }
+.filter-drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+}
+.filter-drawer-header h3 { margin: 0; font-size: 1rem; font-weight: 700; }
+.filter-drawer-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.filter-drawer-close:hover { background: var(--surface2, #f3f4f6); }
+.filter-drawer-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+.filter-drawer-body .filter-group { margin-bottom: 14px; flex-direction: column; align-items: stretch; }
+.filter-drawer-body .filter-group-title { font-weight: 600; font-size: 0.85rem; margin-bottom: 4px; }
+.filter-drawer-body .filter-input { width: 100%; box-sizing: border-box; }
+.filter-drawer-body .filter-select { width: 100%; max-width: none; }
+.filter-drawer-body .filter-group-price { background: none; padding: 0; }
+.filter-drawer-footer {
+  display: flex;
+  gap: 10px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border, #e5e7eb);
+}
+.filter-drawer-apply, .filter-drawer-reset {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+}
+.filter-drawer-apply { background: var(--primary); color: #fff; }
+.filter-drawer-reset { background: var(--surface2, #f3f4f6); color: var(--text); }
+
 /* ===== Product Grid ===== */
 .products-grid {
   display: grid;
@@ -1081,6 +1233,8 @@ input, select, textarea { font-family: var(--font); }
   .checkout-grid { grid-template-columns: 1fr; gap: 20px; }
   .order-summary { position: static; top: auto; margin-top: 20px; }
   .whatsapp-float { width: 48px; height: 48px; bottom: 96px; right: 14px; font-size: 1.6rem; }
+  .filters-row { display: none; }
+  .filter-mobile-toggle { display: inline-flex; }
 }
 
 @media (max-width: 768px) {
