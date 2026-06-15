@@ -3550,3 +3550,6 @@ select:focus {
   .stat-card { padding: 18px !important; }
   .quick-actions-card { padding: 18px !important; }
 }
+
+/* Hide simplified mode toggle */
+#toggle-simplified-btn { display: none !important; }

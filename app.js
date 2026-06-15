@@ -603,23 +603,46 @@ function applyStoreSettings(s) {
     footerCopy.innerHTML = `© ${new Date().getFullYear()} ${s.name || 'متجرك'} · جميع الحقوق محفوظة <i data-lucide="heart" style="width:14px;height:14px;display:inline-block;vertical-align:middle;color:var(--secondary);fill:var(--secondary)"></i>`;
   }
 
-  // Payments UI — visa shown only if explicitly enabled in payment settings
+  syncPaymentMethodVisibility();
+}
+
+function syncPaymentMethodVisibility() {
+  const settings = window.storeSettings || storeSettings || {};
+  const visaEnabled = settings?.paymentGateways?.visa === true;
+
+  // Visa label container
   const visaLabel = document.getElementById('payment-label-visa');
+  const visaRadio = document.querySelector('input[name="payment"][value="visa"]');
+  const codRadio = document.querySelector('input[name="payment"][value="cod"]');
   const codLabel = document.getElementById('payment-label-cod');
+  const visaForm = document.getElementById('visa-form');
+
   if (visaLabel) {
-    const visaEnabled = s.paymentGateways?.visa === true && (s.paymentGateways?.cardPaymentEnabled !== false);
     visaLabel.style.display = visaEnabled ? 'flex' : 'none';
-    
-    // If visa is disabled but selected, fallback to cod
-    const visaRadio = document.querySelector('input[name="payment"][value="visa"]');
-    const codRadio = document.querySelector('input[name="payment"][value="cod"]');
-    if (!visaEnabled && visaRadio?.checked && codRadio) {
-      codRadio.checked = true;
-      if (codLabel) codLabel.classList.add('active');
+    visaLabel.style.visibility = visaEnabled ? 'visible' : 'hidden';
+  }
+  if (visaRadio) {
+    visaRadio.disabled = !visaEnabled;
+  }
+
+  // If visa is disabled but checked, fallback to cod
+  if (!visaEnabled && visaRadio?.checked) {
+    if (codRadio) codRadio.checked = true;
+    if (visaForm) visaForm.style.display = 'none';
+    if (codLabel) {
+      codLabel.classList.add('active');
+    }
+    if (visaLabel) {
       visaLabel.classList.remove('active');
-      togglePaymentForm();
     }
   }
+
+  // If visa is disabled, ensure visa form is hidden
+  if (!visaEnabled && visaForm) {
+    visaForm.style.display = 'none';
+  }
+
+  togglePaymentForm();
 }
 
 function renderCategories() {
@@ -968,6 +991,7 @@ function goToCheckout() {
   }
   closeCart();
   renderCheckoutSummary();
+  syncPaymentMethodVisibility();
   showPage('checkout');
 }
 
