@@ -3166,21 +3166,41 @@ input, select, textarea {
   border-color: #B88746 !important;
   border-radius: 10px !important;
   box-shadow: 0 2px 8px rgba(184,135,70,0.15) !important;
+  color: #ffffff !important;
 }
 .btn-primary:hover {
   background: #A6783A !important;
+  color: #ffffff !important;
   transform: translateY(-1px) !important;
   box-shadow: 0 4px 12px rgba(184,135,70,0.20) !important;
 }
 
 .btn-outline {
+  background: #ffffff !important;
+  color: var(--admin-text) !important;
+  border: 1px solid var(--admin-border) !important;
   border-radius: 10px !important;
 }
 .btn-outline:hover {
+  background: var(--admin-surface2) !important;
+  color: var(--admin-text) !important;
   border-color: #B88746 !important;
 }
 
 .btn-danger {
+  background: var(--admin-danger) !important;
+  color: #ffffff !important;
+  border-radius: 10px !important;
+}
+.btn-danger:hover {
+  background: var(--admin-danger) !important;
+  color: #ffffff !important;
+  opacity: 0.9;
+}
+
+.btn-success {
+  background: var(--admin-success) !important;
+  color: #ffffff !important;
   border-radius: 10px !important;
 }
 
