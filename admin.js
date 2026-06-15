@@ -1635,10 +1635,11 @@ let _merchantOrdersCache = [];
 
 async function renderMerchantDashboard() {
   try {
-    const [orders, products, store] = await Promise.all([
-      API.getOrders(),         // uses appState cache — no re-fetch if updatePendingBadge already loaded
-      API.getProducts(),       // uses appState cache
-      API.getStoreSettings()   // uses appState cache
+    const [orders, products, store, categories] = await Promise.all([
+      API.getOrders(),
+      API.getProducts(),
+      API.getStoreSettings(),
+      API.getCategories()
     ]);
     _merchantOrdersCache = orders;
     const sym = store.currencySymbol || store.currency || 'USD';
@@ -1651,62 +1652,205 @@ async function renderMerchantDashboard() {
     const revenueToday = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
     const invoicesToday = todayOrders.filter(o => o.status !== 'cancelled').length;
 
+    const pendingOrdersCount = orders.filter(o => o.status === 'pending').length;
+
+    // Yesterday's data for trend comparison
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    const yesterdayOrders = orders.filter(o => {
+      const d = o.date || o.createdAt;
+      return d && new Date(d).toDateString() === yesterday;
+    });
+    const revenueYesterday = yesterdayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+
     const safeSet = (id, val) => { const el = $a(id); if(el) el.textContent = val; };
     safeSet('ms-orders-today', todayOrders.length);
     safeSet('ms-revenue-today', revenueToday.toLocaleString('ar-SA') + ` ${sym}`);
     safeSet('ms-products-active', products.length);
     safeSet('ms-invoices-today', invoicesToday);
 
-    // Recent orders
-    const recentOrders = orders.slice(0, 5);
-    const tbody = $a('ms-recent-orders');
-    if (!recentOrders.length) {
-      tbody.innerHTML = '<div class="ms-empty"><p>لا توجد طلبات حتى الآن</p></div>';
-    } else {
-      tbody.innerHTML = recentOrders.map(o => `
-        <div class="ms-activity-row" onclick="navigateTo('orders')" style="cursor:pointer;">
-          <div class="ms-activity-info">
-            <strong>#${o.id || o.orderNumber || ''}</strong>
-            <span class="ms-activity-customer">${o.customer || 'عميل'}</span>
-          </div>
-          <div class="ms-activity-meta">
-            <span class="status-badge status-${o.status}">${statusText(o.status)}</span>
-            <span class="ms-activity-total">${Number(o.total).toLocaleString('ar-SA')} ${sym}</span>
-          </div>
-        </div>`).join('');
+    // ===== SECTION 1: Smart Welcome + Insight =====
+    const hour = new Date().getHours();
+    const greeting = hour < 12 ? 'صباح الخير' : 'مساء الخير';
+    safeSet('dash-greeting-text', greeting);
+    safeSet('dash-store-name', store.name || 'متجرك');
+    const planBadge = $a('dash-plan-badge');
+    if (planBadge) planBadge.textContent = window.storePlan?.name || 'الخطة الأساسية';
+    const dateEl = $a('dash-current-date');
+    if (dateEl) dateEl.textContent = new Date().toLocaleDateString('ar-SA', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    // Dynamic business insight
+    const insightEl = $a('dash-insight-line');
+    if (insightEl) {
+      let text = '', icon = 'info';
+      if (todayOrders.length > 0) { text = `تم استلام ${todayOrders.length} طلب${todayOrders.length>1?'ات':''} جديد${todayOrders.length>1?'ة':''} اليوم`; icon = 'shopping-cart'; }
+      else if (pendingOrdersCount > 0) { text = `يوجد ${pendingOrdersCount} طلب${pendingOrdersCount>1?'ات':''} بانتظار المعالجة`; icon = 'alert-circle'; }
+      else { const ls = products.filter(p => p.active!==false && p.stock!==undefined && Number(p.stock)<=3 && p.stock!==''); if(ls.length>0) { text=`يوجد ${ls.length} منتج${ls.length>1?'ات':''} تحتاج إعادة تخزين`; icon='alert-triangle'; } else { text='كل شيء على ما يرام — متجرك يعمل بكفاءة'; icon='check-circle'; } }
+      insightEl.innerHTML = `<i data-lucide="${icon}" style="width:16px;height:16px"></i> ${text}`;
     }
 
-    // Recent invoices — cached in appState.invoices to avoid extra fetch each render
+    // ===== SECTION 2: Business Snapshot with Trends =====
+    safeSet('dash-orders-today', todayOrders.length);
+    safeSet('dash-revenue-today', revenueToday.toLocaleString('ar-SA') + ` ${sym}`);
+    safeSet('dash-pending-orders', pendingOrdersCount);
+    safeSet('dash-products-count', products.length);
+    const tEl = (id,val,cls) => { const e=$a(id); if(e){e.textContent=val;e.className='dash-kpi-trend '+cls;} };
+    const cEl = (id,val) => { const e=$a(id); if(e)e.textContent=val; };
+    const orderDiff = todayOrders.length - yesterdayOrders.length;
+    if (yesterdayOrders.length>0) { const p=Math.round(orderDiff/yesterdayOrders.length*100); tEl('kpi-trend-orders',(p>0?'+':'')+p+'%',p>0?'up':p<0?'down':'neutral'); }
+    else if (todayOrders.length>0) tEl('kpi-trend-orders','+ جديد','up');
+    else tEl('kpi-trend-orders','—','neutral');
+    cEl('kpi-context-orders',yesterdayOrders.length>0?`مقارنة بالأمس (${yesterdayOrders.length})`:todayOrders.length>0?'أول طلبات اليوم':'');
+    const revDiff = revenueToday - revenueYesterday;
+    if (revenueYesterday>0) { const p=Math.round(revDiff/revenueYesterday*100); tEl('kpi-trend-revenue',(p>0?'+':'')+p+'%',p>0?'up':p<0?'down':'neutral'); }
+    else if (revenueToday>0) tEl('kpi-trend-revenue','+ جديد','up');
+    else tEl('kpi-trend-revenue','—','neutral');
+    cEl('kpi-context-revenue',revenueToday>0?`اليوم: ${revenueToday.toLocaleString('ar-SA')} ${sym}`:revenueYesterday>0?`الأمس: ${revenueYesterday.toLocaleString('ar-SA')} ${sym}`:'');
+    const totalOrders = orders.length;
+    if (totalOrders>0) { const p=Math.round(pendingOrdersCount/totalOrders*100); tEl('kpi-trend-pending',p+'%',p>20?'down':p>0?'neutral':'up'); }
+    else tEl('kpi-trend-pending','—','neutral');
+    cEl('kpi-context-pending',`من ${totalOrders} إجمالي الطلبات`);
+    const activeProducts = products.filter(p=>p.active!==false).length;
+    tEl('kpi-trend-products',activeProducts+'/'+products.length,'neutral');
+    cEl('kpi-context-products',`${products.length-activeProducts} غير نشط`);
+
+    // ===== SECTION 3: Attention Center (collect items from both sides of invoice fetch) =====
+    const attentionArea = $a('dash-attention-area');
+    const attentionList = $a('dash-attention-list');
+    const aItems = [];
+    if (attentionArea && attentionList) {
+      if (pendingOrdersCount>0) aItems.push({ sev:'critical', icon:'shopping-cart', text:`${pendingOrdersCount} طلب بانتظار التأكيد`, page:'orders', action:'معالجة' });
+      const ls = products.filter(p=>p.active!==false && p.stock!==undefined && Number(p.stock)<=3 && p.stock!=='');
+      ls.slice(0,3).forEach(p=>aItems.push({ sev:'warning', icon:'alert-triangle', text:`مخزون منخفض: ${p.name} (${p.stock})`, page:'products', action:'تزويد' }));
+    }
+
+    // ===== Fetch invoices for timeline + attention =====
     let invoices = appState.invoices || [];
     if (!invoices.length) {
       try {
         const invRes = await fetchWithStability('/api/invoices');
-        if (invRes && invRes.success && Array.isArray(invRes.invoices)) {
-          invoices = invRes.invoices;
-          appState.invoices = invoices; // cache it
-        } else if (Array.isArray(invRes)) {
-          invoices = invRes;
-          appState.invoices = invoices;
-        }
+        if (invRes && invRes.success && Array.isArray(invRes.invoices)) { invoices = invRes.invoices; appState.invoices = invoices; }
+        else if (Array.isArray(invRes)) { invoices = invRes; appState.invoices = invoices; }
       } catch(e) { invoices = []; }
     }
-    invoices.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    const recentInvoices = invoices.slice(0, 5);
-    const tbodyInv = $a('ms-recent-invoices');
-    if (!recentInvoices.length) {
-      tbodyInv.innerHTML = '<div class="ms-empty"><p>لا توجد فواتير حتى الآن</p></div>';
-    } else {
-      tbodyInv.innerHTML = recentInvoices.map(inv => `
-        <div class="ms-activity-row" onclick="navigateTo('invoices')" style="cursor:pointer;">
-          <div class="ms-activity-info">
-            <strong>#${inv.id}</strong>
-            <span class="ms-activity-customer">${inv.customer?.name || 'عميل'}</span>
+
+    // Finalize attention with unpaid invoices
+    if (attentionArea && attentionList) {
+      const unpaidCount = invoices.filter(inv=>inv.status==='pending'||inv.status==='unpaid').length;
+      if (unpaidCount>0) aItems.push({ sev:'info', icon:'file-text', text:`${unpaidCount} فاتورة غير مدفوعة`, page:'invoices', action:'دفع' });
+      if (aItems.length>0) {
+        attentionArea.style.display = '';
+        attentionList.innerHTML = aItems.map(i =>
+          `<div class="dash-attention-item">
+            <div class="dash-attention-left">
+              <span class="dash-attention-severity ${i.sev}"></span>
+              <i data-lucide="${i.icon}" style="width:16px;height:16px;color:${i.sev==='critical'?'#dc2626':i.sev==='warning'?'#d97706':'#2563eb'}"></i>
+              <span>${i.text}</span>
+            </div>
+            <button class="dash-attention-action ${i.sev}" onclick="navigateTo('${i.page}')">${i.action}</button>
+          </div>`).join('');
+      } else {
+        attentionArea.style.display = '';
+        attentionList.innerHTML = `<div class="dash-attention-item" style="border-right-color:#059669;cursor:default">
+          <div class="dash-attention-left">
+            <span class="dash-attention-severity success"></span>
+            <i data-lucide="check-circle" style="width:16px;height:16px;color:#059669"></i>
+            <span>كل شيء على ما يرام — لا توجد متطلبات متابعة</span>
           </div>
-          <div class="ms-activity-meta">
-            <span>${inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('ar-EG') : '—'}</span>
-            <span class="ms-activity-total">${Number(inv.total).toFixed(2)} ${sym}</span>
+        </div>`;
+      }
+    }
+
+    // ===== SECTION 4: Activity Timeline =====
+    const timelineEl = $a('dash-timeline-list');
+    if (timelineEl) {
+      const fm = d => d ? new Date(d).toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'}) : '';
+      const ti = [];
+      orders.slice(0,10).forEach(o => ti.push({
+        dot:'order', title:`طلب جديد #${o.id||o.orderNumber||''}`, sub:o.customer||'عميل',
+        tm:fm(o.date||o.createdAt), sd:o.date||o.createdAt,
+        r:`<span class="dash-timeline-status status-badge status-${o.status}">${statusText(o.status)}</span><span class="dash-timeline-total">${Number(o.total||0).toLocaleString('ar-SA')} ${sym}</span>`,
+        pg:'orders' }));
+      invoices.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5).forEach(inv => ti.push({
+        dot:'invoice', title:`فاتورة #${inv.id}`, sub:inv.customer?.name||'عميل',
+        tm:fm(inv.createdAt), sd:inv.createdAt,
+        r:`<span class="dash-timeline-total">${Number(inv.total||0).toLocaleString('ar-SA')} ${sym}</span>`,
+        pg:'invoices' }));
+      (stockReceiptsLog||[]).slice(0,5).forEach(r => ti.push({
+        dot:'stock', title:r.productName||'منتج', sub:`تم إضافة ${r.qty||0} إلى المخزون`,
+        tm:fm(r.date), sd:r.date, r:'', pg:'stock-receiving' }));
+      const top = ti.sort((a,b)=>new Date(b.sd)-new Date(a.sd)).slice(0,10);
+      if (top.length===0) timelineEl.innerHTML='<div class="dash-empty">لا توجد نشاطات حتى الآن</div>';
+      else timelineEl.innerHTML = top.map(i =>
+        `<div class="dash-timeline-item" onclick="navigateTo('${i.pg}')">
+          <div class="dash-timeline-left">
+            <span class="dash-timeline-time">${i.tm}</span>
+            <div class="dash-timeline-dot ${i.dot}"></div>
+            <div class="dash-timeline-info">
+              <span class="dash-timeline-title">${i.title}</span>
+              <span class="dash-timeline-sub">${i.sub}</span>
+            </div>
           </div>
+          <div class="dash-timeline-right">${i.r}</div>
         </div>`).join('');
+    }
+
+    // ===== SECTION 6: Smart Analytics =====
+    // Top Products
+    const topP = $a('dash-analytics-top-products');
+    if (topP) {
+      const pc = {}; orders.forEach(o=>(o.items||[]).forEach(it=>{const n=it.name||'منتج';pc[n]=(pc[n]||0)+(it.qty||1);}));
+      const tp = Object.entries(pc).sort((a,b)=>b[1]-a[1]).slice(0,5); const mx = tp.length?tp[0][1]:1;
+      const b = topP.querySelector('.dash-analytics-card-body');
+      if (b) b.innerHTML = tp.length ? tp.map(([n,c])=>`<div class="dash-analytics-row"><span class="dash-analytics-row-name">${n}</span><span class="dash-analytics-row-value">${c}</span></div><div class="dash-analytics-bar"><div class="dash-analytics-bar-fill" style="width:${(c/mx*100).toFixed(0)}%"></div></div>`).join('') : '<div class="dash-analytics-empty">لا توجد مبيعات بعد</div>';
+    }
+    // Best Categories
+    const catE = $a('dash-analytics-categories');
+    if (catE) {
+      const cc = {}; products.forEach(p=>{const cn=categories.find(c=>c.id===p.category)?.name||p.category||'غير مصنف';cc[cn]=(cc[cn]||0)+1;});
+      const tc = Object.entries(cc).sort((a,b)=>b[1]-a[1]).slice(0,5); const mx = tc.length?tc[0][1]:1;
+      const b = catE.querySelector('.dash-analytics-card-body');
+      if (b) b.innerHTML = tc.length ? tc.map(([n,c])=>`<div class="dash-analytics-row"><span class="dash-analytics-row-name">${n}</span><span class="dash-analytics-row-value">${c}</span></div><div class="dash-analytics-bar"><div class="dash-analytics-bar-fill" style="width:${(c/mx*100).toFixed(0)}%"></div></div>`).join('') : '<div class="dash-analytics-empty">لا توجد تصنيفات</div>';
+    }
+    // Sales This Week
+    const wE = $a('dash-analytics-weekly-sales');
+    if (wE) {
+      const wd = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+      const nw = new Date(); const ws = new Date(nw); ws.setDate(nw.getDate()-nw.getDay()); ws.setHours(0,0,0,0);
+      const ds = wd.map((n,i)=>{const d=new Date(ws);d.setDate(ws.getDate()+i);return{name:n,total:orders.filter(o=>{const od=o.date||o.createdAt;return od&&new Date(od).toDateString()===d.toDateString();}).reduce((s,o)=>s+(o.total||0),0),day:d};});
+      const mx = Math.max(...ds.map(d=>d.total),1); const td = nw.getDay();
+      const b = wE.querySelector('.dash-analytics-card-body');
+      if (b) b.innerHTML = ds.map((d,i)=>`<div class="dash-analytics-row"><span class="dash-analytics-row-name" style="${i===td?'color:#B88746;font-weight:800':''}">${d.name}${i===td?' (اليوم)':''}</span><span class="dash-analytics-row-value">${d.total.toLocaleString('ar-SA')}</span></div><div class="dash-analytics-bar"><div class="dash-analytics-bar-fill" style="width:${(d.total/mx*100).toFixed(0)}%"></div></div>`).join('');
+    }
+    // Orders Status Distribution
+    const sE = $a('dash-analytics-order-status');
+    if (sE) {
+      const ss = {}; orders.forEach(o=>{ss[o.status]=(ss[o.status]||0)+1;});
+      const so = ['pending','processing','delivered','cancelled'];
+      const sl = {pending:'قيد الانتظار',processing:'قيد المعالجة',delivered:'تم التسليم',cancelled:'ملغي'};
+      const tl = orders.length||1; const sc = {pending:'#d97706',processing:'#2563eb',delivered:'#059669',cancelled:'#64748b'};
+      const b = sE.querySelector('.dash-analytics-card-body');
+      if (b) b.innerHTML = orders.length ? so.map(s=>`<div class="dash-analytics-row"><span class="dash-analytics-row-name"><span class="dash-analytics-pill ${s}">${sl[s]||s}</span></span><span class="dash-analytics-row-value">${ss[s]||0}</span></div><div class="dash-analytics-bar"><div class="dash-analytics-bar-fill" style="width:${((ss[s]||0)/tl*100).toFixed(0)}%;background:${sc[s]}"></div></div>`).join('') : '<div class="dash-analytics-empty">لا توجد طلبات</div>';
+    }
+    // Low Stock Summary
+    const lE = $a('dash-analytics-low-stock');
+    if (lE) {
+      const li = products.filter(p=>p.active!==false && p.stock!==undefined && Number(p.stock)<=5 && p.stock!=='').sort((a,b)=>Number(a.stock)-Number(b.stock)).slice(0,5);
+      const mx = Math.max(...li.map(p=>Number(p.stock)),1);
+      const b = lE.querySelector('.dash-analytics-card-body');
+      if (b) b.innerHTML = li.length ? li.map(p=>`<div class="dash-analytics-row"><span class="dash-analytics-row-name">${p.name||'منتج'}</span><span class="dash-analytics-row-value" style="color:${Number(p.stock)<=3?'#dc2626':'#d97706'}">${p.stock}</span></div><div class="dash-analytics-bar"><div class="dash-analytics-bar-fill" style="width:${(Number(p.stock)/mx*100).toFixed(0)}%;background:${Number(p.stock)<=3?'#dc2626':'#d97706'}"></div></div>`).join('') : '<div class="dash-analytics-empty">جميع المنتجات متوفرة بمخزون كافٍ</div>';
+    }
+
+    // ===== SECTION 7: Notification Center =====
+    const nList = $a('dash-notif-list');
+    if (nList) {
+      const ni = [];
+      if (todayOrders.length>0) ni.push({icon:'shopping-cart', text:`${todayOrders.length} طلب${todayOrders.length>1?'ات':''} جديد${todayOrders.length>1?'ة':''}`});
+      const lsc = products.filter(p=>p.active!==false && p.stock!==undefined && Number(p.stock)<=3 && p.stock!=='').length;
+      if (lsc>0) ni.push({icon:'alert-triangle', text:`${lsc} منتج منخفض المخزون`});
+      const upc = invoices.filter(inv=>inv.status==='pending'||inv.status==='unpaid').length;
+      if (upc>0) ni.push({icon:'file-text', text:`${upc} فاتورة غير مدفوعة`});
+      const nC = $a('dash-notif-count');
+      if (nC) nC.textContent = ni.length;
+      nList.innerHTML = ni.length ? ni.map(i=>`<div class="dash-notif-item"><i data-lucide="${i.icon}" style="width:14px;height:14px;color:#B88746"></i><span>${i.text}</span></div>`).join('') : '<div class="dash-notif-item dash-notif-empty">لا توجد إشعارات جديدة</div>';
     }
 
     if (window.lucide) lucide.createIcons();
@@ -2975,14 +3119,10 @@ function closeModal(id) { $a(id).classList.remove('open'); }
 let _settingsCurrentStoreId = STORE_ID;
 
 async function initSettingsPage() {
-  // Always use the single store — no selector needed
   _settingsCurrentStoreId = STORE_ID;
 
-  // Populate country selector
-  await populateCountrySelector();
-
-  // Load settings for the store
-  await loadStoreSettings();
+  // Initialize safe tabs first (binds click listeners, shows first tab)
+  initSettingsTabsSafe();
 
   // Dynamically hide settings tabs based on permissions
   const settingsTabsPermissions = {
@@ -2997,18 +3137,18 @@ async function initSettingsPage() {
 
   const tabs = Object.keys(settingsTabsPermissions);
   tabs.forEach(tab => {
-    const btn = document.querySelector(`.stab[data-tab="${tab}"]`);
+    const btn = document.querySelector(`[data-settings-tab="${tab}"]`);
     if (btn) {
-      const allowed = Auth.can(settingsTabsPermissions[tab]);
+      const allowed = Auth.can(settingsTabsPermissions[tab]) || Auth.isSuperAdmin();
       btn.style.display = allowed ? '' : 'none';
     }
   });
 
-  // Ensure first allowed tab is visible
-  const allowedTab = tabs.find(tab => Auth.can(settingsTabsPermissions[tab]));
-  if (allowedTab) {
-    switchSettingsTab(allowedTab);
-  }
+  // Populate country selector
+  await populateCountrySelector();
+
+  // Load settings for the store
+  await loadStoreSettings();
 }
 
 async function populateCountrySelector() {
@@ -3336,19 +3476,36 @@ function updateCurrencyPreview(country, overrideSym) {
   setEl('ppb-3', `15 ${sym}`);
 }
 
-// Settings Tabs
-function switchSettingsTab(tab) {
-  if (tab === 'payments' && window.storePlan && window.storePlan.modules && window.storePlan.modules.paymentSettings === false) {
-    if (!Auth.isSuperAdmin()) {
-      showAdminToast('إعدادات الدفع الإلكتروني غير مفعّلة في خطة المتجر الحالية', 'error');
-      return;
-    }
-  }
-  document.querySelectorAll('.stab').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-  document.querySelectorAll('.settings-tab-content').forEach(el => {
-    el.classList.toggle('active', el.id === `stab-${tab}`);
+// Settings Tabs Safe — standalone, no dependencies on async ops, old functions, or permissions
+function initSettingsTabsSafe() {
+  const buttons = document.querySelectorAll('[data-settings-tab]');
+  const panels = document.querySelectorAll('.settings-panel');
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const tab = this.dataset.settingsTab;
+      if (!tab) return;
+
+      buttons.forEach(b => b.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+
+      this.classList.add('active');
+      const panel = document.getElementById('settings-panel-' + tab);
+      if (panel) {
+        panel.classList.add('active');
+      } else {
+        console.warn('[settings] panel not found: settings-panel-' + tab);
+      }
+    });
   });
+
+  // Activate first visible tab on init
+  const firstVisible = Array.from(buttons).find(b => b.style.display !== 'none');
+  if (firstVisible) firstVisible.click();
 }
+
+// Legacy — disabled, safe system handles all tab switching
+function switchSettingsTab(tab) {}
 
 // ===== Branding Media Management =====
 function renderBrandingSection() {
@@ -5169,7 +5326,7 @@ function applyStorePlanVisibility() {
   }
 
   const isPaymentSettingsEnabled = plan.modules.paymentSettings !== false;
-  document.querySelectorAll('#stab-payments input, #stab-payments select').forEach(input => {
+  document.querySelectorAll('#settings-panel-payments input, #settings-panel-payments select').forEach(input => {
     input.disabled = !isPaymentSettingsEnabled;
   });
 

@@ -32,7 +32,8 @@ let PERMISSIONS = {
     "view_orders", "update_orders", "delete_orders", "add_order_notes",
     "view_coupons", "manage_coupons",
     "view_customers", "manage_customers",
-    "view_settings", "edit_store_info", "edit_branding", "edit_legal_pages"
+    "view_settings", "edit_store_info", "edit_branding", "edit_legal_pages",
+    "edit_payment_settings", "edit_shipping_settings"
   ],
   store_manager: [
     "view_dashboard", "view_analytics",
@@ -41,7 +42,8 @@ let PERMISSIONS = {
     "view_orders", "update_orders", "delete_orders", "add_order_notes",
     "view_coupons", "manage_coupons",
     "view_customers", "manage_customers",
-    "view_settings", "edit_store_info", "edit_branding", "edit_legal_pages"
+    "view_settings", "edit_store_info", "edit_branding", "edit_legal_pages",
+    "edit_payment_settings", "edit_shipping_settings"
   ],
   manager: [
     "view_dashboard", "view_analytics",
@@ -49,11 +51,13 @@ let PERMISSIONS = {
     "view_categories", "manage_categories",
     "view_orders", "update_orders", "add_order_notes",
     "view_coupons", "manage_coupons",
-    "view_customers"
+    "view_customers",
+    "view_settings"
   ],
   employee: [
     "view_products", "view_categories", "view_coupons",
-    "view_orders", "update_orders", "add_order_notes"
+    "view_orders", "update_orders", "add_order_notes",
+    "view_settings"
   ],
   support_agent: [
     "view_orders", "add_order_notes",
@@ -235,7 +239,11 @@ const Auth = {
 
   setDynamicPermissions(newPerms) {
     if (newPerms) {
-      Object.assign(PERMISSIONS, newPerms);
+      Object.keys(newPerms).forEach(role => {
+        const defaults = PERMISSIONS[role] || [];
+        const dynamic = newPerms[role] || [];
+        PERMISSIONS[role] = [...new Set([...defaults, ...dynamic])];
+      });
     }
   },
 };

@@ -33,16 +33,12 @@
 
   <!-- Advanced Navigation (super_admin) -->
   <nav class="sidebar-nav" id="sidebar-nav-advanced">
-    <div class="nav-section">القائمة الرئيسية</div>
+    <div class="nav-section">الرئيسية</div>
     <div class="nav-item active" data-page="dashboard" id="nav-dashboard">
        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-bar-chart-2" viewBox="0 0 24 24"><path d="M3 3v18h18v-2H5V3H3z"/></svg></span> لوحة المعلومات
     </div>
-    <div class="nav-item" data-page="products" id="nav-products">
-       <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-box" viewBox="0 0 24 24"><path d="M21 16V8l-9-5-9 5v8l9 5 9-5zM12 3.23l7 3.89-7 3.89-7-3.89 7-3.89zM5 10.11l5 2.78v5.5l-5-2.78v-5.5zM14 18.39v-5.5l5-2.78v5.5l-5 2.78z"/></svg></span> المنتجات
-    </div>
-    <div class="nav-item" data-page="categories" id="nav-categories">
-       <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-tag" viewBox="0 0 24 24"><path d="M20 12.41V5a1 1 0 0 0-1-1h-7.41l-9 9 9 9 7.41-7.41zm-9 5.59L5.59 12 12 5.59V18zm0 0h5.59L12 16.41V18z"/></svg></span> التصنيفات
-    </div>
+
+    <div class="nav-section">المبيعات</div>
     <div class="nav-item" data-page="orders" id="nav-orders">
        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-file-text" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg></span> الطلبات
       <span class="nav-badge" id="orders-badge" style="display:none">0</span>
@@ -50,19 +46,35 @@
     <div class="nav-item" data-page="direct-sale" id="nav-direct-sale">
        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M17 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm6 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg></span> بيع مباشر
     </div>
+    <div class="nav-item" data-page="invoices" id="nav-invoices"><span class="nav-icon"><i data-lucide="file-text" style="width:20px;height:20px"></i></span> الفواتير</div>
     <div class="nav-item" data-page="stock-receiving" id="nav-stock-receiving">
        <span class="nav-icon"><i data-lucide="truck" style="width:20px;height:20px"></i></span> توريد مخزون
     </div>
+
+    <div class="nav-section">الكتالوج</div>
+    <div class="nav-item" data-page="products" id="nav-products">
+       <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-box" viewBox="0 0 24 24"><path d="M21 16V8l-9-5-9 5v8l9 5 9-5zM12 3.23l7 3.89-7 3.89-7-3.89 7-3.89zM5 10.11l5 2.78v5.5l-5-2.78v-5.5zM14 18.39v-5.5l5-2.78v5.5l-5 2.78z"/></svg></span> المنتجات
+    </div>
+    <div class="nav-item" data-page="categories" id="nav-categories">
+       <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-tag" viewBox="0 0 24 24"><path d="M20 12.41V5a1 1 0 0 0-1-1h-7.41l-9 9 9 9 7.41-7.41zm-9 5.59L5.59 12 12 5.59V18zm0 0h5.59L12 16.41V18z"/></svg></span> التصنيفات
+    </div>
+
+    <div class="nav-section">العملاء</div>
     <div class="nav-item" data-page="users" id="nav-users">
        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2c0-2.21-1.79-4-4-4H11c-2.21 0-4 1.79-4 4v2h10zm-5-9c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/></svg></span> المستخدمين
     </div>
+
+    <div class="nav-section">المالية</div>
      <div class="nav-item" data-page="accounting" id="nav-accounting">
        <span class="nav-icon"><i data-lucide="credit-card" style="width:20px;height:20px"></i></span> المالية
      </div>
-    <div class="nav-item" data-page="invoices" id="nav-invoices"><span class="nav-icon"><i data-lucide="file-text" style="width:20px;height:20px"></i></span> الفواتير</div>
+
+    <div class="nav-section">أدوات</div>
     <div class="nav-item" data-page="coupons" id="nav-coupons">
        <span class="nav-icon"><i data-lucide="gift" style="width:20px;height:20px"></i></span> الكوبونات
     </div>
+
+    <div class="nav-section">المتجر</div>
     <div class="nav-item" data-page="settings" id="nav-settings">
        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-settings" viewBox="0 0 24 24"><path d="M19.14 12.936a7.5 7.5 0 0 0 .06-.936 7.5 7.5 0 0 0-.06-.936l2.03-1.58a.5.5 0 0 0 .12-.63l-1.91-3.3a.5.5 0 0 0-.6-.22l-2.4.96a7.014 7.014 0 0 0-1.62-.936l-.36-2.54a.5.5 0 0 0-.5-.42h-3.82a.5.5 0 0 0-.5.42l-.36 2.54c-.58.22-1.12.51-1.62.936l-2.4-.96a.5.5 0 0 0-.6.22l-1.91 3.3a.5.5 0 0 0 .12.63l2.03 1.58c-.04.31-.06.63-.06.96s.02.65.06.96l-2.03 1.58a.5.5 0 0 0-.12.63l1.91 3.3c.14.24.44.33.68.22l2.4-.96c.5.426 1.04.716 1.62.936l.36 2.54c.02.24.24.42.5.42h3.82c.26 0 .48-.18.5-.42l.36-2.54c.58-.22 1.12-.51 1.62-.936l2.4.96c.24.11.54.02.68-.22l1.91-3.3a.5.5 0 0 0-.12-.63l-2.03-1.58zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg></span> إعدادات المتجر
     </div>
@@ -70,11 +82,11 @@
        <span class="nav-icon"><i data-lucide="shield-check" style="width:20px;height:20px"></i></span> إدارة خطة المتجر
     </div>
 
-    <div class="nav-section" style="margin-top:20px">روابط سريعة</div>
+    <div class="nav-section" style="margin-top:12px">روابط سريعة</div>
     <a class="nav-item" href="index.html?store=loulo-beauty" target="_blank" id="nav-open-store">
        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-globe" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm6.93 7H16a16.13 16.13 0 0 0-1.55-4.68A8.03 8.03 0 0 1 18.93 9zM12 5c.83 0 1.65.13 2.43.38A13.97 13.97 0 0 0 12 8c-.84 0-1.66-.07-2.43-.32A8.08 8.08 0 0 1 12 5zm-6.93 2h5.55c-.57.92-1.05 1.99-1.42 3.2A13.97 13.97 0 0 0 5.07 7zM5.07 15c.68-1.54 1.43-2.9 2.23-4.1C7.88 12 9 12.69 10.33 13.1A13.94 13.94 0 0 1 5.07 15zm1.44 3.68c-.8-1.2-1.55-2.56-2.23-4.09A13.94 13.94 0 0 0 10.33 13.9c-1.33-.41-2.45-1.1-3.36-2H5.07zM12 19c-.83 0-1.65-.13-2.43-.38A13.97 13.97 0 0 0 12 16c.84 0 1.66.07 2.43.32A8.08 8.08 0 0 1 12 19zm6.93-2h-5.55c.57-.92 1.05-1.99 1.42-3.2A13.97 13.97 0 0 0 18.93 17zM19.43 9c-.68 1.54-1.43 2.9-2.23 4.1-1.24-.71-2.36-1.4-3.69-1.81A13.94 13.94 0 0 1 19.43 9z"/></svg></span> فتح المتجر
     </a>
-    <div class="nav-item" onclick="Auth.logout()" style="color: var(--admin-danger);">
+    <div class="nav-item" onclick="Auth.logout()">
        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-log-out" viewBox="0 0 24 24"><path d="M16 13v-2H7V8l-5 4 5 4v-3h9zM20 3h-8v2h8v14h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg></span> تسجيل خروج
     </div>
   </nav>
@@ -104,12 +116,12 @@
     <div class="nav-item" data-page="settings" id="nav-s-settings">
        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.14 12.936a7.5 7.5 0 0 0 .06-.936 7.5 7.5 0 0 0-.06-.936l2.03-1.58a.5.5 0 0 0 .12-.63l-1.91-3.3a.5.5 0 0 0-.6-.22l-2.4.96a7.014 7.014 0 0 0-1.62-.936l-.36-2.54a.5.5 0 0 0-.5-.42h-3.82a.5.5 0 0 0-.5.42l-.36 2.54c-.58.22-1.12.51-1.62.936l-2.4-.96a.5.5 0 0 0-.6.22l-1.91 3.3a.5.5 0 0 0 .12.63l2.03 1.58c-.04.31-.06.63-.06.96s.02.65.06.96l-2.03 1.58a.5.5 0 0 0-.12.63l1.91 3.3c.14.24.44.33.68.22l2.4-.96c.5.426 1.04.716 1.62.936l.36 2.54c.02.24.24.42.5.42h3.82c.26 0 .48-.18.5-.42l.36-2.54c.58-.22 1.12-.51 1.62-.936l2.4.96c.24.11.54.02.68-.22l1.91-3.3a.5.5 0 0 0-.12-.63l-2.03-1.58z"/></svg></span> المتجر
     </div>
-    <div class="nav-section" style="margin-top:20px">روابط سريعة</div>
+    <div class="nav-section" style="margin-top:12px">روابط سريعة</div>
     <a class="nav-item" href="index.html?store=loulo-beauty" target="_blank" id="nav-s-open-store">
        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-globe" viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm6.93 7H16a16.13 16.13 0 0 0-1.55-4.68A8.03 8.03 0 0 1 18.93 9zM12 5c.83 0 1.65.13 2.43.38A13.97 13.97 0 0 0 12 8c-.84 0-1.66-.07-2.43-.32A8.08 8.08 0 0 1 12 5zm-6.93 2h5.55c-.57.92-1.05 1.99-1.42 3.2A13.97 13.97 0 0 0 5.07 7zM5.07 15c.68-1.54 1.43-2.9 2.23-4.1C7.88 12 9 12.69 10.33 13.1A13.94 13.94 0 0 1 5.07 15zm1.44 3.68c-.8-1.2-1.55-2.56-2.23-4.09A13.94 13.94 0 0 0 10.33 13.9c-1.33-.41-2.45-1.1-3.36-2H5.07zM12 19c-.83 0-1.65-.13-2.43-.38A13.97 13.97 0 0 0 12 16c.84 0 1.66.07 2.43.32A8.08 8.08 0 0 1 12 19zm6.93-2h-5.55c.57-.92 1.05-1.99 1.42-3.2A13.97 13.97 0 0 0 18.93 17zM19.43 9c-.68 1.54-1.43 2.9-2.23 4.1-1.24-.71-2.36-1.4-3.69-1.81A13.94 13.94 0 0 1 19.43 9z"/></svg></span> فتح المتجر
     </a>
-    <div class="nav-section" style="margin-top:20px">حسابي</div>
-    <div class="nav-item" onclick="Auth.logout()" style="color: var(--admin-danger);">
+    <div class="nav-section" style="margin-top:12px">حسابي</div>
+    <div class="nav-item" onclick="Auth.logout()">
        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M16 13v-2H7V8l-5 4 5 4v-3h9zM20 3h-8v2h8v14h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg></span> تسجيل خروج
     </div>
   </nav>
@@ -236,98 +248,149 @@
       </div>
     </div>
 
-    <!-- ==================== SIMPLIFIED DASHBOARD (store_owner / manager / employee) ==================== -->
+    <!-- ==================== PREMIUM SIMPLIFIED DASHBOARD (store_owner / manager / employee) ==================== -->
     <div class="admin-page" id="admin-dashboard-simple" style="display:none">
-      <!-- Welcome header -->
-      <div class="merchant-welcome">
-        <div class="merchant-welcome-text">
-          <h2 id="merchant-greeting">مرحباً بك في متجرك</h2>
-          <p class="merchant-subtitle">نظرة سريعة على أداء متجرك اليوم</p>
+
+      <!-- SECTION 1: Smart Welcome -->
+      <div class="dash-welcome">
+        <div class="dash-welcome-text">
+          <h2><span id="dash-greeting-text">أهلاً بك</span></h2>
+          <p class="dash-welcome-sub" id="dash-store-name">في متجرك</p>
         </div>
-        <div class="merchant-welcome-actions">
-          <button class="merchant-btn merchant-btn-primary" onclick="navigateTo('products');">
-            <i data-lucide="plus-circle" style="width:16px;height:16px;vertical-align:middle;margin-left:6px"></i>إضافة منتج
+        <div class="dash-welcome-meta">
+          <span class="dash-welcome-date" id="dash-current-date"></span>
+          <div class="dash-welcome-badge" id="dash-plan-badge">الخطة الأساسية</div>
+        </div>
+      </div>
+      <div class="dash-insight" id="dash-insight-line"></div>
+
+      <!-- SECTION 2: Business Snapshot -->
+      <div class="dash-snapshot">
+        <div class="dash-kpi-card">
+          <div class="dash-kpi-header">
+            <div class="dash-kpi-icon"><i data-lucide="shopping-cart"></i></div>
+            <span class="dash-kpi-trend" id="kpi-trend-orders"></span>
+          </div>
+          <div class="dash-kpi-value" id="dash-orders-today">0</div>
+          <div class="dash-kpi-label">طلبات اليوم</div>
+          <div class="dash-kpi-context" id="kpi-context-orders"></div>
+        </div>
+        <div class="dash-kpi-card">
+          <div class="dash-kpi-header">
+            <div class="dash-kpi-icon"><i data-lucide="trending-up"></i></div>
+            <span class="dash-kpi-trend" id="kpi-trend-revenue"></span>
+          </div>
+          <div class="dash-kpi-value" id="dash-revenue-today">0</div>
+          <div class="dash-kpi-label">إيرادات اليوم</div>
+          <div class="dash-kpi-context" id="kpi-context-revenue"></div>
+        </div>
+        <div class="dash-kpi-card">
+          <div class="dash-kpi-header">
+            <div class="dash-kpi-icon"><i data-lucide="clock"></i></div>
+            <span class="dash-kpi-trend" id="kpi-trend-pending"></span>
+          </div>
+          <div class="dash-kpi-value" id="dash-pending-orders">0</div>
+          <div class="dash-kpi-label">طلبات معلقة</div>
+          <div class="dash-kpi-context" id="kpi-context-pending"></div>
+        </div>
+        <div class="dash-kpi-card">
+          <div class="dash-kpi-header">
+            <div class="dash-kpi-icon"><i data-lucide="package"></i></div>
+            <span class="dash-kpi-trend" id="kpi-trend-products"></span>
+          </div>
+          <div class="dash-kpi-value" id="dash-products-count">0</div>
+          <div class="dash-kpi-label">المنتجات</div>
+          <div class="dash-kpi-context" id="kpi-context-products"></div>
+        </div>
+      </div>
+
+      <!-- SECTION 3: Attention Center -->
+      <div class="dash-attention-section" id="dash-attention-area" style="display:none">
+        <h3 class="dash-section-title"><i data-lucide="alert-circle"></i> يحتاج متابعة</h3>
+        <div class="dash-attention-list" id="dash-attention-list"></div>
+      </div>
+
+      <!-- SECTION 4: Live Activity Timeline -->
+      <div class="dash-timeline">
+        <h3 class="dash-section-title"><i data-lucide="activity"></i> آخر النشاطات</h3>
+        <div class="dash-timeline-list" id="dash-timeline-list">
+          <div class="dash-empty">جاري التحميل...</div>
+        </div>
+      </div>
+
+      <!-- SECTION 5: Quick Action Center -->
+      <div class="dash-actions">
+        <h3 class="dash-section-title"><i data-lucide="zap"></i> إجراءات سريعة</h3>
+        <div class="dash-actions-grid">
+          <button class="dash-action-btn" onclick="navigateTo('products')">
+            <span class="dash-action-icon"><i data-lucide="plus-circle"></i></span>
+            <span class="dash-action-label">منتج جديد</span>
+            <span class="dash-action-desc">أضف منتجاً للمتجر</span>
           </button>
-          <button class="merchant-btn merchant-btn-secondary" onclick="navigateTo('orders');">
-            <i data-lucide="list" style="width:16px;height:16px;vertical-align:middle;margin-left:6px"></i>عرض الطلبات
+          <button class="dash-action-btn" onclick="navigateTo('direct-sale')">
+            <span class="dash-action-icon"><i data-lucide="shopping-bag"></i></span>
+            <span class="dash-action-label">بيع مباشر</span>
+            <span class="dash-action-desc">طلب سريع للعميل</span>
+          </button>
+          <button class="dash-action-btn" onclick="navigateTo('invoices')">
+            <span class="dash-action-icon"><i data-lucide="file-text"></i></span>
+            <span class="dash-action-label">إنشاء فاتورة</span>
+            <span class="dash-action-desc">عرض وطباعة الفواتير</span>
+          </button>
+          <button class="dash-action-btn" onclick="navigateTo('coupons')">
+            <span class="dash-action-icon"><i data-lucide="gift"></i></span>
+            <span class="dash-action-label">كوبون جديد</span>
+            <span class="dash-action-desc">أضف كود خصم للعملاء</span>
+          </button>
+          <button class="dash-action-btn" onclick="navigateTo('users')">
+            <span class="dash-action-icon"><i data-lucide="user-plus"></i></span>
+            <span class="dash-action-label">عميل جديد</span>
+            <span class="dash-action-desc">أضف مستخدم للوحة التحكم</span>
+          </button>
+          <button class="dash-action-btn" onclick="window.open('index.html?store=' + STORE_ID, '_blank')">
+            <span class="dash-action-icon"><i data-lucide="globe"></i></span>
+            <span class="dash-action-label">فتح المتجر</span>
+            <span class="dash-action-desc">شاهد متجرك كعميل</span>
           </button>
         </div>
       </div>
 
-      <!-- Snapshot cards -->
-      <div class="merchant-snapshot">
-        <div class="ms-card ms-card-orders">
-          <div class="ms-card-icon"><i data-lucide="shopping-cart" style="width:24px;height:24px"></i></div>
-          <div class="ms-card-body">
-            <span class="ms-card-value" id="ms-orders-today">0</span>
-            <span class="ms-card-label">طلب اليوم</span>
+      <!-- SECTION 6: Smart Analytics -->
+      <div class="dash-analytics">
+        <h3 class="dash-section-title"><i data-lucide="bar-chart-2"></i> تحليلات ذكية</h3>
+        <div class="dash-analytics-grid">
+          <div class="dash-analytics-card" id="dash-analytics-top-products">
+            <div class="dash-analytics-card-title">المنتجات الأكثر مبيعاً</div>
+            <div class="dash-analytics-card-body"></div>
           </div>
-        </div>
-        <div class="ms-card ms-card-revenue">
-          <div class="ms-card-icon"><i data-lucide="dollar-sign" style="width:24px;height:24px"></i></div>
-          <div class="ms-card-body">
-            <span class="ms-card-value" id="ms-revenue-today">0</span>
-            <span class="ms-card-label">إيرادات اليوم</span>
+          <div class="dash-analytics-card" id="dash-analytics-categories">
+            <div class="dash-analytics-card-title">أفضل التصنيفات</div>
+            <div class="dash-analytics-card-body"></div>
           </div>
-        </div>
-        <div class="ms-card ms-card-products">
-          <div class="ms-card-icon"><i data-lucide="package" style="width:24px;height:24px"></i></div>
-          <div class="ms-card-body">
-            <span class="ms-card-value" id="ms-products-active">0</span>
-            <span class="ms-card-label">منتج نشط</span>
+          <div class="dash-analytics-card" id="dash-analytics-weekly-sales">
+            <div class="dash-analytics-card-title">مبيعات الأسبوع</div>
+            <div class="dash-analytics-card-body"></div>
           </div>
-        </div>
-        <div class="ms-card ms-card-invoices">
-          <div class="ms-card-icon"><i data-lucide="file-text" style="width:24px;height:24px"></i></div>
-          <div class="ms-card-body">
-            <span class="ms-card-value" id="ms-invoices-today">0</span>
-            <span class="ms-card-label">فاتورة اليوم</span>
+          <div class="dash-analytics-card" id="dash-analytics-order-status">
+            <div class="dash-analytics-card-title">حالة الطلبات</div>
+            <div class="dash-analytics-card-body"></div>
+          </div>
+          <div class="dash-analytics-card" id="dash-analytics-low-stock">
+            <div class="dash-analytics-card-title">مخزون منخفض</div>
+            <div class="dash-analytics-card-body"></div>
           </div>
         </div>
       </div>
 
-      <!-- Operation-focused quick actions -->
-      <div class="merchant-actions">
-        <h3><i data-lucide="zap" style="width:16px;height:16px;vertical-align:middle;margin-left:6px;color:var(--admin-primary)"></i>إجراءات سريعة</h3>
-        <div class="merchant-actions-grid">
-          <button class="ma-btn" onclick="navigateTo('direct-sale')">
-            <span class="ma-btn-icon"><i data-lucide="shopping-bag" style="width:20px;height:20px"></i></span>
-            <span class="ma-btn-text">بيع مباشر</span>
-            <span class="ma-btn-desc">إنشاء طلب سريع للعميل</span>
-          </button>
-          <button class="ma-btn" onclick="navigateTo('products')">
-            <span class="ma-btn-icon"><i data-lucide="box" style="width:20px;height:20px"></i></span>
-            <span class="ma-btn-text">إدارة المنتجات</span>
-            <span class="ma-btn-desc">إضافة أو تعديل منتجاتك</span>
-          </button>
-          <button class="ma-btn" onclick="navigateTo('invoices')">
-            <span class="ma-btn-icon"><i data-lucide="file-text" style="width:20px;height:20px"></i></span>
-            <span class="ma-btn-text">الفواتير</span>
-            <span class="ma-btn-desc">عرض وطباعة الفواتير</span>
-          </button>
-          <button class="ma-btn" onclick="location.reload()">
-            <span class="ma-btn-icon"><i data-lucide="refresh-cw" style="width:20px;height:20px"></i></span>
-            <span class="ma-btn-text">تحديث المؤشرات</span>
-            <span class="ma-btn-desc">تحديث بيانات لوحة المعلومات</span>
-          </button>
+      <!-- SECTION 7: Notification Center -->
+      <div class="dash-notif-center" id="dash-notif-center">
+        <div class="dash-notif-header">
+          <h3 class="dash-section-title" style="margin-bottom:0"><i data-lucide="bell"></i> الإشعارات</h3>
+          <span class="dash-notif-badge" id="dash-notif-count">0</span>
         </div>
+        <div class="dash-notif-list" id="dash-notif-list"></div>
       </div>
 
-      <!-- Recent activity -->
-      <div class="merchant-activity">
-        <div class="merchant-activity-card">
-          <h4><i data-lucide="clock" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>آخر الطلبات</h4>
-          <div id="ms-recent-orders">
-            <p style="color:var(--admin-muted);padding:12px;text-align:center;">جاري التحميل...</p>
-          </div>
-        </div>
-        <div class="merchant-activity-card">
-          <h4><i data-lucide="file-text" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>آخر الفواتير</h4>
-          <div id="ms-recent-invoices">
-            <p style="color:var(--admin-muted);padding:12px;text-align:center;">جاري التحميل...</p>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- ==================== PRODUCTS ==================== -->
@@ -809,17 +872,17 @@
 
         <!-- Settings Tabs -->
         <div class="settings-tabs" id="settings-tabs">
-          <button class="stab active" data-tab="identity" onclick="switchSettingsTab('identity')"><i data-lucide="tag" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>الهوية</button>
-          <button class="stab" data-tab="branding" onclick="switchSettingsTab('branding')"><i data-lucide="palette" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>التصميم</button>
-          <button class="stab" data-tab="regional" onclick="switchSettingsTab('regional')"><i data-lucide="globe" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>الدولة والعملة</button>
-          <button class="stab" data-tab="content" onclick="switchSettingsTab('content')"><i data-lucide="file-text" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>المحتوى</button>
-          <button class="stab" data-tab="contact" onclick="switchSettingsTab('contact')"><i data-lucide="phone" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>التواصل</button>
-          <button class="stab" data-tab="media" onclick="switchSettingsTab('media')"><i data-lucide="image" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>الوسائط</button>
-          <button class="stab" data-tab="payments" onclick="switchSettingsTab('payments')"><i data-lucide="credit-card" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>بوابات الدفع</button>
+          <button class="stab" data-settings-tab="identity" data-tab="identity"><i data-lucide="tag" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>الهوية</button>
+          <button class="stab" data-settings-tab="branding" data-tab="branding"><i data-lucide="palette" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>التصميم</button>
+          <button class="stab" data-settings-tab="regional" data-tab="regional"><i data-lucide="globe" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>الدولة والعملة</button>
+          <button class="stab" data-settings-tab="content" data-tab="content"><i data-lucide="file-text" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>المحتوى</button>
+          <button class="stab" data-settings-tab="contact" data-tab="contact"><i data-lucide="phone" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>التواصل</button>
+          <button class="stab" data-settings-tab="media" data-tab="media"><i data-lucide="image" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>الوسائط</button>
+          <button class="stab" data-settings-tab="payments" data-tab="payments"><i data-lucide="credit-card" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>بوابات الدفع</button>
         </div>
 
         <!-- ---- TAB: Identity ---- -->
-        <div class="settings-tab-content active" id="stab-identity">
+        <div class="settings-panel" id="settings-panel-identity">
           <div class="settings-section">
             <h3><i data-lucide="tag" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>هوية المتجر</h3>
             <div class="settings-grid">
@@ -844,7 +907,7 @@
         </div>
 
         <!-- ---- TAB: Branding ---- -->
-        <div class="settings-tab-content" id="stab-branding">
+        <div class="settings-panel" id="settings-panel-branding">
           <div class="settings-section">
             <h3><i data-lucide="palette" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>ألوان التصميم</h3>
             <p class="settings-hint">التغيير يُطبَّق فورياً كمعاينة حية — احفظ لتثبيت التغييرات</p>
@@ -922,7 +985,7 @@
         </div>
 
         <!-- ---- TAB: Regional ---- -->
-        <div class="settings-tab-content" id="stab-regional">
+        <div class="settings-panel" id="settings-panel-regional">
           <div class="settings-section">
             <h3><i data-lucide="globe" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>إعدادات الدولة والعملة</h3>
             <p class="settings-hint">هذه الإعدادات تتحكم في رمز العملة وتنسيق الأسعار في جميع أنحاء المتجر</p>
@@ -964,7 +1027,7 @@
         </div>
 
         <!-- ---- TAB: Content ---- -->
-        <div class="settings-tab-content" id="stab-content">
+        <div class="settings-panel" id="settings-panel-content">
           <div class="settings-section">
             <h3><i data-lucide="file-text" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>محتوى الواجهة الرئيسية</h3>
             <div class="settings-grid">
@@ -1154,6 +1217,7 @@
                       <button type="button" class="btn-theme-action btn-select-theme" onclick="selectThemeCard('eva-express')">تفعيل الثيم</button>
                     </div>
                   </div>
+                </div>
                 <!-- Card 9: EVA Mega -->
                 <div class="theme-gallery-card" data-theme-id="eva-mega">
                   <div class="theme-card-preview">
@@ -1259,7 +1323,7 @@
         </div>
 
         <!-- ---- TAB: Contact ---- -->
-        <div class="settings-tab-content" id="stab-contact">
+        <div class="settings-panel" id="settings-panel-contact">
           <div class="settings-section">
             <h3><i data-lucide="phone" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>معلومات التواصل</h3>
             <div class="settings-grid">
@@ -1284,7 +1348,7 @@
         </div>
 
         <!-- ---- TAB: Media ---- -->
-        <div class="settings-tab-content" id="stab-media">
+        <div class="settings-panel" id="settings-panel-media">
           <div class="settings-header-banner" style="background:var(--admin-surface2);margin-bottom:20px;border-radius:12px;padding:20px">
             <div>
               <h3 style="margin:0"><i data-lucide="image" style="width:20px;height:20px;color:var(--admin-primary);vertical-align:middle;margin-left:8px"></i>إدارة هوية المتجر المرئية</h3>
@@ -1357,7 +1421,7 @@
         </div>
 
         <!-- ---- TAB: Payments ---- -->
-        <div class="settings-tab-content" id="stab-payments">
+        <div class="settings-panel" id="settings-panel-payments">
           <div class="settings-section">
             <div id="payments-disabled-warning" style="display:none; padding:12px 16px; background:rgba(245,158,11,0.1); border:1px solid #f59e0b; border-radius:8px; color:#d97706; font-weight:600; font-size:0.9rem; margin-bottom:16px;">
               ⚠️ هذه الميزة معطلة ضمن خطة المتجر الحالية

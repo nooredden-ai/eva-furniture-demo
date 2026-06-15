@@ -272,6 +272,7 @@ async function initStore() {
       throw new Error(`HTTP error! status: ${planResponse.status}`);
     }
     const plan = await planResponse.json();
+    window.storePlan = plan || {};
     if (plan && plan.storefront === false) {
       if (overlay) {
         overlay.style.display = 'flex';
@@ -602,11 +603,11 @@ function applyStoreSettings(s) {
     footerCopy.innerHTML = `© ${new Date().getFullYear()} ${s.name || 'متجرك'} · جميع الحقوق محفوظة <i data-lucide="heart" style="width:14px;height:14px;display:inline-block;vertical-align:middle;color:var(--secondary);fill:var(--secondary)"></i>`;
   }
 
-  // Payments UI
+  // Payments UI — visa shown only if explicitly enabled in payment settings
   const visaLabel = document.getElementById('payment-label-visa');
   const codLabel = document.getElementById('payment-label-cod');
   if (visaLabel) {
-    const visaEnabled = s.paymentGateways?.visa !== false;
+    const visaEnabled = s.paymentGateways?.visa === true && (s.paymentGateways?.cardPaymentEnabled !== false);
     visaLabel.style.display = visaEnabled ? 'flex' : 'none';
     
     // If visa is disabled but selected, fallback to cod

@@ -330,7 +330,8 @@ const DEFAULT_PERMISSIONS = {
     "view_orders", "update_orders", "delete_orders", "add_order_notes",
     "view_coupons", "manage_coupons",
     "view_customers", "manage_customers",
-    "view_settings", "edit_store_info", "edit_branding", "edit_legal_pages"
+    "view_settings", "edit_store_info", "edit_branding", "edit_legal_pages",
+    "edit_payment_settings", "edit_shipping_settings"
   ],
   store_manager: [
     "view_dashboard", "view_analytics",
@@ -339,7 +340,8 @@ const DEFAULT_PERMISSIONS = {
     "view_orders", "update_orders", "delete_orders", "add_order_notes",
     "view_coupons", "manage_coupons",
     "view_customers", "manage_customers",
-    "view_settings", "edit_store_info", "edit_branding", "edit_legal_pages"
+    "view_settings", "edit_store_info", "edit_branding", "edit_legal_pages",
+    "edit_payment_settings", "edit_shipping_settings"
   ],
   manager: [
     "view_dashboard", "view_analytics",
@@ -347,11 +349,13 @@ const DEFAULT_PERMISSIONS = {
     "view_categories", "manage_categories",
     "view_orders", "update_orders", "add_order_notes",
     "view_coupons", "manage_coupons",
-    "view_customers"
+    "view_customers",
+    "view_settings"
   ],
   employee: [
     "view_products", "view_categories", "view_coupons",
-    "view_orders", "update_orders", "add_order_notes"
+    "view_orders", "update_orders", "add_order_notes",
+    "view_settings"
   ],
   support_agent: [
     "view_orders", "add_order_notes",
@@ -366,7 +370,12 @@ function getActivePermissions() {
       data = { ...DEFAULT_PERMISSIONS };
       permissionRepository.saveAll(data);
     }
-    data.super_admin = [...DEFAULT_PERMISSIONS.super_admin];
+    // Merge defaults for all roles so new permissions are always present
+    Object.keys(DEFAULT_PERMISSIONS).forEach(role => {
+      const defaults = DEFAULT_PERMISSIONS[role] || [];
+      const existing = data[role] || [];
+      data[role] = [...new Set([...defaults, ...existing])];
+    });
     return data;
   } catch (e) {
     console.error('Error reading permissions file:', e);
@@ -523,6 +532,24 @@ app.post('/api/categories', requirePerm('manage_categories'), (req, res) => {
 });
 
 app.put('/api/categories/:id', requirePerm('manage_categories'), (req, res) => {
+  const { parentId } = req.body;
+  if (parentId && String(parentId).trim() !== '') {
+    if (String(parentId) === String(req.params.id)) {
+      return res.status(400).json({ error: 'لا يمكن أن يكون التصنيف أباً لنفسه' });
+    }
+    const allCategories = categoryRepository.findAll();
+    const visited = new Set();
+    let current = String(parentId);
+    while (current) {
+      if (current === String(req.params.id)) {
+        return res.status(400).json({ error: 'لا يمكن أن يكون التصنيف فرعاً من تصنيف فرعي تابع له' });
+      }
+      if (visited.has(current)) break;
+      visited.add(current);
+      const parent = allCategories.find(c => String(c.id) === current);
+      current = parent && parent.parentId ? String(parent.parentId) : null;
+    }
+  }
   const updated = categoryRepository.update(req.params.id, req.body);
   if (!updated) return res.status(404).json({ error: 'Category not found' });
   res.json(updated);
@@ -1473,7 +1500,7 @@ app.get('/api/settings', (req, res) => {
 });
 
 app.put('/api/settings', requirePerm('view_settings'), (req, res) => {
-  const role = req.headers['x-user-role'];
+  const role = (req.user && req.user.role) || req.headers['x-user-role'];
   const currentPerms = getActivePermissions();
   const rolePerms = currentPerms[role] || DEFAULT_PERMISSIONS[role] || [];
   
