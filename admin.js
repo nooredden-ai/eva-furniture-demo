@@ -3110,7 +3110,106 @@ function renderUsersTable() {
 }
 
 // ===== Modals =====
+function openModal(id) { $a(id).classList.add('open'); }
 function closeModal(id) { $a(id).classList.remove('open'); }
+
+// ===================================================
+// ===== SHIPPING ZONES =====
+// ===================================================
+
+let _shippingZones = [];
+let _editingShippingZoneId = null;
+
+function renderShippingZones() {
+  const container = $a('shipping-zones-container');
+  if (!container) return;
+  if (!_shippingZones.length) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--admin-text2)">لا توجد مناطق توصيل. أضف منطقة جديدة.</div>';
+    return;
+  }
+  const currSym = '₪';
+  container.innerHTML = `
+    <div class="admin-table-wrap" style="border:1px solid var(--admin-border);border-radius:12px;overflow:hidden">
+      <table class="admin-table" style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr>
+            <th style="padding:12px 16px;text-align:right;background:var(--admin-bg-alt);font-size:0.82rem">اسم المنطقة</th>
+            <th style="padding:12px 16px;text-align:right;background:var(--admin-bg-alt);font-size:0.82rem">تكلفة التوصيل</th>
+            <th style="padding:12px 16px;text-align:center;background:var(--admin-bg-alt);font-size:0.82rem">الحالة</th>
+            <th style="padding:12px 16px;text-align:center;background:var(--admin-bg-alt);font-size:0.82rem">إجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${_shippingZones.map((z, i) => `
+            <tr>
+              <td style="padding:10px 16px;border-top:1px solid var(--admin-border);font-weight:600">${escapeHtml(z.name)}</td>
+              <td style="padding:10px 16px;border-top:1px solid var(--admin-border)">${z.price} ${currSym}</td>
+              <td style="padding:10px 16px;border-top:1px solid var(--admin-border);text-align:center">
+                <label class="toggle-switch" style="transform:scale(0.8)">
+                  <input type="checkbox" ${z.enabled ? 'checked' : ''} onchange="toggleShippingZone('${z.id}')">
+                  <span class="slider"></span>
+                </label>
+              </td>
+              <td style="padding:10px 16px;border-top:1px solid var(--admin-border);text-align:center">
+                <button class="topbar-btn btn-outline btn-sm" onclick="editShippingZone('${z.id}')" style="padding:4px 8px;font-size:0.75rem"><i data-lucide="edit" style="width:12px;height:12px"></i></button>
+                <button class="topbar-btn btn-danger btn-sm" onclick="deleteShippingZone('${z.id}')" style="padding:4px 8px;font-size:0.75rem"><i data-lucide="trash-2" style="width:12px;height:12px"></i></button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+  if (window.lucide) lucide.createIcons();
+}
+
+function addShippingZone() {
+  _editingShippingZoneId = null;
+  $a('shipping-zone-modal-title').textContent = 'إضافة منطقة توصيل';
+  $a('sz-name').value = '';
+  $a('sz-price').value = '';
+  openModal('shipping-zone-modal');
+}
+
+function editShippingZone(id) {
+  const zone = _shippingZones.find(z => z.id === id);
+  if (!zone) return;
+  _editingShippingZoneId = id;
+  $a('shipping-zone-modal-title').textContent = 'تعديل منطقة توصيل';
+  $a('sz-name').value = zone.name;
+  $a('sz-price').value = zone.price;
+  openModal('shipping-zone-modal');
+}
+
+function saveShippingZoneModal() {
+  const name = ($a('sz-name')?.value || '').trim();
+  const price = parseFloat($a('sz-price')?.value);
+  if (!name) { showAdminToast('اسم المنطقة مطلوب', 'error'); return; }
+  if (isNaN(price) || price < 0) { showAdminToast('تكلفة التوصيل يجب أن تكون رقماً غير سالب', 'error'); return; }
+  const dup = _shippingZones.find(z => z.name === name && z.id !== _editingShippingZoneId);
+  if (dup) { showAdminToast('يوجد منطقة بنفس الاسم بالفعل', 'error'); return; }
+  if (_editingShippingZoneId) {
+    const zone = _shippingZones.find(z => z.id === _editingShippingZoneId);
+    if (zone) { zone.name = name; zone.price = price; }
+  } else {
+    _shippingZones.push({ id: 'zone_' + Date.now(), name, price, enabled: true, sortOrder: _shippingZones.length + 1 });
+  }
+  closeModal('shipping-zone-modal');
+  renderShippingZones();
+  showAdminToast('تم حفظ المنطقة');
+}
+
+function deleteShippingZone(id) {
+  if (!confirm('هل أنت متأكد من حذف هذه المنطقة؟')) return;
+  _shippingZones = _shippingZones.filter(z => z.id !== id);
+  renderShippingZones();
+  showAdminToast('تم حذف المنطقة');
+}
+
+function toggleShippingZone(id) {
+  const zone = _shippingZones.find(z => z.id === id);
+  if (zone) { zone.enabled = !zone.enabled; renderShippingZones(); }
+}
 
 // ===================================================
 // ===== SETTINGS ENGINE =====
@@ -3132,7 +3231,8 @@ async function initSettingsPage() {
     content: 'edit_legal_pages',
     contact: 'edit_store_info',
     media: 'edit_branding',
-    payments: 'edit_payment_settings'
+    payments: 'edit_payment_settings',
+    shipping: 'edit_shipping_settings'
   };
 
   const tabs = Object.keys(settingsTabsPermissions);
@@ -3243,6 +3343,14 @@ async function loadStoreSettings() {
   setVal('st-pay-public', pay.publicKey || '');
   setVal('st-pay-secret', pay.secretKey || '');
 
+  // Shipping Zones
+  _shippingZones = (s.shippingZones && s.shippingZones.length) ? JSON.parse(JSON.stringify(s.shippingZones)) : [
+    { id: 'zone_westbank', name: 'الضفة الغربية', price: 15, enabled: true, sortOrder: 1 },
+    { id: 'zone_jerusalem', name: 'القدس', price: 25, enabled: true, sortOrder: 2 },
+    { id: 'zone_arab48', name: 'الداخل 48', price: 35, enabled: true, sortOrder: 3 }
+  ];
+  renderShippingZones();
+
   // Branding Media Init
   const b = s.branding || {};
   // Backward compatibility check for old logoImage and bannerImage
@@ -3310,6 +3418,7 @@ async function saveStoreSettings() {
         publicKey: ($a('st-pay-public')?.value || '').trim(),
         secretKey: ($a('st-pay-secret')?.value || '').trim(),
       },
+      shippingZones:  _shippingZones,
       phone:          ($a('st-phone')?.value || '').trim(),
       email:          ($a('st-email')?.value || '').trim(),
       whatsapp:       ($a('st-whatsapp')?.value || '').trim(),

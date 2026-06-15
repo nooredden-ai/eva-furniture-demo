@@ -879,6 +879,7 @@
           <button class="stab" data-settings-tab="contact" data-tab="contact"><i data-lucide="phone" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>التواصل</button>
           <button class="stab" data-settings-tab="media" data-tab="media"><i data-lucide="image" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>الوسائط</button>
           <button class="stab" data-settings-tab="payments" data-tab="payments"><i data-lucide="credit-card" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>بوابات الدفع</button>
+          <button class="stab" data-settings-tab="shipping" data-tab="shipping"><i data-lucide="truck" style="width:16px;height:16px;vertical-align:middle;margin-left:4px"></i>الشحن</button>
         </div>
 
         <!-- ---- TAB: Identity ---- -->
@@ -1472,6 +1473,20 @@
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---- TAB: Shipping ---- -->
+        <div class="settings-panel" id="settings-panel-shipping">
+          <div class="settings-section">
+            <h3><i data-lucide="truck" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>مناطق التوصيل</h3>
+            <p style="color:var(--admin-text2); margin-bottom:16px; font-size:0.95rem">إضافة وتعديل مناطق التوصيل وتكاليف الشحن.</p>
+            <div id="shipping-zones-container">
+              <div style="padding:20px;text-align:center;color:var(--admin-text2)">جاري التحميل...</div>
+            </div>
+            <div style="margin-top:12px">
+              <button class="topbar-btn btn-outline" onclick="addShippingZone()"><i data-lucide="plus" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>إضافة منطقة جديدة</button>
             </div>
           </div>
         </div>
@@ -2307,6 +2322,32 @@
     <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-start;padding:12px 24px;border-top:1px solid var(--admin-border);">
       <button class="topbar-btn btn-primary" onclick="printInvoice()"><i data-lucide="printer" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>طباعة الفاتورة</button>
       <button class="topbar-btn btn-outline" onclick="downloadInvoicePdf(this)"><i data-lucide="download" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>تحميل PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Shipping Zone Modal ===== -->
+<div class="modal-overlay" id="shipping-zone-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 id="shipping-zone-modal-title"><i data-lucide="truck" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>إضافة منطقة توصيل</h3>
+      <button class="modal-close" onclick="closeModal('shipping-zone-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-grid">
+        <div class="form-row">
+          <label for="sz-name">اسم المنطقة <span style="color:var(--admin-danger)">*</span></label>
+          <input type="text" id="sz-name" placeholder="مثال: نابلس" />
+        </div>
+        <div class="form-row">
+          <label for="sz-price">تكلفة التوصيل <span style="color:var(--admin-danger)">*</span></label>
+          <input type="number" id="sz-price" placeholder="مثال: 15" min="0" step="1" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-start;padding:12px 24px;border-top:1px solid var(--admin-border);">
+      <button class="topbar-btn btn-primary" id="shipping-zone-save-btn" onclick="saveShippingZoneModal()"><i data-lucide="check" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>حفظ</button>
+      <button class="topbar-btn btn-outline" onclick="closeModal('shipping-zone-modal')">إلغاء</button>
     </div>
   </div>
 </div>

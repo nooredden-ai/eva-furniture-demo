@@ -744,24 +744,41 @@ app.post('/api/orders', (req, res) => {
       return res.status(403).json({ success: false, message: 'المتجر لا يقبل طلبات حالياً (الميزة غير مفعّلة في خطة المتجر)' });
     }
 
-    const { customer, phone, address, zone, zoneName, items, subtotal, shipping, total, notes, paymentMethod, couponCode, discount } = req.body;
+    const { customer, phone, address, zone, zoneName, items, subtotal: rawSubtotal, shipping: rawShipping, total: rawTotal, notes, paymentMethod, couponCode, discount } = req.body;
 
     if (!customer || !phone || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ success: false, message: 'بيانات الطلب غير مكتملة' });
     }
+
+    // Recalculate shipping from settings to prevent client-side manipulation
+    const settings = settingsRepository.findFirst();
+    const shippingZones = (settings && settings.shippingZones) || [];
+    let calculatedShipping = 0;
+    let calculatedZoneName = zoneName || '';
+    if (zone && shippingZones.length) {
+      const matchedZone = shippingZones.find(z => z.id === zone && z.enabled !== false);
+      if (matchedZone) {
+        calculatedShipping = matchedZone.price || 0;
+        calculatedZoneName = matchedZone.name;
+      }
+    }
+
+    const calculatedSubtotal = (Array.isArray(items) ? items.reduce((sum, i) => sum + ((i.price || 0) * (i.qty || 0)), 0) : 0);
+    const calculatedDiscount = discount || 0;
+    const calculatedTotal = calculatedSubtotal + calculatedShipping - calculatedDiscount;
 
     const newOrderPayload = {
       customer,
       phone,
       address: address || '',
       zone: zone || '',
-      zoneName: zoneName || '',
+      zoneName: calculatedZoneName,
       items,
-      subtotal: subtotal || 0,
-      shipping: shipping || 0,
-      discount: discount || 0,
+      subtotal: calculatedSubtotal,
+      shipping: calculatedShipping,
+      discount: calculatedDiscount,
       couponCode: couponCode || '',
-      total: total || 0,
+      total: calculatedTotal,
       status: 'pending',
       date: new Date().toISOString().split('T')[0],
       notes: notes ? [notes] : [],

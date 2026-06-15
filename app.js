@@ -11,15 +11,31 @@ let _storeLock = false; // prevent double actions
 let appliedCoupon = null; // track applied coupon
 let discountAmount = 0; // track discount amount
 
-const ZONES = [
-  { id: '', name: 'اختر المنطقة...', fee: 0 },
-  { id: 'westbank', name: 'الضفة العربية (Westbank)', fee: 25 },
-  { id: 'jerusalem', name: 'القدس (Jerusalem)', fee: 35 },
-  { id: 'arab48', name: 'الداخل arab 48', fee: 80 },
+const DEFAULT_ZONES = [
+  { id: 'zone_westbank', name: 'الضفة الغربية', price: 15, enabled: true, sortOrder: 1 },
+  { id: 'zone_jerusalem', name: 'القدس', price: 25, enabled: true, sortOrder: 2 },
+  { id: 'zone_arab48', name: 'الداخل 48', price: 35, enabled: true, sortOrder: 3 },
 ];
+
+function getShippingZones() {
+  const s = window.storeSettings || storeSettings || {};
+  const zones = s.shippingZones;
+  if (zones && zones.length) return zones;
+  return DEFAULT_ZONES;
+}
+
+function getEnabledZones() {
+  return getShippingZones().filter(z => z.enabled !== false);
+}
 
 // DOM Elements
 const $ = id => document.getElementById(id);
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
 const AVAILABLE_THEMES = ['calm', 'modern', 'luxury', 'minimal', 'signature', 'noorlabs-signature', 'eva-flow', 'eva-express', 'eva-mega'];
 
 function normalizeThemeName(theme) {
@@ -505,7 +521,8 @@ function renderFeatureHighlights(highlights) {
 function populateZones() {
   const select = $('zone-select');
   const select2 = $('order-zone-select');
-  const html = ZONES.map(z => `<option value="${z.id}" data-fee="${z.fee || 0}">${z.name}</option>`).join('');
+  const zones = getEnabledZones();
+  const html = '<option value="">اختر المنطقة...</option>' + zones.map(z => `<option value="${z.id}" data-fee="${z.price || 0}">${escapeHtml(z.name)}</option>`).join('');
   if (select) select.innerHTML = html;
   if (select2) select2.innerHTML = html;
 }
