@@ -8,6 +8,9 @@ let productsCache = [];
 let imageMarkedForRemoval = false; // Tracks if the user clicked "Remove" in edit mode
 let directSaleLog = []; // Track direct sales for UI display
 let stockReceiptsLog = []; // Track stock receipts for UI display
+let _receiptsCache = []; // Cache for receipt vouchers
+let _expensesCache = []; // Cache for expense vouchers
+let _activeAccTab = 'summary'; // Active accounting tab
 let storePlan = null; // Track active modules plan for this store
 
 // ===== UX Simplification (Merchant Dashboard) =====
@@ -344,6 +347,22 @@ async function renderAccountingPage() {
       $a('fin-kpi-operations-count').textContent = (data.operationsCount || 0).toLocaleString('ar-SA');
     }
 
+    // Financial KPIs
+    if ($a('fin-kpi-total-receipts')) {
+      $a('fin-kpi-total-receipts').textContent = (data.totalReceipts || 0).toLocaleString('ar-SA') + ' ₪';
+    }
+    if ($a('fin-kpi-total-expenses')) {
+      $a('fin-kpi-total-expenses').textContent = (data.totalExpenses || 0).toLocaleString('ar-SA') + ' ₪';
+    }
+    if ($a('fin-kpi-net-balance')) {
+      const nb = (data.netBalance || 0);
+      $a('fin-kpi-net-balance').textContent = nb.toLocaleString('ar-SA') + ' ₪';
+      $a('fin-kpi-net-balance').style.color = nb >= 0 ? 'var(--admin-success)' : 'var(--admin-danger)';
+    }
+    if ($a('fin-kpi-outstanding')) {
+      $a('fin-kpi-outstanding').textContent = (data.outstandingBalances || 0).toLocaleString('ar-SA') + ' ₪';
+    }
+
     const profitValEl = $a('fin-kpi-monthly-profit');
     const profitLabelEl = $a('fin-label-monthly-profit');
     if (profitValEl) {
@@ -473,6 +492,22 @@ async function renderAccountingPage() {
 
 function showAccountingHome() {
   renderAccountingPage();
+}
+
+// ===== Accounting Tab Switching =====
+function switchAccTab(tab) {
+  _activeAccTab = tab;
+  ['summary', 'receipts', 'expenses'].forEach(t => {
+    const btn = $a('acc-tab-' + t);
+    if (btn) {
+      if (t === tab) { btn.className = 'topbar-btn btn-primary'; btn.style.fontSize = '0.85rem'; }
+      else { btn.className = 'topbar-btn btn-outline'; btn.style.fontSize = '0.85rem'; }
+    }
+    const panel = $a('acc-panel-' + t);
+    if (panel) panel.style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'receipts') loadReceiptsSection();
+  if (tab === 'expenses') loadExpensesSection();
 }
 
 // ===== KPI Update Functions =====
@@ -1456,7 +1491,274 @@ function getMonthlyRevenue(orders, labels) {
       revenueByLabel[label] += parseFloat(order.total || 0);
     }
   });
-  return labels.map(label => Math.round(revenueByLabel[label] || 0));
+}
+
+// ===================================================
+// ===== RECEIPT & EXPENSE VOUCHER FUNCTIONS =====
+// ===================================================
+
+function computeInvoicePaymentStatus(invoice, allReceipts) {
+  if (!invoice || invoice.status === 'cancelled') {
+    return { paymentStatus: 'cancelled', totalPaid: 0, remaining: 0, badgeClass: 'badge-danger', badgeText: 'ملغاة', receiptCount: 0 };
+  }
+  const linked = (allReceipts || []).filter(r =>
+    r.linkedTo === 'invoice' && String(r.linkedId) === String(invoice.id) && r.status !== 'cancelled'
+  );
+  const totalPaid = linked.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const total = Number(invoice.total) || 0;
+  const remaining = Math.max(0, total - totalPaid);
+  let paymentStatus, badgeClass, badgeText;
+  if (totalPaid <= 0) {
+    paymentStatus = 'unpaid'; badgeClass = 'badge-warning'; badgeText = 'غير مدفوعة';
+  } else if (totalPaid >= total) {
+    paymentStatus = 'paid'; badgeClass = 'badge-success'; badgeText = 'مدفوعة';
+  } else {
+    paymentStatus = 'partial'; badgeClass = 'badge-info'; badgeText = 'مدفوعة جزئياً';
+  }
+  return { paymentStatus, totalPaid, remaining, badgeClass, badgeText, receiptCount: linked.length };
+}
+
+function getPaymentMethodText(method) {
+  const m = { cash: 'نقداً', cheque: 'شيك', bank_transfer: 'تحويل بنكي', card: 'بطاقة', installment: 'تقسيط' };
+  return m[method] || method;
+}
+
+function getLinkedToText(linkedTo, linkedId) {
+  if (linkedTo === 'none' || !linkedTo) return '—';
+  const labels = { invoice: 'فاتورة', order: 'طلب', direct_sale: 'بيع مباشر' };
+  return (labels[linkedTo] || linkedTo) + (linkedId ? ' #' + linkedId : '');
+}
+
+// ===== Receipt Vouchers =====
+async function loadReceiptsSection() {
+  try {
+    const tbody = $a('receipts-table-body');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;">جاري التحميل...</td></tr>';
+    const res = await fetchWithStability('/api/receipts');
+    _receiptsCache = (res && res.success && Array.isArray(res.data)) ? res.data : (Array.isArray(res) ? res : []);
+    renderReceiptsSection();
+  } catch (err) {
+    console.error('Error loading receipts:', err);
+    showAdminToast('فشل تحميل سندات القبض', 'error');
+  }
+}
+
+function renderReceiptsSection() {
+  const tbody = $a('receipts-table-body');
+  const emptyState = $a('receipts-empty-state');
+  if (!tbody) return;
+  if (!_receiptsCache.length) {
+    tbody.innerHTML = '';
+    if (emptyState) emptyState.style.display = 'block';
+    return;
+  }
+  if (emptyState) emptyState.style.display = 'none';
+  tbody.innerHTML = _receiptsCache.slice().reverse().map(r => {
+    const isCancelled = r.status === 'cancelled';
+    const rowStyle = isCancelled ? 'opacity:0.5;text-decoration:line-through;' : '';
+    const statusBadge = isCancelled
+      ? '<span class="status-badge badge-danger" style="font-size:0.75rem">ملغي</span>'
+      : '<span class="status-badge badge-success" style="font-size:0.75rem">نشط</span>';
+    const actions = isCancelled
+      ? '<span style="color:var(--admin-text2);font-size:0.8rem">ملغي</span>'
+      : '<button class="topbar-btn btn-outline btn-sm" onclick="openCancelReceipt(\'' + r.id + '\')" style="padding:2px 6px;font-size:0.7rem;color:var(--admin-danger)"><i data-lucide="x-circle" style="width:10px;height:10px"></i></button>';
+    return '<tr style="' + rowStyle + '">' +
+      '<td style="padding:8px 12px;font-weight:600">' + (r.voucherNumber || r.id) + '</td>' +
+      '<td style="padding:8px 12px">' + (r.date ? new Date(r.date).toLocaleDateString('ar-EG') : '—') + '</td>' +
+      '<td style="padding:8px 12px">' + escapeHtml(r.customerName || '—') + '</td>' +
+      '<td style="padding:8px 12px;font-weight:600">' + Number(r.amount).toFixed(2) + ' ₪</td>' +
+      '<td style="padding:8px 12px">' + getPaymentMethodText(r.paymentMethod) + '</td>' +
+      '<td style="padding:8px 12px;font-size:0.8rem">' + getLinkedToText(r.linkedTo, r.linkedId) + '</td>' +
+      '<td style="padding:8px 12px">' + statusBadge + '</td>' +
+      '<td style="padding:8px 12px">' + actions + '</td></tr>';
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+function openAddReceipt() {
+  _activeReceiptInvoiceId = null;
+  $a('receipt-modal-title').innerHTML = '<i data-lucide="arrow-down-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>تسجيل سند قبض جديد';
+  $a('receipt-invoice-row').style.display = 'none';
+  $a('receipt-customer-row').style.display = '';
+  $a('rcpt-linked-id').value = '';
+  $a('rcpt-customer').value = '';
+  $a('rcpt-amount').value = '';
+  $a('rcpt-method').value = 'cash';
+  $a('rcpt-reference').value = '';
+  $a('rcpt-cheque').value = '';
+  $a('rcpt-notes').value = '';
+  openModal('receipt-modal');
+}
+
+let _activeReceiptInvoiceId = null;
+
+function recordInvoicePayment(invoiceId) {
+  _activeReceiptInvoiceId = invoiceId;
+  const inv = _currentPrintInvoice;
+  $a('receipt-modal-title').innerHTML = '<i data-lucide="arrow-down-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>تسديد دفعة للفاتورة ' + invoiceId;
+  $a('receipt-invoice-row').style.display = '';
+  $a('rcpt-linked-id').value = invoiceId;
+  $a('receipt-customer-row').style.display = '';
+  $a('rcpt-customer').value = inv && inv.customer ? (inv.customer.name || '') : '';
+  $a('rcpt-amount').value = '';
+  $a('rcpt-method').value = 'cash';
+  $a('rcpt-reference').value = '';
+  $a('rcpt-cheque').value = '';
+  $a('rcpt-notes').value = '';
+  openModal('receipt-modal');
+}
+
+async function saveReceipt() {
+  const amount = parseFloat($a('rcpt-amount')?.value);
+  const method = $a('rcpt-method')?.value || 'cash';
+  const customerName = $a('rcpt-customer')?.value?.trim() || '';
+  const reference = $a('rcpt-reference')?.value?.trim() || '';
+  const cheque = $a('rcpt-cheque')?.value?.trim() || '';
+  const notes = $a('rcpt-notes')?.value?.trim() || '';
+  if (!amount || amount <= 0) { showAdminToast('المبلغ مطلوب ويجب أن يكون أكبر من صفر', 'error'); return; }
+  const payload = {
+    amount,
+    paymentMethod: method,
+    customerName,
+    customerPhone: '',
+    referenceNumber: reference,
+    chequeNumber: cheque,
+    notes,
+    linkedTo: _activeReceiptInvoiceId ? 'invoice' : 'none',
+    linkedId: _activeReceiptInvoiceId || null
+  };
+  try {
+    const res = await fetchWithStability('/api/receipts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!res.success) { showAdminToast(res.message || 'فشل تسجيل سند القبض', 'error'); return; }
+    showAdminToast('تم تسجيل سند القبض بنجاح');
+    closeModal('receipt-modal');
+    await loadReceiptsSection();
+    if (_activeReceiptInvoiceId) {
+      _activeReceiptInvoiceId = null;
+      const invId = $a('rcpt-linked-id')?.value;
+      if (invId) await viewInvoice(invId);
+    }
+  } catch (err) {
+    console.error('Save receipt error:', err);
+    showAdminToast('فشل تسجيل سند القبض', 'error');
+  }
+}
+
+function openCancelReceipt(receiptId) {
+  $a('cancel-receipt-modal').dataset.receiptId = receiptId;
+  $a('rcpt-cancel-reason').value = '';
+  openModal('cancel-receipt-modal');
+}
+
+async function confirmCancelReceipt() {
+  const receiptId = $a('cancel-receipt-modal').dataset.receiptId;
+  if (!receiptId) { showAdminToast('خطأ في تحديد سند القبض', 'error'); return; }
+  const reason = $a('rcpt-cancel-reason')?.value?.trim() || '';
+  try {
+    const res = await fetchWithStability('/api/receipts/' + receiptId + '/cancel', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cancelReason: reason })
+    });
+    if (!res.success) { showAdminToast(res.message || 'فشل إلغاء سند القبض', 'error'); return; }
+    showAdminToast('تم إلغاء سند القبض');
+    closeModal('cancel-receipt-modal');
+    await loadReceiptsSection();
+    if (_currentPrintInvoice) viewInvoice(_currentPrintInvoice.id);
+  } catch (err) {
+    console.error('Cancel receipt error:', err);
+    showAdminToast('فشل إلغاء سند القبض', 'error');
+  }
+}
+
+// ===== Expense Vouchers =====
+async function loadExpensesSection() {
+  try {
+    const tbody = $a('expenses-table-body');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;">جاري التحميل...</td></tr>';
+    const res = await fetchWithStability('/api/expenses');
+    _expensesCache = (res && res.success && Array.isArray(res.data)) ? res.data : (Array.isArray(res) ? res : []);
+    renderExpensesSection();
+  } catch (err) {
+    console.error('Error loading expenses:', err);
+    showAdminToast('فشل تحميل سندات الصرف', 'error');
+  }
+}
+
+function renderExpensesSection() {
+  const tbody = $a('expenses-table-body');
+  const emptyState = $a('expenses-empty-state');
+  if (!tbody) return;
+  if (!_expensesCache.length) {
+    tbody.innerHTML = '';
+    if (emptyState) emptyState.style.display = 'block';
+    return;
+  }
+  if (emptyState) emptyState.style.display = 'none';
+
+  const catLabels = { rent: 'إيجار', salaries: 'رواتب', marketing: 'تسويق', shipping: 'شحن', inventory_purchase: 'مشتريات مخزون', maintenance: 'صيانة', utilities: 'فواتير خدمات', other: 'أخرى' };
+
+  tbody.innerHTML = _expensesCache.slice().reverse().map(function(e) {
+    return '<tr>' +
+      '<td style="padding:8px 12px;font-weight:600">' + (e.voucherNumber || e.id) + '</td>' +
+      '<td style="padding:8px 12px">' + (e.date ? new Date(e.date).toLocaleDateString('ar-EG') : '—') + '</td>' +
+      '<td style="padding:8px 12px">' + (catLabels[e.category] || e.category) + '</td>' +
+      '<td style="padding:8px 12px">' + escapeHtml(e.payee || '—') + '</td>' +
+      '<td style="padding:8px 12px;font-weight:600">' + Number(e.amount).toFixed(2) + ' ₪</td>' +
+      '<td style="padding:8px 12px">' + getPaymentMethodText(e.paymentMethod) + '</td>' +
+      '<td style="padding:8px 12px"><button class="topbar-btn btn-danger btn-sm" onclick="deleteExpense(\'' + e.id + '\')" style="padding:2px 6px;font-size:0.7rem"><i data-lucide="trash-2" style="width:10px;height:10px"></i></button></td></tr>';
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+function openAddExpense() {
+  $a('exp-category').value = 'rent';
+  $a('exp-payee').value = '';
+  $a('exp-amount').value = '';
+  $a('exp-method').value = 'cash';
+  $a('exp-notes').value = '';
+  openModal('expense-modal');
+}
+
+async function saveExpense() {
+  const category = $a('exp-category')?.value;
+  const payee = $a('exp-payee')?.value?.trim();
+  const amount = parseFloat($a('exp-amount')?.value);
+  const method = $a('exp-method')?.value || 'cash';
+  const notes = $a('exp-notes')?.value?.trim() || '';
+  if (!payee) { showAdminToast('المدفوع له مطلوب', 'error'); return; }
+  if (!amount || amount <= 0) { showAdminToast('المبلغ مطلوب ويجب أن يكون أكبر من صفر', 'error'); return; }
+  try {
+    const res = await fetchWithStability('/api/expenses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category, payee, amount, paymentMethod: method, notes })
+    });
+    if (!res.success) { showAdminToast(res.message || 'فشل تسجيل سند الصرف', 'error'); return; }
+    showAdminToast('تم تسجيل سند الصرف بنجاح');
+    closeModal('expense-modal');
+    await loadExpensesSection();
+  } catch (err) {
+    console.error('Save expense error:', err);
+    showAdminToast('فشل تسجيل سند الصرف', 'error');
+  }
+}
+
+async function deleteExpense(id) {
+  if (!confirm('هل أنت متأكد من حذف سند الصرف هذا؟')) return;
+  try {
+    const res = await fetchWithStability('/api/expenses/' + id, { method: 'DELETE' });
+    if (!res.success) { showAdminToast(res.message || 'فشل حذف سند الصرف', 'error'); return; }
+    showAdminToast('تم حذف سند الصرف');
+    await loadExpensesSection();
+  } catch (err) {
+    console.error('Delete expense error:', err);
+    showAdminToast('فشل حذف سند الصرف', 'error');
+  }
 }
 
 function createDashboardChartDefaults() {
@@ -1732,9 +2034,22 @@ async function renderMerchantDashboard() {
       } catch(e) { invoices = []; }
     }
 
+    // Ensure receipt cache is populated for unpaid invoice computation
+    if (!_receiptsCache.length) {
+      try {
+        const rRes = await fetchWithStability('/api/receipts');
+        if (rRes && rRes.success && Array.isArray(rRes.data)) _receiptsCache = rRes.data;
+      } catch(e) { /* ignore */ }
+    }
+
     // Finalize attention with unpaid invoices
     if (attentionArea && attentionList) {
-      const unpaidCount = invoices.filter(inv=>inv.status==='pending'||inv.status==='unpaid').length;
+      const unpaidCount = invoices.filter(inv => {
+      if (inv.status === 'cancelled') return false;
+      const linked = (_receiptsCache || []).filter(r => r.linkedTo === 'invoice' && String(r.linkedId) === String(inv.id) && r.status !== 'cancelled');
+      const totalPaid = linked.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+      return totalPaid < (Number(inv.total) || 0);
+    }).length;
       if (unpaidCount>0) aItems.push({ sev:'info', icon:'file-text', text:`${unpaidCount} فاتورة غير مدفوعة`, page:'invoices', action:'دفع' });
       if (aItems.length>0) {
         attentionArea.style.display = '';
@@ -1846,7 +2161,12 @@ async function renderMerchantDashboard() {
       if (todayOrders.length>0) ni.push({icon:'shopping-cart', text:`${todayOrders.length} طلب${todayOrders.length>1?'ات':''} جديد${todayOrders.length>1?'ة':''}`});
       const lsc = products.filter(p=>p.active!==false && p.stock!==undefined && Number(p.stock)<=3 && p.stock!=='').length;
       if (lsc>0) ni.push({icon:'alert-triangle', text:`${lsc} منتج منخفض المخزون`});
-      const upc = invoices.filter(inv=>inv.status==='pending'||inv.status==='unpaid').length;
+      const upc = invoices.filter(inv => {
+      if (inv.status === 'cancelled') return false;
+      const linked = (_receiptsCache || []).filter(r => r.linkedTo === 'invoice' && String(r.linkedId) === String(inv.id) && r.status !== 'cancelled');
+      const totalPaid = linked.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+      return totalPaid < (Number(inv.total) || 0);
+    }).length;
       if (upc>0) ni.push({icon:'file-text', text:`${upc} فاتورة غير مدفوعة`});
       const nC = $a('dash-notif-count');
       if (nC) nC.textContent = ni.length;
@@ -5515,12 +5835,9 @@ function renderInvoicesTable(invoices) {
     const customerName = inv.customer?.name || 'عميل غير معروف';
     const totalStr = `${Number(inv.total).toFixed(2)} ${inv.snapshot?.currency || ''}`;
     
-    let badgeClass = 'badge-success';
-    let badgeText = 'نشطة';
-    if (inv.status === 'cancelled') {
-      badgeClass = 'badge-danger';
-      badgeText = 'ملغاة';
-    }
+    const ps = computeInvoicePaymentStatus(inv, _receiptsCache);
+    let badgeClass = ps.badgeClass;
+    let badgeText = ps.badgeText;
 
     return `
       <tr>
@@ -5624,6 +5941,33 @@ async function viewInvoice(id) {
             <div style="display:flex;justify-content:space-between;padding:8px 0 4px;border-top:2px solid var(--admin-border);margin-top:4px;font-size:1.1rem;color:var(--admin-text);font-weight:700;"><span>الإجمالي</span><span style="color:var(--admin-primary);font-size:1.3rem;">${Number(total).toFixed(2)} ${currency}</span></div>
           </div>
         </div>
+
+        ${status !== 'cancelled' ? `
+        <div class="invoice-payment-section" style="margin-bottom:20px;padding:15px;background:var(--admin-bg);border:1px solid var(--admin-border);border-radius:8px;">
+          <h3 class="invoice-section-title" style="margin:0 0 10px 0;font-size:1.05rem;color:var(--admin-text);font-weight:600;">المدفوعات</h3>
+          ${(() => {
+            const ps = computeInvoicePaymentStatus(inv, _receiptsCache);
+            const linkedReceipts = (_receiptsCache || []).filter(r => r.linkedTo === 'invoice' && String(r.linkedId) === String(inv.id) && r.status !== 'cancelled');
+            var h = '';
+            h += '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">';
+            h += '<div style="flex:1;min-width:120px;padding:10px;background:var(--admin-bg-alt);border-radius:8px;text-align:center;"><span style="display:block;font-size:0.8rem;color:var(--admin-text2);">المبلغ الإجمالي</span><strong style="font-size:1.1rem;color:var(--admin-text);">' + Number(inv.total).toFixed(2) + ' ' + (inv.snapshot?.currency || '') + '</strong></div>';
+            h += '<div style="flex:1;min-width:120px;padding:10px;background:var(--admin-bg-alt);border-radius:8px;text-align:center;"><span style="display:block;font-size:0.8rem;color:var(--admin-text2);">المدفوع</span><strong style="font-size:1.1rem;color:var(--admin-success);">' + ps.totalPaid.toFixed(2) + ' ' + (inv.snapshot?.currency || '') + '</strong></div>';
+            h += '<div style="flex:1;min-width:120px;padding:10px;background:var(--admin-bg-alt);border-radius:8px;text-align:center;"><span style="display:block;font-size:0.8rem;color:var(--admin-text2);">المتبقي</span><strong style="font-size:1.1rem;color:' + (ps.remaining > 0 ? 'var(--admin-danger)' : 'var(--admin-success)') + ';">' + ps.remaining.toFixed(2) + ' ' + (inv.snapshot?.currency || '') + '</strong></div>';
+            h += '</div>';
+            if (linkedReceipts.length > 0) {
+              h += '<table class="admin-table" style="width:100%;border-collapse:collapse;font-size:0.85rem;margin-bottom:12px;"><thead><tr style="border-bottom:1px solid var(--admin-border);color:var(--admin-text2);"><th style="padding:6px 8px;text-align:right;">التاريخ</th><th style="padding:6px 8px;text-align:right;">المبلغ</th><th style="padding:6px 8px;text-align:right;">طريقة الدفع</th><th style="padding:6px 8px;text-align:right;">المرجع</th></tr></thead><tbody>';
+              linkedReceipts.forEach(r => {
+                h += '<tr style="border-bottom:1px solid var(--admin-border-light);"><td style="padding:6px 8px;">' + (r.date ? new Date(r.date).toLocaleDateString('ar-EG') : '—') + '</td><td style="padding:6px 8px;font-weight:600;">' + Number(r.amount).toFixed(2) + ' ' + (inv.snapshot?.currency || '') + '</td><td style="padding:6px 8px;">' + getPaymentMethodText(r.paymentMethod) + '</td><td style="padding:6px 8px;">' + (r.referenceNumber || '—') + '</td></tr>';
+              });
+              h += '</tbody></table>';
+            }
+            if (ps.remaining > 0) {
+              h += '<button class="topbar-btn btn-primary" onclick="recordInvoicePayment(' + inv.id + ')" style="font-size:0.85rem"><i data-lucide="arrow-down-circle" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>تسديد دفعة</button>';
+            }
+            return h;
+          })()}
+        </div>
+        ` : ''}
 
         ${status === 'cancelled' ? `
           <div class="invoice-cancellation-card" style="padding:15px;background:rgba(239,68,68,0.08);border:1px solid var(--admin-danger);border-radius:8px;margin-top:15px;color:var(--admin-danger);">

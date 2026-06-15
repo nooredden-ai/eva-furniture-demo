@@ -15,6 +15,8 @@ const permissionRepository = require('./backend/src/repositories/permissionRepos
 const jsonStore = require('./backend/src/core/jsonStore');
 const invoiceRepository = require('./backend/src/repositories/invoiceRepository');
 const invoiceService = require('./backend/src/services/invoiceService');
+const receiptRepository = require('./backend/src/repositories/receiptRepository');
+const expenseRepository = require('./backend/src/repositories/expenseRepository');
 const jwt = require('jsonwebtoken');
 
 let prisma = null;
@@ -720,6 +722,165 @@ app.get('/api/invoices/:id/pdf', requirePerm('view_orders'), async (req, res) =>
   } catch (err) {
     console.error('[INVOICE PDF ERROR]', err);
     res.status(500).json({ success: false, message: 'فشل توليد PDF الفاتورة' });
+  }
+});
+
+/* =========================
+   API: RECEIPTS (سندات قبض)
+========================= */
+
+function computeInvoicePaymentStatus(invoice, allReceipts) {
+  if (!invoice || invoice.status === 'cancelled') {
+    return { _paymentStatus: 'cancelled', _totalPaid: 0, _remaining: 0, _receiptCount: 0 };
+  }
+  const linked = (allReceipts || []).filter(r =>
+    r.linkedTo === 'invoice' && String(r.linkedId) === String(invoice.id) && r.status !== 'cancelled'
+  );
+  const totalPaid = linked.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const total = Number(invoice.total) || 0;
+  const remaining = Math.max(0, total - totalPaid);
+  let paymentStatus = 'unpaid';
+  if (totalPaid > 0 && totalPaid < total) paymentStatus = 'partial';
+  else if (totalPaid >= total) paymentStatus = 'paid';
+  return { _paymentStatus: paymentStatus, _totalPaid: totalPaid, _remaining: remaining, _receiptCount: linked.length };
+}
+
+function generateVoucherNumber(prefix, existing) {
+  const year = new Date().getFullYear();
+  const nextSeq = (existing || []).filter(e => String(e.voucherNumber || '').startsWith(prefix + '-' + year)).length + 1;
+  return prefix + '-' + year + '-' + String(nextSeq).padStart(6, '0');
+}
+
+app.post('/api/receipts', requirePerm('update_orders'), (req, res) => {
+  try {
+    const { amount, paymentMethod, customerName, customerPhone, linkedTo, linkedId, notes, referenceNumber, chequeNumber } = req.body;
+    if (!amount || Number(amount) <= 0) {
+      return res.status(400).json({ success: false, message: 'المبلغ مطلوب ويجب أن يكون أكبر من صفر' });
+    }
+    const receipts = receiptRepository.findAll();
+    const receipt = {
+      id: 'rcp_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
+      voucherNumber: generateVoucherNumber('ق', receipts),
+      status: 'active',
+      date: new Date().toISOString(),
+      customerName: customerName || '',
+      customerPhone: customerPhone || '',
+      amount: Number(amount),
+      paymentMethod: paymentMethod || 'cash',
+      referenceNumber: referenceNumber || '',
+      chequeNumber: chequeNumber || '',
+      linkedTo: linkedTo || 'none',
+      linkedId: linkedId || null,
+      notes: notes || '',
+      createdBy: req.user ? req.user.username || req.user.id : 'admin',
+      createdAt: new Date().toISOString(),
+      cancelledAt: null,
+      cancelReason: ''
+    };
+    receiptRepository.create(receipt);
+    res.json({ success: true, data: receipt, message: 'تم تسجيل سند القبض بنجاح' });
+  } catch (err) {
+    console.error('[RECEIPT POST ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تسجيل سند القبض' });
+  }
+});
+
+app.get('/api/receipts', requirePerm('view_dashboard'), (req, res) => {
+  try {
+    const receipts = receiptRepository.findAll();
+    res.json({ success: true, data: receipts });
+  } catch (err) {
+    console.error('[RECEIPTS GET ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحميل سندات القبض' });
+  }
+});
+
+app.get('/api/receipts/:id', requirePerm('view_dashboard'), (req, res) => {
+  try {
+    const receipt = receiptRepository.findById(req.params.id);
+    if (!receipt) return res.status(404).json({ success: false, message: 'سند القبض غير موجود' });
+    res.json(receipt);
+  } catch (err) {
+    console.error('[RECEIPT GET SINGLE ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحميل سند القبض' });
+  }
+});
+
+app.put('/api/receipts/:id/cancel', requirePerm('update_orders'), (req, res) => {
+  try {
+    const receipt = receiptRepository.findById(req.params.id);
+    if (!receipt) return res.status(404).json({ success: false, message: 'سند القبض غير موجود' });
+    if (receipt.status === 'cancelled') {
+      return res.status(400).json({ success: false, message: 'سند القبض ملغي بالفعل' });
+    }
+    const updated = receiptRepository.update(req.params.id, {
+      status: 'cancelled',
+      cancelledAt: new Date().toISOString(),
+      cancelReason: req.body.cancelReason || ''
+    });
+    res.json({ success: true, data: updated, message: 'تم إلغاء سند القبض' });
+  } catch (err) {
+    console.error('[RECEIPT CANCEL ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل إلغاء سند القبض' });
+  }
+});
+
+/* =========================
+   API: EXPENSES (سندات صرف)
+========================= */
+
+app.post('/api/expenses', requirePerm('update_orders'), (req, res) => {
+  try {
+    const { category, payee, amount, paymentMethod, notes } = req.body;
+    const validCategories = ['rent', 'salaries', 'marketing', 'shipping', 'inventory_purchase', 'maintenance', 'utilities', 'other'];
+    if (!category || !validCategories.includes(category)) {
+      return res.status(400).json({ success: false, message: 'الفئة غير صالحة' });
+    }
+    if (!payee || !payee.trim()) {
+      return res.status(400).json({ success: false, message: 'المدفوع له مطلوب' });
+    }
+    if (!amount || Number(amount) <= 0) {
+      return res.status(400).json({ success: false, message: 'المبلغ مطلوب ويجب أن يكون أكبر من صفر' });
+    }
+    const expenses = expenseRepository.findAll();
+    const expense = {
+      id: 'exp_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
+      voucherNumber: generateVoucherNumber('ص', expenses),
+      date: new Date().toISOString(),
+      category,
+      payee: payee.trim(),
+      amount: Number(amount),
+      paymentMethod: paymentMethod || 'cash',
+      notes: notes || '',
+      createdBy: req.user ? req.user.username || req.user.id : 'admin',
+      createdAt: new Date().toISOString()
+    };
+    expenseRepository.create(expense);
+    res.json({ success: true, data: expense, message: 'تم تسجيل سند الصرف بنجاح' });
+  } catch (err) {
+    console.error('[EXPENSE POST ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تسجيل سند الصرف' });
+  }
+});
+
+app.get('/api/expenses', requirePerm('view_dashboard'), (req, res) => {
+  try {
+    const expenses = expenseRepository.findAll();
+    res.json({ success: true, data: expenses });
+  } catch (err) {
+    console.error('[EXPENSES GET ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحميل سندات الصرف' });
+  }
+});
+
+app.delete('/api/expenses/:id', requirePerm('update_orders'), (req, res) => {
+  try {
+    const existed = expenseRepository.delete(req.params.id);
+    if (!existed) return res.status(404).json({ success: false, message: 'سند الصرف غير موجود' });
+    res.json({ success: true, message: 'تم حذف سند الصرف' });
+  } catch (err) {
+    console.error('[EXPENSE DELETE ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل حذف سند الصرف' });
   }
 });
 
@@ -1814,6 +1975,28 @@ app.get('/api/accounting/financial-summary', requirePerm('view_dashboard'), (req
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 10);
 
+    // Financial KPIs from receipts and expenses
+    const receipts = receiptRepository.findAll();
+    const expenses = expenseRepository.findAll();
+    const activeReceipts = receipts.filter(r => r.status !== 'cancelled');
+    const totalReceipts = activeReceipts.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+    const totalExpenses = expenses.reduce((s, e) => s + (Number(e.amount) || 0), 0);
+    const netBalance = totalReceipts - totalExpenses;
+
+    const invoices = invoiceRepository.findAll();
+    let outstandingBalances = 0, partiallyPaidCount = 0, unpaidCount = 0;
+    invoices.forEach(inv => {
+      if (inv.status === 'cancelled') return;
+      const linked = activeReceipts.filter(r => r.linkedTo === 'invoice' && String(r.linkedId) === String(inv.id));
+      const totalPaid = linked.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+      const remaining = Math.max(0, (Number(inv.total) || 0) - totalPaid);
+      if (remaining > 0) {
+        outstandingBalances += remaining;
+        if (totalPaid > 0) partiallyPaidCount++;
+        else unpaidCount++;
+      }
+    });
+
     res.json({
       success: true,
       inventoryValue,
@@ -1832,7 +2015,13 @@ app.get('/api/accounting/financial-summary', requirePerm('view_dashboard'), (req
       },
       bestSellers,
       lowStock,
-      recentSales
+      recentSales,
+      totalReceipts,
+      totalExpenses,
+      netBalance,
+      outstandingBalances,
+      partiallyPaidCount,
+      unpaidCount
     });
   } catch (error) {
     console.error('[FINANCIAL SUMMARY GET]', error);

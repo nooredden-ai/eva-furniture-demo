@@ -1,0 +1,20 @@
+[
+  {
+    "id": "rcp_mqfrl3lv_y3bg",
+    "voucherNumber": "ق-2026-000001",
+    "status": "active",
+    "date": "2026-06-15T22:07:57.571Z",
+    "customerName": "نورالدين",
+    "customerPhone": "",
+    "amount": 2000,
+    "paymentMethod": "cheque",
+    "referenceNumber": "1",
+    "chequeNumber": "1",
+    "linkedTo": "none",
+    "linkedId": null,
+    "notes": "",
+    "createdAt": "2026-06-15T22:07:57.571Z",
+    "cancelledAt": null,
+    "cancelReason": ""
+  }
+]

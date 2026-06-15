@@ -677,6 +677,15 @@
           </div>
         </div>
 
+        <!-- Accounting Tabs -->
+        <div class="acc-tabs" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+          <button class="topbar-btn btn-primary" onclick="switchAccTab('summary')" id="acc-tab-summary" style="font-size:0.85rem"><i data-lucide="bar-chart-3" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>الملخص المالي</button>
+          <button class="topbar-btn btn-outline" onclick="switchAccTab('receipts')" id="acc-tab-receipts" style="font-size:0.85rem"><i data-lucide="arrow-down-circle" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>سندات القبض</button>
+          <button class="topbar-btn btn-outline" onclick="switchAccTab('expenses')" id="acc-tab-expenses" style="font-size:0.85rem"><i data-lucide="arrow-up-circle" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>سندات الصرف</button>
+        </div>
+
+        <div id="acc-panel-summary" class="acc-panel" style="display:block">
+
         <!-- Section 1: KPI Cards Grid -->
         <div class="fin-kpi-grid">
           <div class="fin-kpi-card" data-card="inventory">
@@ -719,6 +728,35 @@
             <div class="kpi-info">
               <span class="kpi-label">عدد الفواتير / العمليات</span>
               <h3 class="kpi-val" id="fin-kpi-operations-count">0</h3>
+            </div>
+          </div>
+          <!-- Finance KPIs -->
+          <div class="fin-kpi-card" data-card="receipts">
+            <div class="kpi-icon"><i data-lucide="arrow-down-circle"></i></div>
+            <div class="kpi-info">
+              <span class="kpi-label">إجمالي المقبوضات</span>
+              <h3 class="kpi-val" id="fin-kpi-total-receipts">0 ₪</h3>
+            </div>
+          </div>
+          <div class="fin-kpi-card" data-card="expenses">
+            <div class="kpi-icon"><i data-lucide="arrow-up-circle"></i></div>
+            <div class="kpi-info">
+              <span class="kpi-label">إجمالي المصروفات</span>
+              <h3 class="kpi-val" id="fin-kpi-total-expenses">0 ₪</h3>
+            </div>
+          </div>
+          <div class="fin-kpi-card" data-card="net-balance">
+            <div class="kpi-icon"><i data-lucide="balance"></i></div>
+            <div class="kpi-info">
+              <span class="kpi-label">صافي الرصيد</span>
+              <h3 class="kpi-val" id="fin-kpi-net-balance">0 ₪</h3>
+            </div>
+          </div>
+          <div class="fin-kpi-card" data-card="outstanding">
+            <div class="kpi-icon"><i data-lucide="clock"></i></div>
+            <div class="kpi-info">
+              <span class="kpi-label">الأرصدة المستحقة</span>
+              <h3 class="kpi-val" id="fin-kpi-outstanding">0 ₪</h3>
             </div>
           </div>
         </div>
@@ -803,6 +841,49 @@
             </table>
           </div>
         </div>
+      </div>
+
+      <!-- Receipt Vouchers Panel -->
+      <div id="acc-panel-receipts" class="acc-panel" style="display:none;margin-top:16px">
+        <div class="table-header" style="margin-bottom:12px">
+          <h3><i data-lucide="arrow-down-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i> سندات القبض</h3>
+          <button class="topbar-btn btn-primary" onclick="openAddReceipt()"><i data-lucide="plus" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>إضافة سند قبض</button>
+        </div>
+        <div id="receipts-empty-state" style="display:none;text-align:center;padding:40px 20px;font-weight:600;color:var(--admin-subtext);font-size:1.05rem;">لا توجد سندات قبض بعد</div>
+        <div style="overflow-x:auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>رقم السند</th><th>التاريخ</th><th>العميل</th><th>المبلغ</th><th>طريقة الدفع</th><th>مرتبط بـ</th><th>الحالة</th><th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="receipts-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Expense Vouchers Panel -->
+      <div id="acc-panel-expenses" class="acc-panel" style="display:none;margin-top:16px">
+        <div class="table-header" style="margin-bottom:12px">
+          <h3><i data-lucide="arrow-up-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i> سندات الصرف</h3>
+          <button class="topbar-btn btn-primary" onclick="openAddExpense()"><i data-lucide="plus" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>إضافة سند صرف</button>
+        </div>
+        <div id="expenses-empty-state" style="display:none;text-align:center;padding:40px 20px;font-weight:600;color:var(--admin-subtext);font-size:1.05rem;">لا توجد سندات صرف بعد</div>
+        <div style="overflow-x:auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>رقم السند</th><th>التاريخ</th><th>الفئة</th><th>المدفوع له</th><th>المبلغ</th><th>طريقة الدفع</th><th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="expenses-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       </div>
     </div>
@@ -2322,6 +2403,131 @@
     <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-start;padding:12px 24px;border-top:1px solid var(--admin-border);">
       <button class="topbar-btn btn-primary" onclick="printInvoice()"><i data-lucide="printer" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>طباعة الفاتورة</button>
       <button class="topbar-btn btn-outline" onclick="downloadInvoicePdf(this)"><i data-lucide="download" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>تحميل PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Payment / Receipt Voucher Modal ===== -->
+<div class="modal-overlay" id="receipt-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 id="receipt-modal-title"><i data-lucide="arrow-down-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>تسجيل سند قبض</h3>
+      <button class="modal-close" onclick="closeModal('receipt-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-grid">
+        <div class="form-row" style="display:none" id="receipt-invoice-row">
+          <label>مرتبط بالفاتورة</label>
+          <input type="text" id="rcpt-linked-id" readonly style="background:var(--admin-bg);color:var(--admin-text2);font-weight:600" />
+        </div>
+        <div class="form-row" id="receipt-customer-row">
+          <label for="rcpt-customer">العميل</label>
+          <input type="text" id="rcpt-customer" placeholder="اسم العميل" />
+        </div>
+        <div class="form-row">
+          <label for="rcpt-amount">المبلغ <span style="color:var(--admin-danger)">*</span></label>
+          <input type="number" id="rcpt-amount" placeholder="مثال: 2000" min="0" step="0.01" />
+        </div>
+        <div class="form-row">
+          <label for="rcpt-method">طريقة الدفع <span style="color:var(--admin-danger)">*</span></label>
+          <select id="rcpt-method">
+            <option value="cash">نقداً</option>
+            <option value="cheque">شيك</option>
+            <option value="bank_transfer">تحويل بنكي</option>
+            <option value="card">بطاقة (شبكة)</option>
+            <option value="installment">تقسيط</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="rcpt-reference">رقم المرجع</label>
+          <input type="text" id="rcpt-reference" placeholder="رقم الفاتورة / رقم التحويل" />
+        </div>
+        <div class="form-row">
+          <label for="rcpt-cheque">رقم الشيك</label>
+          <input type="text" id="rcpt-cheque" placeholder="رقم الشيك (إن وجد)" />
+        </div>
+        <div class="form-row">
+          <label for="rcpt-notes">ملاحظات</label>
+          <textarea id="rcpt-notes" placeholder="ملاحظات..." style="width:100%;min-height:60px;padding:8px;border:1px solid var(--admin-border);border-radius:8px;resize:vertical"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-start;padding:12px 24px;border-top:1px solid var(--admin-border);">
+      <button class="topbar-btn btn-primary" onclick="saveReceipt()"><i data-lucide="check" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>تسجيل</button>
+      <button class="topbar-btn btn-outline" onclick="closeModal('receipt-modal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Cancel Receipt Modal ===== -->
+<div class="modal-overlay" id="cancel-receipt-modal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <h3><i data-lucide="alert-triangle" style="width:18px;height:18px;vertical-align:middle;margin-left:6px;color:var(--admin-danger)"></i>إلغاء سند القبض</h3>
+      <button class="modal-close" onclick="closeModal('cancel-receipt-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--admin-text2);margin-bottom:12px;">سيؤدي إلغاء سند القبض إلى استبعاده من جميع الحسابات المالية. السند سيبقى في السجلات كملغي.</p>
+      <div class="form-row">
+        <label for="rcpt-cancel-reason">سبب الإلغاء</label>
+        <textarea id="rcpt-cancel-reason" placeholder="ذكر سبب الإلغاء..." style="width:100%;min-height:60px;padding:8px;border:1px solid var(--admin-border);border-radius:8px;resize:vertical"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-start;padding:12px 24px;border-top:1px solid var(--admin-border);">
+      <button class="topbar-btn btn-danger" onclick="confirmCancelReceipt()"><i data-lucide="x-circle" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>تأكيد الإلغاء</button>
+      <button class="topbar-btn btn-outline" onclick="closeModal('cancel-receipt-modal')">رجوع</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Expense Voucher Modal ===== -->
+<div class="modal-overlay" id="expense-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3><i data-lucide="arrow-up-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i>تسجيل سند صرف</h3>
+      <button class="modal-close" onclick="closeModal('expense-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-grid">
+        <div class="form-row">
+          <label for="exp-category">الفئة <span style="color:var(--admin-danger)">*</span></label>
+          <select id="exp-category">
+            <option value="rent">إيجار</option>
+            <option value="salaries">رواتب</option>
+            <option value="marketing">تسويق</option>
+            <option value="shipping">شحن</option>
+            <option value="inventory_purchase">مشتريات مخزون</option>
+            <option value="maintenance">صيانة</option>
+            <option value="utilities">فواتير خدمات</option>
+            <option value="other">أخرى</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="exp-payee">المدفوع له <span style="color:var(--admin-danger)">*</span></label>
+          <input type="text" id="exp-payee" placeholder="اسم المورد أو المستفيد" />
+        </div>
+        <div class="form-row">
+          <label for="exp-amount">المبلغ <span style="color:var(--admin-danger)">*</span></label>
+          <input type="number" id="exp-amount" placeholder="مثال: 1500" min="0" step="0.01" />
+        </div>
+        <div class="form-row">
+          <label for="exp-method">طريقة الدفع</label>
+          <select id="exp-method">
+            <option value="cash">نقداً</option>
+            <option value="cheque">شيك</option>
+            <option value="bank_transfer">تحويل بنكي</option>
+            <option value="card">بطاقة (شبكة)</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="exp-notes">ملاحظات</label>
+          <textarea id="exp-notes" placeholder="ملاحظات..." style="width:100%;min-height:60px;padding:8px;border:1px solid var(--admin-border);border-radius:8px;resize:vertical"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-start;padding:12px 24px;border-top:1px solid var(--admin-border);">
+      <button class="topbar-btn btn-primary" onclick="saveExpense()"><i data-lucide="check" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>تسجيل</button>
+      <button class="topbar-btn btn-outline" onclick="closeModal('expense-modal')">إلغاء</button>
     </div>
   </div>
 </div>
