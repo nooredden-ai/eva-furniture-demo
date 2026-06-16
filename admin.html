@@ -682,6 +682,7 @@
           <button class="topbar-btn btn-primary" onclick="switchAccTab('summary')" id="acc-tab-summary" style="font-size:0.85rem"><i data-lucide="bar-chart-3" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>الملخص المالي</button>
           <button class="topbar-btn btn-outline" onclick="switchAccTab('receipts')" id="acc-tab-receipts" style="font-size:0.85rem"><i data-lucide="arrow-down-circle" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>سندات القبض</button>
           <button class="topbar-btn btn-outline" onclick="switchAccTab('expenses')" id="acc-tab-expenses" style="font-size:0.85rem"><i data-lucide="arrow-up-circle" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>سندات الصرف</button>
+          <button class="topbar-btn btn-outline" onclick="switchAccTab('customers')" id="acc-tab-customers" style="font-size:0.85rem"><i data-lucide="users" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>العملاء</button>
         </div>
 
         <div id="acc-panel-summary" class="acc-panel" style="display:block">
@@ -841,6 +842,33 @@
             </table>
           </div>
         </div>
+
+        <!-- Section 6: Aging Report -->
+        <div class="fin-recent-sales" id="fin-aging-section" style="display:none;margin-top:16px">
+          <div class="insights-header">
+            <h3><i data-lucide="clock"></i> تقرير الأعمار (الذمم المدينة)</h3>
+          </div>
+          <div class="insights-body">
+            <div id="fin-aging-empty" style="display:none;text-align:center;padding:20px;color:var(--admin-text2)">لا توجد ذمم مدينة مستحقة</div>
+            <div style="overflow-x:auto;">
+              <table class="fin-table">
+                <thead>
+                  <tr>
+                    <th>العميل</th>
+                    <th>0–30 يوم</th>
+                    <th>31–60 يوم</th>
+                    <th>61–90 يوم</th>
+                    <th>90+ يوم</th>
+                    <th>الإجمالي</th>
+                  </tr>
+                </thead>
+                <tbody id="fin-aging-body">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Receipt Vouchers Panel -->
@@ -885,6 +913,76 @@
         </div>
       </div>
 
+      <!-- Customers Panel -->
+      <div id="acc-panel-customers" class="acc-panel" style="display:none;margin-top:16px">
+        <div class="table-header" style="margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+          <h3><i data-lucide="users" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i> العملاء</h3>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="customer-search-input" placeholder="بحث بالاسم أو الجوال..." style="padding:6px 12px;border:1px solid var(--admin-border);border-radius:8px;font-size:0.8rem;background:var(--admin-bg);color:var(--admin-text);min-width:220px;" oninput="filterCustomersTable()">
+          </div>
+        </div>
+        <div id="customers-empty-state" style="display:none;text-align:center;padding:40px 20px;font-weight:600;color:var(--admin-subtext);font-size:1.05rem;">لا يوجد عملاء بعد</div>
+        <div style="overflow-x:auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>الاسم</th>
+                <th>الجوال</th>
+                <th>إجمالي المشتريات</th>
+                <th>إجمالي المدفوع</th>
+                <th>الرصيد</th>
+                <th>عدد الفواتير</th>
+                <th>آخر فاتورة</th>
+                <th>الحالة</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="customers-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      </div>
+    </div>
+
+    <!-- Customer Statement Modal -->
+    <div class="modal-overlay" id="customer-statement-modal" style="z-index:1000">
+      <div class="modal" style="max-width:800px">
+        <div class="modal-header">
+          <h3 id="customer-statement-title"><i data-lucide="file-text" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i> كشف حساب</h3>
+          <button class="topbar-btn btn-outline btn-sm" onclick="closeModal('customer-statement-modal')" style="padding:4px 8px;font-size:0.75rem"><i data-lucide="x" style="width:14px;height:14px"></i></button>
+        </div>
+        <div class="modal-body">
+          <div id="customer-statement-summary" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;padding:12px;background:var(--admin-bg2);border-radius:8px;">
+            <div><span style="color:var(--admin-text2);font-size:0.8rem;">إجمالي المشتريات</span><br><strong id="cs-total-purchases">0 ₪</strong></div>
+            <div><span style="color:var(--admin-text2);font-size:0.8rem;">إجمالي المدفوع</span><br><strong id="cs-total-paid">0 ₪</strong></div>
+            <div><span style="color:var(--admin-text2);font-size:0.8rem;">الرصيد الحالي</span><br><strong id="cs-balance">0 ₪</strong></div>
+            <div><span style="color:var(--admin-text2);font-size:0.8rem;">عدد الفواتير</span><br><strong id="cs-invoice-count">0</strong></div>
+          </div>
+          <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
+            <table class="admin-table" style="font-size:0.8rem;">
+              <thead>
+                <tr>
+                  <th>التاريخ</th>
+                  <th>النوع</th>
+                  <th>المرجع</th>
+                  <th>مدين</th>
+                  <th>دائن</th>
+                  <th>الرصيد</th>
+                  <th>ملاحظات</th>
+                </tr>
+              </thead>
+              <tbody id="customer-statement-body">
+                <!-- Rendered dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="topbar-btn btn-outline" onclick="closeModal('customer-statement-modal')">إغلاق</button>
+        </div>
       </div>
     </div>
 

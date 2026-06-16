@@ -481,6 +481,9 @@ async function renderAccountingPage() {
       }
     }
 
+    // Load aging report after KPIs
+    loadAgingReport();
+
     if (window.lucide) lucide.createIcons();
 
   } catch (error) {
@@ -497,7 +500,7 @@ function showAccountingHome() {
 // ===== Accounting Tab Switching =====
 function switchAccTab(tab) {
   _activeAccTab = tab;
-  ['summary', 'receipts', 'expenses'].forEach(t => {
+  ['summary', 'receipts', 'expenses', 'customers'].forEach(t => {
     const btn = $a('acc-tab-' + t);
     if (btn) {
       if (t === tab) { btn.className = 'topbar-btn btn-primary'; btn.style.fontSize = '0.85rem'; }
@@ -508,6 +511,172 @@ function switchAccTab(tab) {
   });
   if (tab === 'receipts') loadReceiptsSection();
   if (tab === 'expenses') loadExpensesSection();
+  if (tab === 'customers') loadCustomersSection();
+}
+
+// ===== Customer Summaries Section =====
+async function loadCustomersSection() {
+  const tbody = $a('customers-table-body');
+  const emptyState = $a('customers-empty-state');
+  if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;">جاري التحميل...</td></tr>';
+  try {
+    const res = await fetchWithStability('/api/accounting/customer-summaries');
+    if (!res.success) { showAdminToast(res.message || 'فشل تحميل العملاء', 'error'); return; }
+    renderCustomersSection(res.data || []);
+  } catch (err) {
+    console.error('Error loading customers:', err);
+    showAdminToast('فشل تحميل العملاء', 'error');
+  }
+}
+
+function renderCustomersSection(customers) {
+  const tbody = $a('customers-table-body');
+  const emptyState = $a('customers-empty-state');
+  if (!tbody) return;
+  if (!customers || !customers.length) {
+    tbody.innerHTML = '';
+    if (emptyState) emptyState.style.display = 'block';
+    return;
+  }
+  if (emptyState) emptyState.style.display = 'none';
+
+  const statusColors = {
+    'VIP': 'badge-success',
+    'مدين': 'badge-danger',
+    'جديد': 'badge-info',
+    'خامل': 'badge-warning',
+    'عادي': 'badge-status'
+  };
+
+  _customerCache = customers;
+
+  tbody.innerHTML = customers.map(c => {
+    const lastInvoice = c.lastInvoice ? new Date(c.lastInvoice).toLocaleDateString('ar-EG') : '—';
+    const statusBadge = `<span class="status-badge ${statusColors[c.status] || 'badge-status'}">${c.status}</span>`;
+    return `<tr>
+      <td style="font-weight:600">${escapeHtml(c.name)}</td>
+      <td>${escapeHtml(c.phone || '—')}</td>
+      <td>${(c.totalPurchases || 0).toLocaleString('ar-SA')} ₪</td>
+      <td>${(c.totalPaid || 0).toLocaleString('ar-SA')} ₪</td>
+      <td style="font-weight:600;color:${(c.balance || 0) > 0 ? 'var(--admin-danger)' : 'var(--admin-success)'}">${(c.balance || 0).toLocaleString('ar-SA')} ₪</td>
+      <td>${c.invoiceCount || 0}</td>
+      <td style="font-size:0.8rem">${lastInvoice}</td>
+      <td>${statusBadge}</td>
+      <td><button class="topbar-btn btn-outline btn-sm" onclick="openCustomerStatement('${escapeHtml(c.name)}', '${escapeHtml(c.phone || '')}')"><i data-lucide="file-text" style="width:12px;height:12px;vertical-align:middle;margin-left:2px"></i> كشف</button></td>
+    </tr>`;
+  }).join('');
+  if (window.lucide) lucide.createIcons();
+}
+
+let _customerCache = [];
+
+function filterCustomersTable() {
+  const query = ($a('customer-search-input')?.value || '').toLowerCase().trim();
+  if (!_customerCache || !_customerCache.length) return;
+  const filtered = _customerCache.filter(c =>
+    (c.name || '').toLowerCase().includes(query) ||
+    (c.phone || '').toLowerCase().includes(query)
+  );
+  renderCustomersSection(filtered);
+}
+
+// ===== Customer Statement Modal =====
+async function openCustomerStatement(name, phone) {
+  try {
+    const res = await fetchWithStability('/api/accounting/customer-statement?name=' + encodeURIComponent(name) + '&phone=' + encodeURIComponent(phone || ''));
+    if (!res.success) { showAdminToast(res.message || 'فشل تحميل كشف الحساب', 'error'); return; }
+    const { entries, summary } = res.data;
+
+    $a('customer-statement-title').innerHTML = '<i data-lucide="file-text" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i> كشف حساب: ' + escapeHtml(name);
+
+    if ($a('cs-total-purchases')) $a('cs-total-purchases').textContent = (summary.totalPurchases || 0).toLocaleString('ar-SA') + ' ₪';
+    if ($a('cs-total-paid')) $a('cs-total-paid').textContent = (summary.totalPaid || 0).toLocaleString('ar-SA') + ' ₪';
+    if ($a('cs-balance')) {
+      const bal = summary.balance || 0;
+      $a('cs-balance').textContent = bal.toLocaleString('ar-SA') + ' ₪';
+      $a('cs-balance').style.color = bal > 0 ? 'var(--admin-danger)' : 'var(--admin-success)';
+    }
+    if ($a('cs-invoice-count')) $a('cs-invoice-count').textContent = summary.invoiceCount || 0;
+
+    const tbody = $a('customer-statement-body');
+    if (!tbody) return;
+
+    if (!entries || !entries.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;">لا توجد حركات مالية لهذا العميل</td></tr>';
+    } else {
+      tbody.innerHTML = entries.map(e => {
+        const dateStr = e.date ? new Date(e.date).toLocaleDateString('ar-EG') : '—';
+        const ref = escapeHtml(e.reference || '—');
+        const debit = e.debit ? e.debit.toLocaleString('ar-SA') + ' ₪' : '—';
+        const credit = e.credit ? e.credit.toLocaleString('ar-SA') + ' ₪' : '—';
+        const balance = (e.balance !== undefined) ? e.balance.toLocaleString('ar-SA') + ' ₪' : '—';
+        const notes = e.note ? escapeHtml(e.note) : '';
+        const typeText = e.type === 'فاتورة' ? '<span style="color:var(--admin-danger)">فاتورة</span>' : '<span style="color:var(--admin-success)">سند قبض</span>';
+        return `<tr>
+          <td style="font-size:0.75rem">${dateStr}</td>
+          <td>${typeText}</td>
+          <td style="font-size:0.75rem;font-family:monospace">${ref}</td>
+          <td style="color:var(--admin-danger)">${debit}</td>
+          <td style="color:var(--admin-success)">${credit}</td>
+          <td style="font-weight:600">${balance}</td>
+          <td style="font-size:0.75rem;color:var(--admin-text2)">${notes}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    openModal('customer-statement-modal');
+    if (window.lucide) lucide.createIcons();
+  } catch (err) {
+    console.error('Error loading customer statement:', err);
+    showAdminToast('فشل تحميل كشف الحساب', 'error');
+  }
+}
+
+// ===== Aging Report =====
+async function loadAgingReport() {
+  try {
+    const res = await fetchWithStability('/api/accounting/aging-report');
+    if (!res.success) return;
+    renderAgingReport(res.data || []);
+  } catch (err) {
+    console.error('Error loading aging report:', err);
+  }
+}
+
+function renderAgingReport(report) {
+  const section = $a('fin-aging-section');
+  const tbody = $a('fin-aging-body');
+  const empty = $a('fin-aging-empty');
+  if (!section || !tbody) return;
+
+  if (!report || !report.length) {
+    section.style.display = 'block';
+    tbody.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  section.style.display = 'block';
+
+  let grandTotal = 0;
+  tbody.innerHTML = report.map(r => {
+    grandTotal += r.total || 0;
+    return `<tr>
+      <td style="font-weight:600">${escapeHtml(r.name)}</td>
+      <td>${(r['0to30'] || 0).toLocaleString('ar-SA')} ₪</td>
+      <td>${(r['31to60'] || 0).toLocaleString('ar-SA')} ₪</td>
+      <td>${(r['61to90'] || 0).toLocaleString('ar-SA')} ₪</td>
+      <td>${(r['90plus'] || 0).toLocaleString('ar-SA')} ₪</td>
+      <td style="font-weight:600">${(r.total || 0).toLocaleString('ar-SA')} ₪</td>
+    </tr>`;
+  }).join('') + `<tr style="background:var(--admin-bg2);font-weight:700">
+    <td>المجموع</td>
+    <td>${report.reduce((s, r) => s + (r['0to30'] || 0), 0).toLocaleString('ar-SA')} ₪</td>
+    <td>${report.reduce((s, r) => s + (r['31to60'] || 0), 0).toLocaleString('ar-SA')} ₪</td>
+    <td>${report.reduce((s, r) => s + (r['61to90'] || 0), 0).toLocaleString('ar-SA')} ₪</td>
+    <td>${report.reduce((s, r) => s + (r['90plus'] || 0), 0).toLocaleString('ar-SA')} ₪</td>
+    <td>${grandTotal.toLocaleString('ar-SA')} ₪</td>
+  </tr>`;
 }
 
 // ===== KPI Update Functions =====

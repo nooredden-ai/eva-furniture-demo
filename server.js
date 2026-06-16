@@ -17,6 +17,7 @@ const invoiceRepository = require('./backend/src/repositories/invoiceRepository'
 const invoiceService = require('./backend/src/services/invoiceService');
 const receiptRepository = require('./backend/src/repositories/receiptRepository');
 const expenseRepository = require('./backend/src/repositories/expenseRepository');
+const statementService = require('./backend/src/services/statementService');
 const jwt = require('jsonwebtoken');
 
 let prisma = null;
@@ -1997,6 +1998,9 @@ app.get('/api/accounting/financial-summary', requirePerm('view_dashboard'), (req
       }
     });
 
+    // Compute aging report for financial summary
+    const agingBuckets = statementService.getAgingReport(invoices, receipts);
+
     res.json({
       success: true,
       inventoryValue,
@@ -2021,7 +2025,8 @@ app.get('/api/accounting/financial-summary', requirePerm('view_dashboard'), (req
       netBalance,
       outstandingBalances,
       partiallyPaidCount,
-      unpaidCount
+      unpaidCount,
+      agingBuckets
     });
   } catch (error) {
     console.error('[FINANCIAL SUMMARY GET]', error);
@@ -2030,7 +2035,86 @@ app.get('/api/accounting/financial-summary', requirePerm('view_dashboard'), (req
 });
 
 /* =========================
-   API: ACCOUNTING CUSTOMERS
+   API: CUSTOMER STATEMENTS (DERIVED FROM INVOICES & RECEIPTS)
+========================= */
+
+function hasAccessToAccounting(req) {
+  const plan = require('./backend/src/core/jsonStore').readJsonFile('store-plan.json');
+  return !(plan && plan.modules && plan.modules.accounting === false);
+}
+
+app.get('/api/accounting/customers-list', requirePerm('view_dashboard'), (req, res) => {
+  try {
+    if (!hasAccessToAccounting(req)) return res.status(403).json({ success: false, message: 'الميزة غير مفعّلة' });
+    const invoices = invoiceRepository.findAll();
+    const receipts = receiptRepository.findAll();
+    const customers = statementService.getCustomerSummaries(invoices, receipts);
+    res.json({ success: true, data: customers });
+  } catch (err) {
+    console.error('[CUSTOMERS-LIST ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحميل قائمة العملاء' });
+  }
+});
+
+app.get('/api/accounting/customer-statement', requirePerm('view_dashboard'), (req, res) => {
+  try {
+    if (!hasAccessToAccounting(req)) return res.status(403).json({ success: false, message: 'الميزة غير مفعّلة' });
+    const { name, phone } = req.query;
+    if (!name) return res.status(400).json({ success: false, message: 'اسم العميل مطلوب' });
+    const invoices = invoiceRepository.findAll();
+    const receipts = receiptRepository.findAll();
+    const entries = statementService.getCustomerStatement(name, phone, invoices, receipts);
+    const summary = statementService.getCustomerSummary(name, phone, invoices, receipts);
+    res.json({ success: true, data: { entries, summary } });
+  } catch (err) {
+    console.error('[CUSTOMER-STATEMENT ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحميل كشف حساب العميل' });
+  }
+});
+
+app.get('/api/accounting/customer-summary', requirePerm('view_dashboard'), (req, res) => {
+  try {
+    if (!hasAccessToAccounting(req)) return res.status(403).json({ success: false, message: 'الميزة غير مفعّلة' });
+    const { name, phone } = req.query;
+    if (!name) return res.status(400).json({ success: false, message: 'اسم العميل مطلوب' });
+    const invoices = invoiceRepository.findAll();
+    const receipts = receiptRepository.findAll();
+    const summary = statementService.getCustomerSummary(name, phone, invoices, receipts);
+    res.json({ success: true, data: summary });
+  } catch (err) {
+    console.error('[CUSTOMER-SUMMARY ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحميل ملخص العميل' });
+  }
+});
+
+app.get('/api/accounting/customer-summaries', requirePerm('view_dashboard'), (req, res) => {
+  try {
+    if (!hasAccessToAccounting(req)) return res.status(403).json({ success: false, message: 'الميزة غير مفعّلة' });
+    const invoices = invoiceRepository.findAll();
+    const receipts = receiptRepository.findAll();
+    const summaries = statementService.getCustomerSummaries(invoices, receipts);
+    res.json({ success: true, data: summaries });
+  } catch (err) {
+    console.error('[CUSTOMER-SUMMARIES ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحميل ملخصات العملاء' });
+  }
+});
+
+app.get('/api/accounting/aging-report', requirePerm('view_dashboard'), (req, res) => {
+  try {
+    if (!hasAccessToAccounting(req)) return res.status(403).json({ success: false, message: 'الميزة غير مفعّلة' });
+    const invoices = invoiceRepository.findAll();
+    const receipts = receiptRepository.findAll();
+    const report = statementService.getAgingReport(invoices, receipts);
+    res.json({ success: true, data: report });
+  } catch (err) {
+    console.error('[AGING-REPORT ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحميل تقرير الأعمار' });
+  }
+});
+
+/* =========================
+   API: ACCOUNTING CUSTOMERS (Prisma)
 ========================= */
 app.get('/api/accounting/customers', async (req, res) => {
   console.log('[ACCOUNTING CUSTOMERS] GET route hit');
