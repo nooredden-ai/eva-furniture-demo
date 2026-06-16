@@ -65,10 +65,33 @@
     ],
     "paymentGateways": {
       "cod": true,
-      "visa": true,
+      "visa": false,
       "gateway": "stripe",
       "publicKey": "",
       "secretKey": ""
-    }
+    },
+    "shippingZones": [
+      {
+        "id": "zone_westbank",
+        "name": "الضفة الغربية",
+        "price": 15,
+        "enabled": true,
+        "sortOrder": 1
+      },
+      {
+        "id": "zone_jerusalem",
+        "name": "القدس",
+        "price": 25,
+        "enabled": true,
+        "sortOrder": 2
+      },
+      {
+        "id": "zone_arab48",
+        "name": "الداخل 48",
+        "price": 35,
+        "enabled": true,
+        "sortOrder": 3
+      }
+    ]
   }
 ]
