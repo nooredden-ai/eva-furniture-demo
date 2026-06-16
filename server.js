@@ -1174,7 +1174,7 @@ app.post('/api/orders', (req, res) => {
       return res.status(403).json({ success: false, message: 'المتجر لا يقبل طلبات حالياً (الميزة غير مفعّلة في خطة المتجر)' });
     }
 
-    const { customer, phone, address, zone, zoneName, items, subtotal: rawSubtotal, shipping: rawShipping, total: rawTotal, notes, paymentMethod, couponCode, discount } = req.body;
+    const { customer, phone, city, address, zone, zoneName, items, subtotal: rawSubtotal, shipping: rawShipping, total: rawTotal, notes, paymentMethod, couponCode, discount } = req.body;
 
     if (!customer || !phone || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ success: false, message: 'بيانات الطلب غير مكتملة' });
@@ -1201,6 +1201,7 @@ app.post('/api/orders', (req, res) => {
       customer,
       phone,
       address: address || '',
+      city: city || '',
       zone: zone || '',
       zoneName: calculatedZoneName,
       items,
