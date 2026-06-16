@@ -192,6 +192,100 @@ function findOrderByIdOrNumber(orders, identifier) {
   return orderRepository.findByIdOrNumber(key);
 }
 
+// Shared Puppeteer PDF helper — renders HTML to PDF buffer
+async function generatePdfFromHtml(html, options = {}) {
+  if (!puppeteer) throw new Error('Puppeteer is not available.');
+  const execPath = getPuppeteerExecutablePath();
+  const launchOpts = {
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  };
+  if (execPath) launchOpts.executablePath = execPath;
+  const browser = await puppeteer.launch(launchOpts);
+  try {
+    const page = await browser.newPage();
+    await page.setViewport({ width: 1200, height: 900 });
+    await page.setContent(html, { waitUntil: 'networkidle0', timeout: PUPPETEER_TIMEOUT });
+    await page.emulateMediaType('print');
+    const buffer = await page.pdf({
+      format: options.format || 'A4',
+      margin: options.margin || { top: '12mm', bottom: '12mm', left: '12mm', right: '12mm' },
+      printBackground: true,
+      preferCSSPageSize: true,
+    });
+    return buffer;
+  } finally {
+    if (browser) await browser.close();
+  }
+}
+
+// Shared PDF style block
+function pdfStyles() {
+  return `
+<style>
+  @page { size: A4; margin: 12mm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; color: #222; font-size: 13px; line-height: 1.5; direction: rtl; background: #fff; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+  .store { text-align: right; }
+  .store-logo { max-height: 70px; margin-bottom: 10px; display: block; }
+  .store-name { font-size: 22px; font-weight: 700; color: #111; margin-bottom: 4px; }
+  .store-info { font-size: 12px; color: #555; line-height: 1.6; }
+  .meta { text-align: left; }
+  .doc-title { font-size: 20px; font-weight: 700; color: #111; margin-bottom: 6px; }
+  .doc-info { font-size: 12px; color: #555; line-height: 1.6; }
+  .status-badge { display: inline-block; margin-top: 6px; padding: 3px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .status-badge.active { background: #dcfce7; color: #166534; }
+  .status-badge.cancelled { background: #fee2e2; color: #991b1b; }
+  .divider { height: 1px; background: #ddd; margin: 16px 0; }
+  .section-title { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 8px; }
+  .info-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .info-table td { padding: 3px 0; border: none; }
+  .info-table td.lbl { width: 120px; font-weight: 600; color: #555; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table th { background: #f5f5f5; padding: 8px 6px; font-weight: 600; color: #333; border-bottom: 2px solid #ddd; text-align: center; }
+  .data-table td { padding: 8px 6px; border-bottom: 1px solid #eee; text-align: center; }
+  .signature-area { margin-top: 50px; display: flex; justify-content: space-between; }
+  .signature-box { text-align: center; }
+  .signature-line { width: 200px; height: 1px; background: #333; margin: 40px auto 6px; }
+  .signature-label { font-size: 12px; color: #555; }
+  .footer { text-align: center; margin-top: 40px; padding-top: 16px; border-top: 1px solid #ddd; }
+  .footer-text { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 4px; }
+  .footer-sub { font-size: 11px; color: #888; }
+  .summary-box { margin-top: 16px; padding: 12px; background: #f9f9f9; border-radius: 6px; border: 1px solid #ddd; }
+  .summary-box table { width: 100%; }
+  .summary-box td { padding: 4px 8px; font-size: 13px; }
+  .summary-box td.lbl { font-weight: 600; color: #555; width: 160px; }
+  .summary-box td.val { font-weight: 700; }
+  .payment-info { margin-top: 12px; padding: 12px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; }
+  .payment-info td.lbl { color: #166534; }
+  .payment-info td.val { color: #166534; }
+</style>`;
+}
+
+// Shared PDF header (store info right, doc meta left)
+function pdfHeader(settings, docTitle, docMeta) {
+  const logoUrl = settings?.logo || settings?.logoImage || (settings?.branding && settings.branding.logo) || '';
+  return `<div class="header">
+    <div class="store">
+      ${logoUrl ? `<img src="${logoUrl}" class="store-logo" />` : ''}
+      <div class="store-name">${settings?.storeName || settings?.name || ''}</div>
+      <div class="store-info">${settings?.phone || ''}</div>
+      <div class="store-info">${settings?.email || ''}</div>
+      <div class="store-info">${settings?.address || ''}</div>
+    </div>
+    <div class="meta">
+      <div class="doc-title">${docTitle}</div>
+      ${Object.entries(docMeta || {}).map(([k, v]) => `<div class="doc-info">${k}: ${v}</div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// Shared PDF footer
+function pdfFooter() {
+  return `<div class="footer"><div class="footer-text">شكراً لتعاملكم معنا</div><div class="footer-sub">Generated by EVA System</div></div>`;
+}
+
 async function createPdfFromPrintPage({ ids, type = 'invoice', saveToDisk = false, filename = null, port }) {
   if (!puppeteer) {
     throw new Error('Puppeteer is not available.');
@@ -610,6 +704,11 @@ app.get('/api/invoices/:id/pdf', requirePerm('view_orders'), async (req, res) =>
     const subtotal = invoice.subtotal ?? (items || []).reduce((sum, item) => sum + Number(item.total || (item.price * item.qty)), 0);
     const shipping = invoice.shipping ?? 0;
     const discount = invoice.discount ?? 0;
+    const invPayment = computeInvoicePaymentStatus(invoice, receiptRepository.findAll());
+    const payLabels = { paid: 'مدفوعة', partial: 'مدفوعة جزئياً', unpaid: 'غير مدفوعة', cancelled: 'ملغاة' };
+    const payBadgeColors = { paid: '#166534', partial: '#d97706', unpaid: '#991b1b', cancelled: '#888' };
+    const payBgColors = { paid: '#dcfce7', partial: '#fef3c7', unpaid: '#fee2e2', cancelled: '#f5f5f5' };
+    const badgeStyle = `display:inline-block;padding:3px 12px;border-radius:12px;font-size:12px;font-weight:600;background:${payBgColors[invPayment._paymentStatus]};color:${payBadgeColors[invPayment._paymentStatus]}`;
 
     const html = `<!DOCTYPE html>
 <html dir="rtl">
@@ -689,6 +788,7 @@ app.get('/api/invoices/:id/pdf', requirePerm('view_orders'), async (req, res) =>
       <tr class="grand"><td class="lbl">الإجمالي</td><td class="val">${Number(total).toFixed(2)} ${currency}</td></tr>
     </table>
   </div>
+  ${status !== 'cancelled' ? `<div class="divider"></div><div class="section-title">حالة الدفع</div><div style="margin-top:8px;padding:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;"><table class="cust-table"><tr><td class="lbl">المدفوع</td><td style="font-weight:700;color:#166534">${Number(invPayment._totalPaid).toFixed(2)} ${currency}</td></tr><tr><td class="lbl">المتبقي</td><td style="font-weight:700;color:${invPayment._remaining > 0 ? '#991b1b' : '#166534'}">${Number(invPayment._remaining).toFixed(2)} ${currency}</td></tr><tr><td class="lbl">الحالة</td><td><span style="${badgeStyle}">${payLabels[invPayment._paymentStatus]}</span></td></tr></table></div>` : ''}
   ${status === 'cancelled' ? `<div class="cancel-info"><div class="section-title">معلومات الإلغاء</div><table class="cust-table"><tr><td class="lbl">تاريخ الإلغاء</td><td>${cancelledAt ? new Date(cancelledAt).toLocaleString('ar-EG') : '—'}</td></tr><tr><td class="lbl">السبب</td><td>${cancelReason || '—'}</td></tr></table></div>` : ''}
   <div class="footer"><div class="footer-text">شكراً لتعاملكم معنا</div><div class="footer-sub">Generated by EVA System</div></div>
 </body></html>`;
@@ -723,6 +823,95 @@ app.get('/api/invoices/:id/pdf', requirePerm('view_orders'), async (req, res) =>
   } catch (err) {
     console.error('[INVOICE PDF ERROR]', err);
     res.status(500).json({ success: false, message: 'فشل توليد PDF الفاتورة' });
+  }
+});
+
+// ===== Receipt PDF =====
+app.get('/api/receipts/:id/pdf', requirePerm('view_orders'), async (req, res) => {
+  if (!puppeteer) return res.status(503).json({ success: false, message: 'PDF غير متاح حالياً' });
+  try {
+    const receipt = receiptRepository.findById(req.params.id);
+    if (!receipt) return res.status(404).json({ success: false, message: 'سند القبض غير موجود' });
+    const settings = settingsRepository.findFirst() || {};
+    const currency = settings.currencySymbol || '₪';
+    const isCancelled = receipt.status === 'cancelled';
+    const methodLabels = { cash: 'نقداً', cheque: 'شيك', bank_transfer: 'تحويل بنكي', visa: 'بطاقة ائتمان' };
+    const html = `<!DOCTYPE html>
+<html dir="rtl"><head><meta charset="utf-8"><title>${receipt.voucherNumber || receipt.id}</title>${pdfStyles()}</head>
+<body>
+  ${pdfHeader(settings, 'سند قبض', {'الرقم': receipt.voucherNumber || receipt.id, 'التاريخ': new Date(receipt.date || receipt.createdAt).toLocaleString('ar-EG')})}
+  <div class="divider"></div>
+  <div class="section-title">بيانات العميل</div>
+  <table class="info-table">
+    <tr><td class="lbl">الاسم</td><td>${receipt.customerName || '—'}</td></tr>
+    <tr><td class="lbl">الهاتف</td><td>${receipt.customerPhone || '—'}</td></tr>
+  </table>
+  <div class="divider"></div>
+  <div class="section-title">تفاصيل السند</div>
+  <table class="info-table">
+    <tr><td class="lbl">المبلغ</td><td style="font-weight:700;font-size:15px">${Number(receipt.amount).toFixed(2)} ${currency}</td></tr>
+    <tr><td class="lbl">طريقة الدفع</td><td>${methodLabels[receipt.paymentMethod] || receipt.paymentMethod}</td></tr>
+    ${receipt.referenceNumber ? `<tr><td class="lbl">رقم المرجع</td><td>${receipt.referenceNumber}</td></tr>` : ''}
+    ${receipt.linkedTo === 'invoice' && receipt.linkedId ? `<tr><td class="lbl">مرتبط بفاتورة</td><td>${receipt.linkedId}</td></tr>` : ''}
+    ${receipt.chequeNumber ? `<tr><td class="lbl">رقم الشيك</td><td>${receipt.chequeNumber}</td></tr>` : ''}
+    ${receipt.notes ? `<tr><td class="lbl">ملاحظات</td><td>${receipt.notes}</td></tr>` : ''}
+  </table>
+  ${isCancelled ? `<div class="divider"></div><div class="cancel-info" style="margin-top:12px;padding:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;"><div class="section-title">ملغي</div><table class="info-table"><tr><td class="lbl">تاريخ الإلغاء</td><td>${receipt.cancelledAt ? new Date(receipt.cancelledAt).toLocaleString('ar-EG') : '—'}</td></tr><tr><td class="lbl">السبب</td><td>${receipt.cancelReason || '—'}</td></tr></table></div>` : ''}
+  <div class="signature-area">
+    <div class="signature-box"><div class="signature-line"></div><div class="signature-label">التوقيع</div></div>
+    <div class="signature-box"><div class="signature-line"></div><div class="signature-label">ختم الشركة</div></div>
+  </div>
+  ${pdfFooter()}
+</body></html>`;
+    const buffer = await generatePdfFromHtml(html);
+    const filename = `${receipt.voucherNumber || receipt.id}.pdf`;
+    const safeFilename = filename.replace(/[^\x00-\x7F]/g, '_');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
+    res.send(buffer);
+  } catch (err) {
+    console.error('[RECEIPT PDF ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل توليد PDF سند القبض' });
+  }
+});
+
+// ===== Expense PDF =====
+app.get('/api/expenses/:id/pdf', requirePerm('view_orders'), async (req, res) => {
+  if (!puppeteer) return res.status(503).json({ success: false, message: 'PDF غير متاح حالياً' });
+  try {
+    const expense = expenseRepository.findById(req.params.id);
+    if (!expense) return res.status(404).json({ success: false, message: 'سند الصرف غير موجود' });
+    const settings = settingsRepository.findFirst() || {};
+    const currency = settings.currencySymbol || '₪';
+    const catLabels = { rent: 'إيجار', salaries: 'رواتب', marketing: 'تسويق', shipping: 'شحن', inventory_purchase: 'مشتريات مخزون', maintenance: 'صيانة', utilities: 'فواتير خدمات', other: 'أخرى' };
+    const methodLabels = { cash: 'نقداً', cheque: 'شيك', bank_transfer: 'تحويل بنكي', visa: 'بطاقة ائتمان' };
+    const html = `<!DOCTYPE html>
+<html dir="rtl"><head><meta charset="utf-8"><title>${expense.voucherNumber || expense.id}</title>${pdfStyles()}</head>
+<body>
+  ${pdfHeader(settings, 'سند صرف', {'الرقم': expense.voucherNumber || expense.id, 'التاريخ': new Date(expense.date || expense.createdAt).toLocaleString('ar-EG')})}
+  <div class="divider"></div>
+  <div class="section-title">تفاصيل السند</div>
+  <table class="info-table">
+    <tr><td class="lbl">المدفوع له</td><td>${expense.payee || '—'}</td></tr>
+    <tr><td class="lbl">التصنيف</td><td>${catLabels[expense.category] || expense.category}</td></tr>
+    <tr><td class="lbl">المبلغ</td><td style="font-weight:700;font-size:15px">${Number(expense.amount).toFixed(2)} ${currency}</td></tr>
+    <tr><td class="lbl">طريقة الدفع</td><td>${methodLabels[expense.paymentMethod] || expense.paymentMethod}</td></tr>
+    ${expense.notes ? `<tr><td class="lbl">ملاحظات</td><td>${expense.notes}</td></tr>` : ''}
+  </table>
+  <div class="signature-area">
+    <div class="signature-box"><div class="signature-line"></div><div class="signature-label">التوقيع</div></div>
+  </div>
+  ${pdfFooter()}
+</body></html>`;
+    const buffer = await generatePdfFromHtml(html);
+    const filename = `${expense.voucherNumber || expense.id}.pdf`;
+    const safeFilename = filename.replace(/[^\x00-\x7F]/g, '_');
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
+    res.send(buffer);
+  } catch (err) {
+    console.error('[EXPENSE PDF ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل توليد PDF سند الصرف' });
   }
 });
 
@@ -2069,6 +2258,57 @@ app.get('/api/accounting/customer-statement', requirePerm('view_dashboard'), (re
   } catch (err) {
     console.error('[CUSTOMER-STATEMENT ERROR]', err);
     res.status(500).json({ success: false, message: 'فشل تحميل كشف حساب العميل' });
+  }
+});
+
+// ===== Customer Statement PDF =====
+app.get('/api/accounting/customer-statement/pdf', requirePerm('view_dashboard'), async (req, res) => {
+  if (!puppeteer) return res.status(503).json({ success: false, message: 'PDF غير متاح حالياً' });
+  try {
+    if (!hasAccessToAccounting(req)) return res.status(403).json({ success: false, message: 'الميزة غير مفعّلة' });
+    const { name, phone } = req.query;
+    if (!name) return res.status(400).json({ success: false, message: 'اسم العميل مطلوب' });
+    const invoices = invoiceRepository.findAll();
+    const receipts = receiptRepository.findAll();
+    const entries = statementService.getCustomerStatement(name, phone, invoices, receipts) || [];
+    const summary = statementService.getCustomerSummary(name, phone, invoices, receipts) || {};
+    const settings = settingsRepository.findFirst() || {};
+    const currency = settings.currencySymbol || '₪';
+
+    const entriesHtml = entries.length ? entries.map(e => {
+      const dateStr = e.date ? new Date(e.date).toLocaleDateString('ar-EG') : '—';
+      const ref = e.reference || '—';
+      const debit = e.debit ? Number(e.debit).toFixed(2) + ' ' + currency : '—';
+      const credit = e.credit ? Number(e.credit).toFixed(2) + ' ' + currency : '—';
+      const bal = e.balance !== undefined ? Number(e.balance).toFixed(2) + ' ' + currency : '—';
+      return `<tr><td style="font-size:0.8rem">${dateStr}</td><td>${e.type === 'فاتورة' ? 'فاتورة' : 'سند قبض'}</td><td style="font-family:monospace;font-size:0.75rem">${ref}</td><td style="color:#991b1b">${debit}</td><td style="color:#166534">${credit}</td><td style="font-weight:600">${bal}</td></tr>`;
+    }).join('') : '<tr><td colspan="6" style="text-align:center;color:#888;padding:20px;">لا توجد حركات مالية</td></tr>';
+
+    const html = `<!DOCTYPE html>
+<html dir="rtl"><head><meta charset="utf-8"><title>كشف حساب - ${name}</title>${pdfStyles()}</head>
+<body>
+  ${pdfHeader(settings, 'كشف حساب', {'العميل': name, 'الجوال': phone || '—'})}
+  <div class="divider"></div>
+  <div class="section-title">حركات الحساب</div>
+  <table class="data-table">
+    <thead><tr><th>التاريخ</th><th>النوع</th><th>المرجع</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead>
+    <tbody>${entriesHtml}</tbody>
+  </table>
+  <div class="summary-box">
+    <table><tr><td class="lbl">إجمالي المشتريات</td><td class="val">${Number(summary.totalPurchases || 0).toFixed(2)} ${currency}</td></tr>
+    <tr><td class="lbl">إجمالي المدفوع</td><td class="val">${Number(summary.totalPaid || 0).toFixed(2)} ${currency}</td></tr>
+    <tr><td class="lbl">الرصيد المتبقي</td><td class="val" style="color:${(summary.balance || 0) > 0 ? '#991b1b' : '#166534'}">${Number(summary.balance || 0).toFixed(2)} ${currency}</td></tr></table>
+  </div>
+  ${pdfFooter()}
+</body></html>`;
+    const buffer = await generatePdfFromHtml(html);
+    const filename = `statement-${name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
+  } catch (err) {
+    console.error('[STATEMENT PDF ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل توليد PDF كشف الحساب' });
   }
 });
 

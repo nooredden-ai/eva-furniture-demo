@@ -1995,7 +1995,11 @@ function renderReceiptsSection() {
       : '<span class="status-badge badge-success" style="font-size:0.75rem">نشط</span>';
     const actions = isCancelled
       ? '<span style="color:var(--admin-text2);font-size:0.8rem">ملغي</span>'
-      : '<button class="topbar-btn btn-outline btn-sm" onclick="openCancelReceipt(\'' + r.id + '\')" style="padding:2px 6px;font-size:0.7rem;color:var(--admin-danger)"><i data-lucide="x-circle" style="width:10px;height:10px"></i></button>';
+      : '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center">' +
+        '<button class="topbar-btn btn-outline btn-sm" onclick="printReceiptById(\'' + r.id + '\')" style="padding:2px 6px;font-size:0.7rem" title="طباعة"><i data-lucide="printer" style="width:10px;height:10px"></i></button>' +
+        '<button class="topbar-btn btn-outline btn-sm" onclick="downloadReceiptPdfById(this,\'' + r.id + '\')" style="padding:2px 6px;font-size:0.7rem" title="PDF"><i data-lucide="file-text" style="width:10px;height:10px"></i></button>' +
+        '<button class="topbar-btn btn-outline btn-sm" onclick="openCancelReceipt(\'' + r.id + '\')" style="padding:2px 6px;font-size:0.7rem;color:var(--admin-danger)" title="إلغاء"><i data-lucide="x-circle" style="width:10px;height:10px"></i></button>' +
+        '</div>';
     return '<tr style="' + rowStyle + '">' +
       '<td style="padding:8px 12px;font-weight:600">' + (r.voucherNumber || r.id) + '</td>' +
       '<td style="padding:8px 12px">' + (r.date ? new Date(r.date).toLocaleDateString('ar-EG') : '—') + '</td>' +
@@ -2109,6 +2113,122 @@ async function confirmCancelReceipt() {
   }
 }
 
+// ===== Receipt Print & PDF =====
+let _lastPrintedReceiptId = null;
+let _lastPrintedExpenseId = null;
+
+function printReceipt() {
+  const id = $a('rcpt-linked-id')?.value || _lastPrintedReceiptId;
+  if (!id) { showAdminToast('لا يوجد سند للطباعة', 'error'); return; }
+  printReceiptById(id);
+}
+
+async function downloadReceiptPdf(btn) {
+  const id = $a('rcpt-linked-id')?.value || _lastPrintedReceiptId;
+  if (!id) { showAdminToast('لا يوجد سند للتحميل', 'error'); return; }
+  await downloadReceiptPdfById(btn, id);
+}
+
+function printReceiptById(id) {
+  _lastPrintedReceiptId = id;
+  const r = _receiptsCache.find(x => x.id === id);
+  if (!r) { showAdminToast('سند القبض غير موجود', 'error'); return; }
+  const methodLabels = { cash: 'نقداً', cheque: 'شيك', bank_transfer: 'تحويل بنكي', visa: 'بطاقة ائتمان' };
+  const win = window.open('', '_blank');
+  if (!win) { showAdminToast('الرجاء السماح للنوافذ المنبثقة', 'error'); return; }
+  win.document.write('<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>سند قبض - ' + r.voucherNumber + '</title><style>@page{size:A4;margin:12mm}*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;color:#222;font-size:13px;line-height:1.5;direction:rtl;background:#fff}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}.store{text-align:right}.store-logo{max-height:70px;margin-bottom:10px;display:block}.store-name{font-size:22px;font-weight:700;color:#111}.store-info{font-size:12px;color:#555;line-height:1.6}.meta{text-align:left}.doc-title{font-size:20px;font-weight:700;color:#111;margin-bottom:6px}.doc-info{font-size:12px;color:#555}.divider{height:1px;background:#ddd;margin:16px 0}.section-title{font-size:14px;font-weight:700;color:#333;margin-bottom:8px}.info-table{width:100%;border-collapse:collapse;font-size:13px}.info-table td{padding:3px 0;border:none}.info-table td.lbl{width:120px;font-weight:600;color:#555}.signature-area{margin-top:50px;display:flex;justify-content:space-between}.signature-box{text-align:center}.signature-line{width:200px;height:1px;background:#333;margin:40px auto 6px}.signature-label{font-size:12px;color:#555}.footer{text-align:center;margin-top:40px;padding-top:16px;border-top:1px solid #ddd}.footer-text{font-size:16px;font-weight:600;color:#333;margin-bottom:4px}.footer-sub{font-size:11px;color:#888}</style></head><body>');
+  win.document.write('<div class="header"><div class="store"><div class="store-name">' + escapeHtml(window.storeName || '') + '</div></div><div class="meta"><div class="doc-title">سند قبض</div><div class="doc-info">الرقم: ' + (r.voucherNumber || r.id) + '</div><div class="doc-info">التاريخ: ' + new Date(r.date || r.createdAt).toLocaleString('ar-EG') + '</div></div></div>');
+  win.document.write('<div class="divider"></div><div class="section-title">بيانات العميل</div><table class="info-table"><tr><td class="lbl">الاسم</td><td>' + escapeHtml(r.customerName || '—') + '</td></tr><tr><td class="lbl">الهاتف</td><td>' + escapeHtml(r.customerPhone || '—') + '</td></tr></table>');
+  win.document.write('<div class="divider"></div><div class="section-title">تفاصيل السند</div><table class="info-table"><tr><td class="lbl">المبلغ</td><td style="font-weight:700;font-size:15px">' + Number(r.amount).toFixed(2) + ' ₪</td></tr><tr><td class="lbl">طريقة الدفع</td><td>' + (methodLabels[r.paymentMethod] || r.paymentMethod) + '</td></tr>' + (r.referenceNumber ? '<tr><td class="lbl">رقم المرجع</td><td>' + escapeHtml(r.referenceNumber) + '</td></tr>' : '') + (r.linkedTo === 'invoice' && r.linkedId ? '<tr><td class="lbl">مرتبط بفاتورة</td><td>' + escapeHtml(r.linkedId) + '</td></tr>' : '') + (r.chequeNumber ? '<tr><td class="lbl">رقم الشيك</td><td>' + escapeHtml(r.chequeNumber) + '</td></tr>' : '') + (r.notes ? '<tr><td class="lbl">ملاحظات</td><td>' + escapeHtml(r.notes) + '</td></tr>' : '') + '</table>');
+  win.document.write('<div class="signature-area"><div class="signature-box"><div class="signature-line"></div><div class="signature-label">التوقيع</div></div><div class="signature-box"><div class="signature-line"></div><div class="signature-label">ختم الشركة</div></div></div>');
+  win.document.write('<div class="footer"><div class="footer-text">شكراً لتعاملكم معنا</div><div class="footer-sub">Generated by EVA System</div></div>');
+  win.document.write('</body></html>');
+  win.document.close();
+  win.focus();
+  setTimeout(function() { win.print(); }, 500);
+}
+
+async function downloadReceiptPdfById(btn, id) {
+  if (!id) { showAdminToast('سند القبض غير موجود', 'error'); return; }
+  const origHtml = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.classList.add('btn-loading'); btn.innerHTML = '...'; }
+  try {
+    const res = await API.downloadReceiptPdf(id);
+    if (!res.success) { showAdminToast(res.message || 'فشل تحميل PDF', 'error'); return; }
+    const r = _receiptsCache.find(x => x.id === id);
+    downloadBlobFile(res.blob, (r ? (r.voucherNumber || id) : id) + '.pdf');
+  } catch (err) {
+    console.error('Download receipt PDF error:', err);
+    showAdminToast('فشل تحميل PDF', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = origHtml; btn.classList.remove('btn-loading'); }
+  }
+}
+
+// ===== Expense Print & PDF =====
+function printExpense() {
+  const id = _lastPrintedExpenseId;
+  if (!id) { showAdminToast('لا يوجد سند للطباعة', 'error'); return; }
+  printExpenseById(id);
+}
+
+async function downloadExpensePdf(btn) {
+  const id = _lastPrintedExpenseId;
+  if (!id) { showAdminToast('لا يوجد سند للتحميل', 'error'); return; }
+  await downloadExpensePdfById(btn, id);
+}
+
+function printExpenseById(id) {
+  _lastPrintedExpenseId = id;
+  const e = _expensesCache.find(x => x.id === id);
+  if (!e) { showAdminToast('سند الصرف غير موجود', 'error'); return; }
+  const methodLabels = { cash: 'نقداً', cheque: 'شيك', bank_transfer: 'تحويل بنكي', visa: 'بطاقة ائتمان' };
+  const catLabels = { rent: 'إيجار', salaries: 'رواتب', marketing: 'تسويق', shipping: 'شحن', inventory_purchase: 'مشتريات مخزون', maintenance: 'صيانة', utilities: 'فواتير خدمات', other: 'أخرى' };
+  const win = window.open('', '_blank');
+  if (!win) { showAdminToast('الرجاء السماح للنوافذ المنبثقة', 'error'); return; }
+  win.document.write('<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>سند صرف - ' + e.voucherNumber + '</title><style>@page{size:A4;margin:12mm}*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;color:#222;font-size:13px;line-height:1.5;direction:rtl;background:#fff}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}.store{text-align:right}.store-logo{max-height:70px;margin-bottom:10px;display:block}.store-name{font-size:22px;font-weight:700;color:#111}.store-info{font-size:12px;color:#555;line-height:1.6}.meta{text-align:left}.doc-title{font-size:20px;font-weight:700;color:#111;margin-bottom:6px}.doc-info{font-size:12px;color:#555}.divider{height:1px;background:#ddd;margin:16px 0}.section-title{font-size:14px;font-weight:700;color:#333;margin-bottom:8px}.info-table{width:100%;border-collapse:collapse;font-size:13px}.info-table td{padding:3px 0;border:none}.info-table td.lbl{width:120px;font-weight:600;color:#555}.signature-area{margin-top:50px;display:flex;justify-content:center}.signature-box{text-align:center}.signature-line{width:200px;height:1px;background:#333;margin:40px auto 6px}.signature-label{font-size:12px;color:#555}.footer{text-align:center;margin-top:40px;padding-top:16px;border-top:1px solid #ddd}.footer-text{font-size:16px;font-weight:600;color:#333;margin-bottom:4px}.footer-sub{font-size:11px;color:#888}</style></head><body>');
+  win.document.write('<div class="header"><div class="store"><div class="store-name">' + escapeHtml(window.storeName || '') + '</div></div><div class="meta"><div class="doc-title">سند صرف</div><div class="doc-info">الرقم: ' + (e.voucherNumber || e.id) + '</div><div class="doc-info">التاريخ: ' + new Date(e.date || e.createdAt).toLocaleString('ar-EG') + '</div></div></div>');
+  win.document.write('<div class="divider"></div><div class="section-title">تفاصيل السند</div><table class="info-table"><tr><td class="lbl">المدفوع له</td><td>' + escapeHtml(e.payee || '—') + '</td></tr><tr><td class="lbl">التصنيف</td><td>' + (catLabels[e.category] || e.category) + '</td></tr><tr><td class="lbl">المبلغ</td><td style="font-weight:700;font-size:15px">' + Number(e.amount).toFixed(2) + ' ₪</td></tr><tr><td class="lbl">طريقة الدفع</td><td>' + (methodLabels[e.paymentMethod] || e.paymentMethod) + '</td></tr>' + (e.notes ? '<tr><td class="lbl">ملاحظات</td><td>' + escapeHtml(e.notes) + '</td></tr>' : '') + '</table>');
+  win.document.write('<div class="signature-area"><div class="signature-box"><div class="signature-line"></div><div class="signature-label">التوقيع</div></div></div>');
+  win.document.write('<div class="footer"><div class="footer-text">شكراً لتعاملكم معنا</div><div class="footer-sub">Generated by EVA System</div></div>');
+  win.document.write('</body></html>');
+  win.document.close();
+  win.focus();
+  setTimeout(function() { win.print(); }, 500);
+}
+
+async function downloadExpensePdfById(btn, id) {
+  if (!id) { showAdminToast('سند الصرف غير موجود', 'error'); return; }
+  const origHtml = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.classList.add('btn-loading'); btn.innerHTML = '...'; }
+  try {
+    const res = await API.downloadExpensePdf(id);
+    if (!res.success) { showAdminToast(res.message || 'فشل تحميل PDF', 'error'); return; }
+    const e = _expensesCache.find(x => x.id === id);
+    downloadBlobFile(res.blob, (e ? (e.voucherNumber || id) : id) + '.pdf');
+  } catch (err) {
+    console.error('Download expense PDF error:', err);
+    showAdminToast('فشل تحميل PDF', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = origHtml; btn.classList.remove('btn-loading'); }
+  }
+}
+
+// ===== Customer Statement PDF =====
+async function downloadStatementPdf() {
+  const name = _profileCustomerName;
+  const phone = _profileCustomerPhone;
+  if (!name) { showAdminToast('لا يوجد عميل', 'error'); return; }
+  try {
+    const res = await API.downloadStatementPdf(name, phone);
+    if (!res.success) { showAdminToast(res.message || 'فشل تحميل PDF', 'error'); return; }
+    downloadBlobFile(res.blob, 'statement-' + name.replace(/[^a-zA-Z0-9]/g, '_') + '.pdf');
+  } catch (err) {
+    console.error('Download statement PDF error:', err);
+    showAdminToast('فشل تحميل PDF', 'error');
+  }
+}
+
 // ===== Expense Vouchers =====
 async function loadExpensesSection() {
   try {
@@ -2144,7 +2264,11 @@ function renderExpensesSection() {
       '<td style="padding:8px 12px">' + escapeHtml(e.payee || '—') + '</td>' +
       '<td style="padding:8px 12px;font-weight:600">' + Number(e.amount).toFixed(2) + ' ₪</td>' +
       '<td style="padding:8px 12px">' + getPaymentMethodText(e.paymentMethod) + '</td>' +
-      '<td style="padding:8px 12px"><button class="topbar-btn btn-danger btn-sm" onclick="deleteExpense(\'' + e.id + '\')" style="padding:2px 6px;font-size:0.7rem"><i data-lucide="trash-2" style="width:10px;height:10px"></i></button></td></tr>';
+      '<td style="padding:8px 12px"><div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center">' +
+        '<button class="topbar-btn btn-outline btn-sm" onclick="printExpenseById(\'' + e.id + '\')" style="padding:2px 6px;font-size:0.7rem" title="طباعة"><i data-lucide="printer" style="width:10px;height:10px"></i></button>' +
+        '<button class="topbar-btn btn-outline btn-sm" onclick="downloadExpensePdfById(this,\'' + e.id + '\')" style="padding:2px 6px;font-size:0.7rem" title="PDF"><i data-lucide="file-text" style="width:10px;height:10px"></i></button>' +
+        '<button class="topbar-btn btn-danger btn-sm" onclick="deleteExpense(\'' + e.id + '\')" style="padding:2px 6px;font-size:0.7rem" title="حذف"><i data-lucide="trash-2" style="width:10px;height:10px"></i></button>' +
+        '</div></td></tr>';
   }).join('');
   if (window.lucide) lucide.createIcons();
 }

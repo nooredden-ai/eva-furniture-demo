@@ -1044,7 +1044,8 @@
           </div>
         </div>
         </div>
-        <div class="modal-footer">
+        <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-start;padding:12px 24px;border-top:1px solid var(--admin-border);">
+          <button class="topbar-btn btn-primary btn-sm" onclick="downloadStatementPdf()"><i data-lucide="file-text" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> تحميل PDF</button>
           <button class="topbar-btn btn-outline" onclick="closeModal('customer-statement-modal')">إغلاق</button>
         </div>
       </div>
@@ -2616,6 +2617,8 @@
     </div>
     <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-start;padding:12px 24px;border-top:1px solid var(--admin-border);">
       <button class="topbar-btn btn-primary" onclick="saveReceipt()"><i data-lucide="check" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>تسجيل</button>
+      <button class="topbar-btn btn-outline" onclick="printReceipt()"><i data-lucide="printer" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>طباعة</button>
+      <button class="topbar-btn btn-outline" onclick="downloadReceiptPdf(this)"><i data-lucide="file-text" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>PDF</button>
       <button class="topbar-btn btn-outline" onclick="closeModal('receipt-modal')">إلغاء</button>
     </div>
   </div>
@@ -2689,6 +2692,8 @@
     </div>
     <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-start;padding:12px 24px;border-top:1px solid var(--admin-border);">
       <button class="topbar-btn btn-primary" onclick="saveExpense()"><i data-lucide="check" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>تسجيل</button>
+      <button class="topbar-btn btn-outline" onclick="printExpense()"><i data-lucide="printer" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>طباعة</button>
+      <button class="topbar-btn btn-outline" onclick="downloadExpensePdf(this)"><i data-lucide="file-text" style="width:14px;height:14px;margin-left:4px;vertical-align:middle;"></i>PDF</button>
       <button class="topbar-btn btn-outline" onclick="closeModal('expense-modal')">إلغاء</button>
     </div>
   </div>

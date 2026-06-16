@@ -249,6 +249,46 @@ const API = {
       return { success: false, message: 'فشل الاتصال بالخادم لتنزيل PDF.' };
     }
   },
+  downloadReceiptPdf: async (id) => {
+    try {
+      const response = await fetch(`/api/receipts/${encodeURIComponent(id)}/pdf`, { headers: getAuthHeaders() });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        return { success: false, message: payload?.message || 'فشل تحميل PDF سند القبض' };
+      }
+      const blob = await response.blob();
+      return { success: true, blob };
+    } catch (err) {
+      return { success: false, message: 'فشل الاتصال بالخادم لتنزيل PDF.' };
+    }
+  },
+  downloadExpensePdf: async (id) => {
+    try {
+      const response = await fetch(`/api/expenses/${encodeURIComponent(id)}/pdf`, { headers: getAuthHeaders() });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        return { success: false, message: payload?.message || 'فشل تحميل PDF سند الصرف' };
+      }
+      const blob = await response.blob();
+      return { success: true, blob };
+    } catch (err) {
+      return { success: false, message: 'فشل الاتصال بالخادم لتنزيل PDF.' };
+    }
+  },
+  downloadStatementPdf: async (name, phone) => {
+    try {
+      const url = `/api/accounting/customer-statement/pdf?name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone || '')}`;
+      const response = await fetch(url, { headers: getAuthHeaders() });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        return { success: false, message: payload?.message || 'فشل تحميل PDF كشف الحساب' };
+      }
+      const blob = await response.blob();
+      return { success: true, blob };
+    } catch (err) {
+      return { success: false, message: 'فشل الاتصال بالخادم لتنزيل PDF.' };
+    }
+  },
   downloadOrderPdf: async (id, type = 'invoice') => {
     try {
       const response = await fetch(`/api/orders/${encodeURIComponent(id)}/pdf?type=${encodeURIComponent(type)}`, { headers: getAuthHeaders() });
