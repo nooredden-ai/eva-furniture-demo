@@ -1277,18 +1277,9 @@ function escapeHtml(str) {
 async function fetchAccountingCustomers(url, options = {}) {
   const finalHeaders = {
     'Content-Type': 'application/json',
+    ...getAuthHeaders(),
     ...(options.headers || {})
   };
-  
-  // Temporary header injection matching current session
-  const sessionStr = sessionStorage.getItem('louloSession');
-  if (sessionStr) {
-    try {
-      const session = JSON.parse(sessionStr);
-      finalHeaders['x-user-role'] = session.role;
-      finalHeaders['x-user-id'] = session.id;
-    } catch(e) {}
-  }
   
   const response = await fetch(url, { ...options, headers: finalHeaders });
   if (!response.ok) {
@@ -1446,18 +1437,9 @@ let accountingSuppliers = [];
 async function fetchAccountingSuppliers(url, options = {}) {
   const finalHeaders = {
     'Content-Type': 'application/json',
+    ...getAuthHeaders(),
     ...(options.headers || {})
   };
-  
-  // Temporary header injection matching current session
-  const sessionStr = sessionStorage.getItem('louloSession');
-  if (sessionStr) {
-    try {
-      const session = JSON.parse(sessionStr);
-      finalHeaders['x-user-role'] = session.role;
-      finalHeaders['x-user-id'] = session.id;
-    } catch(e) {}
-  }
   
   const response = await fetch(url, { ...options, headers: finalHeaders });
   if (!response.ok) {
@@ -1623,17 +1605,9 @@ const accountTypeLabels = {
 async function fetchAccountingAccounts(url, options = {}) {
   const finalHeaders = {
     'Content-Type': 'application/json',
+    ...getAuthHeaders(),
     ...(options.headers || {})
   };
-  
-  const sessionStr = sessionStorage.getItem('louloSession');
-  if (sessionStr) {
-    try {
-      const session = JSON.parse(sessionStr);
-      finalHeaders['x-user-role'] = session.role;
-      finalHeaders['x-user-id'] = session.id;
-    } catch(e) {}
-  }
   
   const response = await fetch(url, { ...options, headers: finalHeaders });
   if (!response.ok) {

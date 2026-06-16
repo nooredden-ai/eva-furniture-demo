@@ -22,15 +22,6 @@ function getAuthHeaders() {
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-  // TODO: remove legacy x-user-role/x-user-id after full JWT migration
-  const sessionStr = sessionStorage.getItem('louloSession');
-  if (sessionStr) {
-    try {
-      const session = JSON.parse(sessionStr);
-      headers['x-user-role'] = session.role;
-      headers['x-user-id'] = session.id;
-    } catch (e) {}
-  }
   // Impersonation: notify backend of real operator
   if (typeof Auth !== 'undefined' && Auth.isImpersonating()) {
     const impInfo = Auth.getImpersonationInfo();

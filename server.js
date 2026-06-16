@@ -130,21 +130,7 @@ app.use(async (req, res, next) => {
     }
   }
 
-  // TODO: remove x-user-role fallback after frontend migration.
-  const oldRole = req.headers['x-user-role'];
-  if (oldRole) {
-    let companyId = null;
-    try {
-      const company = await prisma.company.findFirst();
-      if (company) companyId = company.id;
-    } catch (e) {}
-
-    req.user = {
-      userId: null,
-      role: oldRole,
-      companyId: companyId
-    };
-  }
+  // x-user-role bypass removed in Security Phase 1 — see tag before-security-phase-1
 
   next();
 });
@@ -1236,7 +1222,7 @@ app.post('/api/orders', (req, res) => {
   }
 });
 
-app.get('/api/orders/:id/pdf', async (req, res) => {
+app.get('/api/orders/:id/pdf', requirePerm('view_orders'), async (req, res) => {
   if (!puppeteer) {
     return res.status(503).json({
       success: false,
@@ -1268,7 +1254,7 @@ app.get('/api/orders/:id/pdf', async (req, res) => {
   }
 });
 
-app.post('/api/orders/bulk-pdf', async (req, res) => {
+app.post('/api/orders/bulk-pdf', requirePerm('view_orders'), async (req, res) => {
   if (!puppeteer) {
     return res.status(503).json({
       success: false,
