@@ -2093,10 +2093,131 @@ app.get('/api/accounting/customer-summaries', requirePerm('view_dashboard'), (re
     const invoices = invoiceRepository.findAll();
     const receipts = receiptRepository.findAll();
     const summaries = statementService.getCustomerSummaries(invoices, receipts);
+
+    // Optionally merge CRM notes
+    if (req.query.includeNotes === 'true') {
+      const notes = readJSON('customer-notes.json') || [];
+      const notesByKey = {};
+      notes.forEach(n => { notesByKey[n.key] = n; });
+
+      // Merge CRM data into derived customers
+      summaries.forEach(c => {
+        const key = statementService.getCustomerKey(c.name, c.phone);
+        const note = notesByKey[key];
+        if (note) {
+          c.tags = note.tags || [];
+          c.lastContactAt = note.lastContactAt || null;
+          c.lastContactNote = note.lastContactNote || null;
+          c.noteCount = (note.notes || []).length;
+          c.crmNote = note.notes && note.notes.length ? note.notes[note.notes.length - 1].text : null;
+        } else {
+          c.tags = [];
+          c.lastContactAt = null;
+          c.lastContactNote = null;
+          c.noteCount = 0;
+          c.crmNote = null;
+        }
+      });
+
+      // Add standalone customers from customer-notes.json that have no invoices/receipts
+      const derivedKeys = new Set(summaries.map(c => statementService.getCustomerKey(c.name, c.phone)));
+      notes.forEach(n => {
+        if (!derivedKeys.has(n.key) && n.name) {
+          summaries.push({
+            name: n.name,
+            phone: n.phone || '',
+            totalPurchases: 0,
+            totalPaid: 0,
+            balance: 0,
+            invoiceCount: 0,
+            remaining: 0,
+            status: 'جديد',
+            lastInvoice: null,
+            lastReceipt: null,
+            tags: n.tags || [],
+            lastContactAt: n.lastContactAt || null,
+            lastContactNote: n.lastContactNote || null,
+            noteCount: (n.notes || []).length,
+            crmNote: n.notes && n.notes.length ? n.notes[n.notes.length - 1].text : null
+          });
+        }
+      });
+    }
+
     res.json({ success: true, data: summaries });
   } catch (err) {
     console.error('[CUSTOMER-SUMMARIES ERROR]', err);
     res.status(500).json({ success: false, message: 'فشل تحميل ملخصات العملاء' });
+  }
+});
+
+app.get('/api/accounting/customer-notes', requirePerm('view_dashboard'), (req, res) => {
+  try {
+    const key = req.query.key;
+    if (!key) return res.status(400).json({ success: false, message: 'key query param مطلوب' });
+    const notes = readJSON('customer-notes.json') || [];
+    const entry = notes.find(n => n.key === key);
+    res.json({ success: true, data: entry || null });
+  } catch (err) {
+    console.error('[CUSTOMER-NOTES GET ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحميل ملاحظات العميل' });
+  }
+});
+
+app.put('/api/accounting/customer-notes', requirePerm('view_dashboard'), (req, res) => {
+  try {
+    const { key, name, phone, notes, tags, lastContactAt, lastContactNote } = req.body;
+    if (!key) return res.status(400).json({ success: false, message: 'key مطلوب' });
+
+    const allNotes = readJSON('customer-notes.json') || [];
+    const idx = allNotes.findIndex(n => n.key === key);
+
+    const entry = {
+      key,
+      name: name || '',
+      phone: phone || '',
+      notes: notes || [],
+      tags: tags || [],
+      lastContactAt: lastContactAt || null,
+      lastContactNote: lastContactNote || null,
+      createdAt: idx >= 0 ? allNotes[idx].createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    if (idx >= 0) {
+      allNotes[idx] = entry;
+    } else {
+      allNotes.push(entry);
+    }
+
+    writeJSON('customer-notes.json', allNotes);
+    res.json({ success: true, data: entry });
+  } catch (err) {
+    console.error('[CUSTOMER-NOTES PUT ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل حفظ ملاحظات العميل' });
+  }
+});
+
+app.get('/api/accounting/inactive-customers', requirePerm('view_dashboard'), (req, res) => {
+  try {
+    const days = parseInt(req.query.days) || 60;
+    const invoices = invoiceRepository.findAll();
+    const receipts = receiptRepository.findAll();
+    const summaries = statementService.getCustomerSummaries(invoices, receipts);
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+    const inactive = summaries.filter(c => {
+      const lastInvoice = c.lastInvoice ? new Date(c.lastInvoice) : null;
+      const lastReceipt = c.lastReceipt ? new Date(c.lastReceipt) : null;
+      const mostRecent = lastInvoice && lastReceipt ? (lastInvoice > lastReceipt ? lastInvoice : lastReceipt) : (lastInvoice || lastReceipt);
+      return !mostRecent || mostRecent < cutoff;
+    });
+
+    res.json({ success: true, data: inactive, days });
+  } catch (err) {
+    console.error('[INACTIVE-CUSTOMERS ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحميل العملاء غير النشطين' });
   }
 });
 

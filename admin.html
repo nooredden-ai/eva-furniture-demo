@@ -918,10 +918,16 @@
         <div class="table-header" style="margin-bottom:12px;flex-wrap:wrap;gap:10px;">
           <h3><i data-lucide="users" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i> العملاء</h3>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="customer-activity-filter" onchange="filterCustomersTable()" style="padding:6px 12px;border:1px solid var(--admin-border);border-radius:8px;font-size:0.8rem;background:var(--admin-bg);color:var(--admin-text);">
+              <option value="all">الكل</option>
+              <option value="active">نشط</option>
+              <option value="inactive">غير نشط (60+ يوم)</option>
+            </select>
             <input type="text" id="customer-search-input" placeholder="بحث بالاسم أو الجوال..." style="padding:6px 12px;border:1px solid var(--admin-border);border-radius:8px;font-size:0.8rem;background:var(--admin-bg);color:var(--admin-text);min-width:220px;" oninput="filterCustomersTable()">
+            <button class="topbar-btn btn-primary btn-sm" onclick="openCrmCustomerModal()"><i data-lucide="plus" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> عميل جديد</button>
           </div>
         </div>
-        <div id="customers-empty-state" style="display:none;text-align:center;padding:40px 20px;font-weight:600;color:var(--admin-subtext);font-size:1.05rem;">لا يوجد عملاء بعد</div>
+        <div id="customers-empty-state" style="display:none;text-align:center;padding:40px 20px;font-weight:600;color:var(--admin-subtext);font-size:1.05rem;">لا يوجد عملاء حتى الآن</div>
         <div style="overflow-x:auto;">
           <table class="admin-table">
             <thead>
@@ -934,6 +940,7 @@
                 <th>عدد الفواتير</th>
                 <th>آخر فاتورة</th>
                 <th>الحالة</th>
+                <th>الوسوم</th>
                 <th>إجراءات</th>
               </tr>
             </thead>
@@ -947,21 +954,77 @@
       </div>
     </div>
 
-    <!-- Customer Statement Modal -->
+    <!-- Customer Profile Modal (CRM Lite) -->
     <div class="modal-overlay" id="customer-statement-modal" style="z-index:1000">
-      <div class="modal" style="max-width:800px">
+      <div class="modal" style="max-width:900px">
         <div class="modal-header">
-          <h3 id="customer-statement-title"><i data-lucide="file-text" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i> كشف حساب</h3>
+          <h3 id="customer-statement-title"><i data-lucide="user" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i> ملف العميل</h3>
           <button class="topbar-btn btn-outline btn-sm" onclick="closeModal('customer-statement-modal')" style="padding:4px 8px;font-size:0.75rem"><i data-lucide="x" style="width:14px;height:14px"></i></button>
         </div>
         <div class="modal-body">
+          <!-- Profile Header -->
+          <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:16px;padding:12px;background:var(--admin-bg2);border-radius:8px;">
+            <div style="font-size:2rem;width:48px;height:48px;border-radius:50%;background:var(--admin-border);display:flex;align-items:center;justify-content:center;"><i data-lucide="user" style="width:24px;height:24px"></i></div>
+            <div style="flex:1">
+              <strong id="cs-customer-name" style="font-size:1.1rem"></strong><br>
+              <span id="cs-customer-phone" style="font-size:0.85rem;color:var(--admin-text2)"></span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <a id="cs-whatsapp-btn" href="#" target="_blank" class="topbar-btn btn-outline btn-sm" style="color:#25D366;border-color:#25D366;display:none"><i data-lucide="message-circle" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>واتساب</a>
+              <button class="topbar-btn btn-outline btn-sm" onclick="document.getElementById('cs-contact-section').scrollIntoView({behavior:'smooth'})"><i data-lucide="phone" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>تسجيل تواصل</button>
+            </div>
+          </div>
+
+          <!-- Financial Summary -->
           <div id="customer-statement-summary" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;padding:12px;background:var(--admin-bg2);border-radius:8px;">
             <div><span style="color:var(--admin-text2);font-size:0.8rem;">إجمالي المشتريات</span><br><strong id="cs-total-purchases">0 ₪</strong></div>
             <div><span style="color:var(--admin-text2);font-size:0.8rem;">إجمالي المدفوع</span><br><strong id="cs-total-paid">0 ₪</strong></div>
             <div><span style="color:var(--admin-text2);font-size:0.8rem;">الرصيد الحالي</span><br><strong id="cs-balance">0 ₪</strong></div>
             <div><span style="color:var(--admin-text2);font-size:0.8rem;">عدد الفواتير</span><br><strong id="cs-invoice-count">0</strong></div>
+            <div><span style="color:var(--admin-text2);font-size:0.8rem;">آخر فاتورة</span><br><strong id="cs-last-invoice" style="font-size:0.85rem">—</strong></div>
+            <div><span style="color:var(--admin-text2);font-size:0.8rem;">الحالة</span><br><strong id="cs-status-badge"></strong></div>
           </div>
-          <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
+
+          <!-- Tags Section -->
+          <div style="margin-bottom:16px;padding:12px;background:var(--admin-bg2);border-radius:8px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <i data-lucide="tag" style="width:16px;height:16px;color:var(--admin-primary)"></i>
+              <strong style="font-size:0.9rem;">الوسوم</strong>
+            </div>
+            <div id="cs-tags-container" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;min-height:32px;"></div>
+          </div>
+
+          <!-- Notes Section -->
+          <div style="margin-bottom:16px;padding:12px;background:var(--admin-bg2);border-radius:8px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;justify-content:space-between;">
+              <div><i data-lucide="sticky-note" style="width:16px;height:16px;color:var(--admin-primary)"></i> <strong style="font-size:0.9rem;">الملاحظات الداخلية</strong></div>
+              <div style="display:flex;gap:6px;">
+                <input type="text" id="cs-new-note-input" placeholder="أضف ملاحظة..." style="padding:6px 10px;border:1px solid var(--admin-border);border-radius:6px;font-size:0.8rem;background:var(--admin-bg);color:var(--admin-text);min-width:180px;">
+                <button class="topbar-btn btn-primary btn-sm" onclick="addCustomerNote()">إضافة</button>
+              </div>
+            </div>
+            <div id="cs-notes-list" style="max-height:200px;overflow-y:auto;"></div>
+          </div>
+
+          <!-- Contact Section -->
+          <div id="cs-contact-section" style="margin-bottom:16px;padding:12px;background:var(--admin-bg2);border-radius:8px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap;justify-content:space-between;">
+              <div><i data-lucide="phone-call" style="width:16px;height:16px;color:var(--admin-primary)"></i> <strong style="font-size:0.9rem;">آخر تواصل</strong></div>
+              <div style="display:flex;gap:6px;">
+                <input type="text" id="cs-contact-note-input" placeholder="ملاحظة التواصل..." style="padding:6px 10px;border:1px solid var(--admin-border);border-radius:6px;font-size:0.8rem;background:var(--admin-bg);color:var(--admin-text);min-width:180px;">
+                <button class="topbar-btn btn-primary btn-sm" onclick="recordContact()">تسجيل</button>
+              </div>
+            </div>
+            <div id="cs-last-contact-display" style="font-size:0.85rem;color:var(--admin-text2);"></div>
+          </div>
+
+          <!-- Statement Table -->
+          <div style="margin-top:12px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <i data-lucide="file-text" style="width:16px;height:16px;color:var(--admin-primary)"></i>
+              <strong style="font-size:0.9rem;">كشف حساب</strong>
+            </div>
+            <div style="overflow-x:auto;max-height:400px;overflow-y:auto;">
             <table class="admin-table" style="font-size:0.8rem;">
               <thead>
                 <tr>
@@ -979,6 +1042,7 @@
               </tbody>
             </table>
           </div>
+        </div>
         </div>
         <div class="modal-footer">
           <button class="topbar-btn btn-outline" onclick="closeModal('customer-statement-modal')">إغلاق</button>
@@ -2662,6 +2726,38 @@
 <!-- ===== Admin Toast ===== -->
 <div class="admin-toast" id="admin-toast"></div>
 
+<div class="modal-overlay" id="crm-customer-modal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h3><i data-lucide="user-plus" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة عميل جديد</h3>
+      <button class="modal-close" onclick="closeModal('crm-customer-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <label>الاسم *</label>
+        <input type="text" id="crm-customer-name" placeholder="اسم العميل" style="padding:8px 12px;border:1px solid var(--admin-border);border-radius:8px;font-size:0.9rem;width:100%;background:var(--admin-bg);color:var(--admin-text);">
+      </div>
+      <div class="form-row">
+        <label>رقم الجوال</label>
+        <input type="text" id="crm-customer-phone" placeholder="05xxxxxxxx" style="padding:8px 12px;border:1px solid var(--admin-border);border-radius:8px;font-size:0.9rem;width:100%;background:var(--admin-bg);color:var(--admin-text);">
+      </div>
+      <div class="form-row">
+        <label>وسم أولي (اختياري)</label>
+        <select id="crm-customer-tag" style="padding:8px 12px;border:1px solid var(--admin-border);border-radius:8px;font-size:0.9rem;width:100%;background:var(--admin-bg);color:var(--admin-text);">
+          <option value="">— بدون وسم —</option>
+          <option value="VIP">VIP</option>
+          <option value="عادي">عادي</option>
+          <option value="تاجر جملة">تاجر جملة</option>
+          <option value="يحتاج متابعة">يحتاج متابعة</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="topbar-btn btn-primary btn-active-scale" onclick="saveCrmCustomer(this)"><i data-lucide="save" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> حفظ</button>
+      <button class="topbar-btn btn-outline" onclick="closeModal('crm-customer-modal')">إلغاء</button>
+    </div>
+  </div>
+</div>
 <script src="api.js"></script>
 <script src="auth.js"></script>
 <script src="admin.js"></script>

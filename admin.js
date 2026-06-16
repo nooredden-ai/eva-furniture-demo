@@ -518,15 +518,32 @@ function switchAccTab(tab) {
 async function loadCustomersSection() {
   const tbody = $a('customers-table-body');
   const emptyState = $a('customers-empty-state');
-  if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:20px;">جاري التحميل...</td></tr>';
+  if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;">جاري التحميل...</td></tr>';
   try {
-    const res = await fetchWithStability('/api/accounting/customer-summaries');
-    if (!res.success) { showAdminToast(res.message || 'فشل تحميل العملاء', 'error'); return; }
+    const res = await fetchWithStability('/api/accounting/customer-summaries?includeNotes=true');
+    if (!res.success) { showAdminToast(res.message || 'فشل تحميل العملاء', 'error'); renderCustomersSection([]); return; }
     renderCustomersSection(res.data || []);
   } catch (err) {
     console.error('Error loading customers:', err);
     showAdminToast('فشل تحميل العملاء', 'error');
+    renderCustomersSection([]);
   }
+}
+
+function getCustomerKeyStr(name, phone) {
+  const n = (name || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  const p = (phone || '').trim().replace(/[^0-9]/g, '');
+  return p ? n + '|' + p : n;
+}
+
+function isCustomerInactive(c, days) {
+  days = days || 60;
+  const now = new Date();
+  const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+  const lastInvoice = c.lastInvoice ? new Date(c.lastInvoice) : null;
+  const lastReceipt = c.lastReceipt ? new Date(c.lastReceipt) : null;
+  const mostRecent = lastInvoice && lastReceipt ? (lastInvoice > lastReceipt ? lastInvoice : lastReceipt) : (lastInvoice || lastReceipt);
+  return !mostRecent || mostRecent < cutoff;
 }
 
 function renderCustomersSection(customers) {
@@ -550,19 +567,32 @@ function renderCustomersSection(customers) {
 
   _customerCache = customers;
 
-  tbody.innerHTML = customers.map(c => {
+  const activityFilter = ($a('customer-activity-filter')?.value) || 'all';
+
+  const filtered = customers.filter(c => {
+    if (activityFilter === 'active') return !isCustomerInactive(c, 60);
+    if (activityFilter === 'inactive') return isCustomerInactive(c, 60);
+    return true;
+  });
+
+  tbody.innerHTML = filtered.map(c => {
     const lastInvoice = c.lastInvoice ? new Date(c.lastInvoice).toLocaleDateString('ar-EG') : '—';
     const statusBadge = `<span class="status-badge ${statusColors[c.status] || 'badge-status'}">${c.status}</span>`;
+    const tags = (c.tags || []).map(t => `<span style="display:inline-block;padding:1px 8px;border-radius:9999px;font-size:0.7rem;background:var(--admin-primary);color:#fff;margin:1px">${escapeHtml(t)}</span>`).join('') || '<span style="color:var(--admin-text2);font-size:0.75rem">—</span>';
+    const key = getCustomerKeyStr(c.name, c.phone);
+    const encName = escapeHtml(c.name);
+    const encPhone = escapeHtml(c.phone || '');
     return `<tr>
-      <td style="font-weight:600">${escapeHtml(c.name)}</td>
-      <td>${escapeHtml(c.phone || '—')}</td>
+      <td style="font-weight:600">${encName}</td>
+      <td>${encPhone || '—'}</td>
       <td>${(c.totalPurchases || 0).toLocaleString('ar-SA')} ₪</td>
       <td>${(c.totalPaid || 0).toLocaleString('ar-SA')} ₪</td>
       <td style="font-weight:600;color:${(c.balance || 0) > 0 ? 'var(--admin-danger)' : 'var(--admin-success)'}">${(c.balance || 0).toLocaleString('ar-SA')} ₪</td>
       <td>${c.invoiceCount || 0}</td>
       <td style="font-size:0.8rem">${lastInvoice}</td>
       <td>${statusBadge}</td>
-      <td><button class="topbar-btn btn-outline btn-sm" onclick="openCustomerStatement('${escapeHtml(c.name)}', '${escapeHtml(c.phone || '')}')"><i data-lucide="file-text" style="width:12px;height:12px;vertical-align:middle;margin-left:2px"></i> كشف</button></td>
+      <td style="font-size:0.75rem">${tags}</td>
+      <td><button class="topbar-btn btn-outline btn-sm" onclick="openCustomerProfile('${encName}', '${encPhone}')"><i data-lucide="user" style="width:12px;height:12px;vertical-align:middle;margin-left:2px"></i> ملف</button></td>
     </tr>`;
   }).join('');
   if (window.lucide) lucide.createIcons();
@@ -573,22 +603,58 @@ let _customerCache = [];
 function filterCustomersTable() {
   const query = ($a('customer-search-input')?.value || '').toLowerCase().trim();
   if (!_customerCache || !_customerCache.length) return;
-  const filtered = _customerCache.filter(c =>
-    (c.name || '').toLowerCase().includes(query) ||
-    (c.phone || '').toLowerCase().includes(query)
-  );
+  const filtered = _customerCache.filter(c => {
+    const matchesSearch = !query ||
+      (c.name || '').toLowerCase().includes(query) ||
+      (c.phone || '').toLowerCase().includes(query);
+    return matchesSearch;
+  });
   renderCustomersSection(filtered);
 }
 
-// ===== Customer Statement Modal =====
-async function openCustomerStatement(name, phone) {
+// ===== Customer Profile Modal (CRM Lite) =====
+let _profileCustomerName = '';
+let _profileCustomerPhone = '';
+let _profileNotes = [];
+
+const CRM_TAGS = ['VIP', 'عادي', 'تاجر جملة', 'يحتاج متابعة', 'متأخر بالسداد'];
+
+async function openCustomerProfile(name, phone) {
+  _profileCustomerName = name;
+  _profileCustomerPhone = phone;
+  _profileNotes = [];
+
   try {
-    const res = await fetchWithStability('/api/accounting/customer-statement?name=' + encodeURIComponent(name) + '&phone=' + encodeURIComponent(phone || ''));
-    if (!res.success) { showAdminToast(res.message || 'فشل تحميل كشف الحساب', 'error'); return; }
-    const { entries, summary } = res.data;
+    // Load statement
+    const stmtRes = await fetchWithStability('/api/accounting/customer-statement?name=' + encodeURIComponent(name) + '&phone=' + encodeURIComponent(phone || ''));
+    const statementData = stmtRes.success ? stmtRes.data : { entries: [], summary: {} };
+    const { entries, summary } = statementData;
 
-    $a('customer-statement-title').innerHTML = '<i data-lucide="file-text" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i> كشف حساب: ' + escapeHtml(name);
+    // Load CRM notes
+    const key = getCustomerKeyStr(name, phone);
+    const notesRes = await fetchWithStability('/api/accounting/customer-notes?key=' + encodeURIComponent(key));
+    const crmData = notesRes.success && notesRes.data ? notesRes.data : null;
+    _profileNotes = (crmData && crmData.notes) || [];
 
+    // Set title
+    $a('customer-statement-title').innerHTML = '<i data-lucide="user" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i> ' + escapeHtml(name);
+
+    // Profile header
+    $a('cs-customer-name').textContent = name;
+    const phoneEl = $a('cs-customer-phone');
+    phoneEl.textContent = phone || '(لا يوجد رقم)';
+
+    // WhatsApp button
+    const waBtn = $a('cs-whatsapp-btn');
+    const digits = (phone || '').replace(/[^0-9]/g, '');
+    if (digits) {
+      waBtn.href = 'https://wa.me/' + digits;
+      waBtn.style.display = 'inline-flex';
+    } else {
+      waBtn.style.display = 'none';
+    }
+
+    // Financial summary
     if ($a('cs-total-purchases')) $a('cs-total-purchases').textContent = (summary.totalPurchases || 0).toLocaleString('ar-SA') + ' ₪';
     if ($a('cs-total-paid')) $a('cs-total-paid').textContent = (summary.totalPaid || 0).toLocaleString('ar-SA') + ' ₪';
     if ($a('cs-balance')) {
@@ -597,7 +663,31 @@ async function openCustomerStatement(name, phone) {
       $a('cs-balance').style.color = bal > 0 ? 'var(--admin-danger)' : 'var(--admin-success)';
     }
     if ($a('cs-invoice-count')) $a('cs-invoice-count').textContent = summary.invoiceCount || 0;
+    if ($a('cs-last-invoice')) {
+      $a('cs-last-invoice').textContent = summary.lastInvoice ? new Date(summary.lastInvoice).toLocaleDateString('ar-EG') : '—';
+    }
+    if ($a('cs-status-badge')) {
+      const statusColors = { 'VIP': 'badge-success', 'مدين': 'badge-danger', 'جديد': 'badge-info', 'خامل': 'badge-warning', 'عادي': 'badge-status' };
+      $a('cs-status-badge').innerHTML = '<span class="status-badge ' + (statusColors[summary.status] || 'badge-status') + '">' + (summary.status || '—') + '</span>';
+    }
 
+    // Tags
+    renderProfileTags(crmData ? (crmData.tags || []) : []);
+
+    // Notes
+    renderProfileNotes();
+
+    // Last contact
+    const contactEl = $a('cs-last-contact-display');
+    if (crmData && crmData.lastContactAt) {
+      const dt = new Date(crmData.lastContactAt).toLocaleString('ar-EG');
+      const note = crmData.lastContactNote ? ' — ' + escapeHtml(crmData.lastContactNote) : '';
+      contactEl.innerHTML = '<span style="color:var(--admin-text)">' + dt + '</span>' + note;
+    } else {
+      contactEl.textContent = 'لم يتم تسجيل أي تواصل بعد';
+    }
+
+    // Statement entries
     const tbody = $a('customer-statement-body');
     if (!tbody) return;
 
@@ -610,7 +700,7 @@ async function openCustomerStatement(name, phone) {
         const debit = e.debit ? e.debit.toLocaleString('ar-SA') + ' ₪' : '—';
         const credit = e.credit ? e.credit.toLocaleString('ar-SA') + ' ₪' : '—';
         const balance = (e.balance !== undefined) ? e.balance.toLocaleString('ar-SA') + ' ₪' : '—';
-        const notes = e.note ? escapeHtml(e.note) : '';
+        const note = e.note ? escapeHtml(e.note) : '';
         const typeText = e.type === 'فاتورة' ? '<span style="color:var(--admin-danger)">فاتورة</span>' : '<span style="color:var(--admin-success)">سند قبض</span>';
         return `<tr>
           <td style="font-size:0.75rem">${dateStr}</td>
@@ -619,7 +709,7 @@ async function openCustomerStatement(name, phone) {
           <td style="color:var(--admin-danger)">${debit}</td>
           <td style="color:var(--admin-success)">${credit}</td>
           <td style="font-weight:600">${balance}</td>
-          <td style="font-size:0.75rem;color:var(--admin-text2)">${notes}</td>
+          <td style="font-size:0.75rem;color:var(--admin-text2)">${note}</td>
         </tr>`;
       }).join('');
     }
@@ -627,8 +717,183 @@ async function openCustomerStatement(name, phone) {
     openModal('customer-statement-modal');
     if (window.lucide) lucide.createIcons();
   } catch (err) {
-    console.error('Error loading customer statement:', err);
-    showAdminToast('فشل تحميل كشف الحساب', 'error');
+    console.error('Error loading customer profile:', err);
+    showAdminToast('فشل تحميل ملف العميل', 'error');
+  }
+}
+
+function renderProfileTags(tags) {
+  const container = $a('cs-tags-container');
+  if (!container) return;
+
+  const available = CRM_TAGS.filter(t => !tags.includes(t));
+
+  container.innerHTML = tags.map(t => {
+    const colorMap = { 'VIP': '#16a34a', 'عادي': '#64748b', 'تاجر جملة': '#2563eb', 'يحتاج متابعة': '#d97706', 'متأخر بالسداد': '#dc2626' };
+    const bg = colorMap[t] || '#64748b';
+    return '<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:9999px;font-size:0.75rem;background:' + bg + ';color:#fff;cursor:pointer" onclick="removeCustomerTag(\'' + escapeHtml(t) + '\')">' + escapeHtml(t) + ' <span style="font-size:0.7rem;opacity:0.7">✕</span></span>';
+  }).join('');
+
+  if (available.length) {
+    const sel = '<select id="cs-add-tag-select" onchange="addCustomerTag(this)" style="padding:2px 8px;border:1px solid var(--admin-border);border-radius:6px;font-size:0.75rem;background:var(--admin-bg);color:var(--admin-text);"><option value="">+ إضافة وسم</option>' + available.map(t => '<option value="' + escapeHtml(t) + '">' + escapeHtml(t) + '</option>').join('') + '</select>';
+    container.innerHTML += sel;
+  }
+}
+
+async function addCustomerTag(sel) {
+  if (!sel || !sel.value) return;
+  const tag = sel.value;
+  sel.value = '';
+  const currentTags = [];
+  document.querySelectorAll('#cs-tags-container > span').forEach(el => {
+    const txt = el.textContent.replace('✕', '').trim();
+    if (txt) currentTags.push(txt);
+  });
+  if (!currentTags.includes(tag)) currentTags.push(tag);
+  renderProfileTags(currentTags);
+  await saveCustomerNotes({ tags: currentTags });
+}
+
+async function removeCustomerTag(tag) {
+  const currentTags = [];
+  document.querySelectorAll('#cs-tags-container > span').forEach(el => {
+    const txt = el.textContent.replace('✕', '').trim();
+    if (txt && txt !== tag) currentTags.push(txt);
+  });
+  renderProfileTags(currentTags);
+  await saveCustomerNotes({ tags: currentTags });
+}
+
+async function addCustomerNote() {
+  const input = $a('cs-new-note-input');
+  if (!input || !input.value.trim()) return;
+  const text = input.value.trim();
+  input.value = '';
+
+  _profileNotes.push({ text, createdAt: new Date().toISOString(), author: 'admin' });
+  renderProfileNotes();
+  await saveCustomerNotes({ notes: _profileNotes });
+}
+
+function renderProfileNotes() {
+  const list = $a('cs-notes-list');
+  if (!list) return;
+  if (!_profileNotes || !_profileNotes.length) {
+    list.innerHTML = '<div style="color:var(--admin-text2);font-size:0.85rem;padding:8px 0;">لا توجد ملاحظات</div>';
+    return;
+  }
+  list.innerHTML = _profileNotes.slice().reverse().map(n => {
+    const dt = n.createdAt ? new Date(n.createdAt).toLocaleString('ar-EG') : '';
+    return '<div style="padding:6px 0;border-bottom:1px solid var(--admin-border);font-size:0.85rem;">' +
+      '<div>' + escapeHtml(n.text) + '</div>' +
+      '<div style="font-size:0.7rem;color:var(--admin-text2);">' + dt + (n.author ? ' — ' + escapeHtml(n.author) : '') + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function recordContact() {
+  const input = $a('cs-contact-note-input');
+  const note = input ? input.value.trim() : '';
+  if (input) input.value = '';
+  const now = new Date().toISOString();
+
+  const contactEl = $a('cs-last-contact-display');
+  if (contactEl) {
+    contactEl.innerHTML = '<span style="color:var(--admin-text)">' + new Date().toLocaleString('ar-EG') + '</span>' + (note ? ' — ' + escapeHtml(note) : '');
+  }
+
+  await saveCustomerNotes({ lastContactAt: now, lastContactNote: note });
+}
+
+async function saveCustomerNotes(updates) {
+  const key = getCustomerKeyStr(_profileCustomerName, _profileCustomerPhone);
+  try {
+    const body = {
+      key,
+      name: _profileCustomerName,
+      phone: _profileCustomerPhone,
+      notes: updates.notes !== undefined ? updates.notes : _profileNotes,
+      tags: updates.tags || [],
+      lastContactAt: updates.lastContactAt || null,
+      lastContactNote: updates.lastContactNote || null
+    };
+    // Fetch existing to preserve fields not being updated
+    if (updates.tags && !updates.notes) {
+      const existingRes = await fetchWithStability('/api/accounting/customer-notes?key=' + encodeURIComponent(key));
+      if (existingRes.success && existingRes.data) {
+        body.notes = existingRes.data.notes || [];
+        body.lastContactAt = existingRes.data.lastContactAt || null;
+        body.lastContactNote = existingRes.data.lastContactNote || null;
+      }
+    }
+    if (updates.lastContactAt && !updates.tags && !updates.notes) {
+      const existingRes = await fetchWithStability('/api/accounting/customer-notes?key=' + encodeURIComponent(key));
+      if (existingRes.success && existingRes.data) {
+        body.notes = existingRes.data.notes || [];
+        body.tags = existingRes.data.tags || [];
+      }
+    }
+
+    await fetchWithStability('/api/accounting/customer-notes', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+  } catch (err) {
+    console.error('Error saving customer notes:', err);
+  }
+}
+
+function openCrmCustomerModal() {
+  $a('crm-customer-name').value = '';
+  $a('crm-customer-phone').value = '';
+  $a('crm-customer-tag').value = '';
+  openModal('crm-customer-modal');
+  if (window.lucide) lucide.createIcons();
+}
+
+async function saveCrmCustomer(btn) {
+  const name = $a('crm-customer-name').value.trim();
+  const phone = $a('crm-customer-phone').value.trim();
+  const tag = $a('crm-customer-tag').value;
+
+  if (!name) { showAdminToast('الرجاء إدخال اسم العميل', 'error'); return; }
+
+  const key = getCustomerKeyStr(name, phone);
+  const originalHtml = btn.innerHTML;
+  btn.classList.add('btn-loading');
+  btn.innerHTML = 'جاري الحفظ...';
+
+  try {
+    const body = {
+      key,
+      name,
+      phone,
+      notes: [],
+      tags: tag ? [tag] : [],
+      lastContactAt: null,
+      lastContactNote: null
+    };
+
+    const res = await fetchWithStability('/api/accounting/customer-notes', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if (res.success) {
+      closeModal('crm-customer-modal');
+      showAdminToast('تم إضافة العميل بنجاح', 'success');
+      loadCustomersSection();
+    } else {
+      showAdminToast(res.message || 'فشل حفظ العميل', 'error');
+    }
+  } catch (err) {
+    console.error('Error saving CRM customer:', err);
+    showAdminToast('فشل حفظ العميل', 'error');
+  } finally {
+    btn.innerHTML = originalHtml;
+    btn.classList.remove('btn-loading');
   }
 }
 
