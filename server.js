@@ -854,6 +854,9 @@ app.get('/api/receipts/:id/pdf', requirePerm('view_orders'), async (req, res) =>
     ${receipt.referenceNumber ? `<tr><td class="lbl">رقم المرجع</td><td>${receipt.referenceNumber}</td></tr>` : ''}
     ${receipt.linkedTo === 'invoice' && receipt.linkedId ? `<tr><td class="lbl">مرتبط بفاتورة</td><td>${receipt.linkedId}</td></tr>` : ''}
     ${receipt.chequeNumber ? `<tr><td class="lbl">رقم الشيك</td><td>${receipt.chequeNumber}</td></tr>` : ''}
+    ${receipt.bankName ? `<tr><td class="lbl">البنك</td><td>${receipt.bankName}</td></tr>` : ''}
+    ${receipt.dueDate ? `<tr><td class="lbl">تاريخ الاستحقاق</td><td>${new Date(receipt.dueDate).toLocaleDateString('ar-EG')}</td></tr>` : ''}
+    ${receipt.paymentMethod === 'cheque' && receipt.chequeStatus ? `<tr><td class="lbl">حالة الشيك</td><td>${chequeNoteLabel(receipt.chequeStatus)}</td></tr>` : ''}
     ${receipt.notes ? `<tr><td class="lbl">ملاحظات</td><td>${receipt.notes}</td></tr>` : ''}
   </table>
   ${isCancelled ? `<div class="divider"></div><div class="cancel-info" style="margin-top:12px;padding:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;"><div class="section-title">ملغي</div><table class="info-table"><tr><td class="lbl">تاريخ الإلغاء</td><td>${receipt.cancelledAt ? new Date(receipt.cancelledAt).toLocaleString('ar-EG') : '—'}</td></tr><tr><td class="lbl">السبب</td><td>${receipt.cancelReason || '—'}</td></tr></table></div>` : ''}
@@ -926,7 +929,10 @@ function computeInvoicePaymentStatus(invoice, allReceipts) {
   const linked = (allReceipts || []).filter(r =>
     r.linkedTo === 'invoice' && String(r.linkedId) === String(invoice.id) && r.status !== 'cancelled'
   );
-  const totalPaid = linked.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const totalPaid = linked.reduce((s, r) => {
+    if (!statementService.isReceiptCreditable(r)) return s;
+    return s + (Number(r.amount) || 0);
+  }, 0);
   const total = Number(invoice.total) || 0;
   const remaining = Math.max(0, total - totalPaid);
   let paymentStatus = 'unpaid';
@@ -943,22 +949,56 @@ function generateVoucherNumber(prefix, existing) {
 
 app.post('/api/receipts', requirePerm('update_orders'), (req, res) => {
   try {
-    const { amount, paymentMethod, customerName, customerPhone, linkedTo, linkedId, notes, referenceNumber, chequeNumber } = req.body;
+    const { amount, paymentMethod, customerName, customerPhone, linkedTo, linkedId, notes, referenceNumber, chequeNumber, bankName, dueDate } = req.body;
     if (!amount || Number(amount) <= 0) {
       return res.status(400).json({ success: false, message: 'المبلغ مطلوب ويجب أن يكون أكبر من صفر' });
     }
+
+    // Overpayment validation for invoice-linked receipts
+    let resolvedCustomerName = typeof customerName === 'string' ? customerName.trim() : '';
+    if (linkedTo === 'invoice' && linkedId) {
+      const inv = invoiceRepository.findById(linkedId);
+      if (!inv) {
+        return res.status(404).json({ success: false, message: 'الفاتورة غير موجودة' });
+      }
+      if (inv.status === 'cancelled') {
+        return res.status(400).json({ success: false, message: 'لا يمكن إضافة دفعة لفاتورة ملغية' });
+      }
+      // Auto-populate customer name from invoice if not provided (Fix D)
+      if (!resolvedCustomerName && inv.customer && inv.customer.name) {
+        resolvedCustomerName = inv.customer.name;
+      }
+      const allReceipts = receiptRepository.findAll();
+      const creditableSum = allReceipts.filter(r =>
+        r.linkedTo === 'invoice' &&
+        String(r.linkedId) === String(linkedId) &&
+        r.status !== 'cancelled' &&
+        statementService.isReceiptCreditable(r)
+      ).reduce((s, r) => s + (Number(r.amount) || 0), 0);
+      const allowed = Number(inv.total) - creditableSum;
+      if (Number(amount) > allowed) {
+        return res.status(400).json({
+          success: false,
+          message: `المبلغ يتجاوز المتبقي على الفاتورة. المتبقي المسموح: ${allowed.toFixed(2)}`
+        });
+      }
+    }
+
     const receipts = receiptRepository.findAll();
     const receipt = {
       id: 'rcp_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
       voucherNumber: generateVoucherNumber('ق', receipts),
       status: 'active',
       date: new Date().toISOString(),
-      customerName: customerName || '',
+      customerName: resolvedCustomerName,
       customerPhone: customerPhone || '',
       amount: Number(amount),
       paymentMethod: paymentMethod || 'cash',
       referenceNumber: referenceNumber || '',
       chequeNumber: chequeNumber || '',
+      bankName: bankName || '',
+      dueDate: dueDate || '',
+      chequeStatus: (paymentMethod === 'cheque') ? 'pending' : null,
       linkedTo: linkedTo || 'none',
       linkedId: linkedId || null,
       notes: notes || '',
@@ -1014,6 +1054,45 @@ app.put('/api/receipts/:id/cancel', requirePerm('update_orders'), (req, res) => 
     res.status(500).json({ success: false, message: 'فشل إلغاء سند القبض' });
   }
 });
+
+// ===== Cheque Status Update =====
+app.patch('/api/receipts/:id/cheque-status', requirePerm('update_orders'), (req, res) => {
+  try {
+    const receipt = receiptRepository.findById(req.params.id);
+    if (!receipt) return res.status(404).json({ success: false, message: 'سند القبض غير موجود' });
+    if (receipt.paymentMethod !== 'cheque') {
+      return res.status(400).json({ success: false, message: 'هذا السند ليس شيكاً' });
+    }
+    if (receipt.status === 'cancelled') {
+      return res.status(400).json({ success: false, message: 'لا يمكن تحديث شيك ملغي' });
+    }
+    const { chequeStatus } = req.body;
+    const validStatuses = ['pending', 'collected', 'returned', 'cancelled'];
+    if (!validStatuses.includes(chequeStatus)) {
+      return res.status(400).json({ success: false, message: 'حالة غير صالحة' });
+    }
+    const current = receipt.chequeStatus || 'pending';
+    const allowedTransitions = {
+      pending: ['collected', 'returned', 'cancelled'],
+      collected: [],
+      returned: [],
+      cancelled: []
+    };
+    if (!allowedTransitions[current].includes(chequeStatus)) {
+      return res.status(400).json({ success: false, message: `لا يمكن تغيير الحالة من ${chequeNoteLabel(current)} إلى ${chequeNoteLabel(chequeStatus)}` });
+    }
+    const updated = receiptRepository.update(req.params.id, { chequeStatus });
+    res.json({ success: true, data: updated, message: 'تم تحديث حالة الشيك' });
+  } catch (err) {
+    console.error('[CHEQUE STATUS ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحديث حالة الشيك' });
+  }
+});
+
+function chequeNoteLabel(status) {
+  const labels = { collected: 'تم التحصيل', pending: 'قيد التحصيل', returned: 'مرتجع', cancelled: 'ملغي' };
+  return labels[status] || status;
+}
 
 /* =========================
    API: EXPENSES (سندات صرف)
@@ -2281,7 +2360,8 @@ app.get('/api/accounting/customer-statement/pdf', requirePerm('view_dashboard'),
       const debit = e.debit ? Number(e.debit).toFixed(2) + ' ' + currency : '—';
       const credit = e.credit ? Number(e.credit).toFixed(2) + ' ' + currency : '—';
       const bal = e.balance !== undefined ? Number(e.balance).toFixed(2) + ' ' + currency : '—';
-      return `<tr><td style="font-size:0.8rem">${dateStr}</td><td>${e.type === 'فاتورة' ? 'فاتورة' : 'سند قبض'}</td><td style="font-family:monospace;font-size:0.75rem">${ref}</td><td style="color:#991b1b">${debit}</td><td style="color:#166534">${credit}</td><td style="font-weight:600">${bal}</td></tr>`;
+      const note = e.note ? e.note : '';
+      return `<tr><td style="font-size:0.8rem">${dateStr}</td><td>${e.type === 'فاتورة' ? 'فاتورة' : 'سند قبض'}${note ? `<br><span style="font-size:0.7rem;color:#888">${note}</span>` : ''}</td><td style="font-family:monospace;font-size:0.75rem">${ref}</td><td style="color:#991b1b">${debit}</td><td style="color:#166534">${credit}</td><td style="font-weight:600">${bal}</td></tr>`;
     }).join('') : '<tr><td colspan="6" style="text-align:center;color:#888;padding:20px;">لا توجد حركات مالية</td></tr>';
 
     const html = `<!DOCTYPE html>
@@ -2458,6 +2538,47 @@ app.get('/api/accounting/inactive-customers', requirePerm('view_dashboard'), (re
   } catch (err) {
     console.error('[INACTIVE-CUSTOMERS ERROR]', err);
     res.status(500).json({ success: false, message: 'فشل تحميل العملاء غير النشطين' });
+  }
+});
+
+// ===== Cheques List =====
+app.get('/api/accounting/cheques', requirePerm('view_dashboard'), (req, res) => {
+  try {
+    if (!hasAccessToAccounting(req)) return res.status(403).json({ success: false, message: 'الميزة غير مفعّلة' });
+    const receipts = receiptRepository.findAll();
+    let cheques = receipts.filter(r => r.paymentMethod === 'cheque');
+    const { status } = req.query;
+    if (status && status !== 'all') {
+      cheques = cheques.filter(r => (r.chequeStatus || 'pending') === status);
+    }
+    const now = new Date();
+    const result = cheques.map(r => {
+      const dueDate = r.dueDate ? new Date(r.dueDate) : null;
+      let daysLabel = '—';
+      if (dueDate) {
+        const diff = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+        if (diff > 0) daysLabel = `بعد ${diff} أيام`;
+        else if (diff === 0) daysLabel = 'اليوم';
+        else daysLabel = `متأخر ${Math.abs(diff)} أيام`;
+      }
+      return {
+        id: r.id,
+        voucherNumber: r.voucherNumber,
+        customerName: r.customerName,
+        customerPhone: r.customerPhone,
+        amount: r.amount,
+        chequeNumber: r.chequeNumber || '—',
+        bankName: r.bankName || '—',
+        dueDate: r.dueDate || null,
+        chequeStatus: r.chequeStatus || 'pending',
+        daysLabel,
+        createdAt: r.createdAt
+      };
+    });
+    res.json({ success: true, data: result });
+  } catch (err) {
+    console.error('[CHEQUES LIST ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل تحميل قائمة الشيكات' });
   }
 });
 

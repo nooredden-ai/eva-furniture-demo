@@ -682,6 +682,7 @@
           <button class="topbar-btn btn-primary" onclick="switchAccTab('summary')" id="acc-tab-summary" style="font-size:0.85rem"><i data-lucide="bar-chart-3" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>الملخص المالي</button>
           <button class="topbar-btn btn-outline" onclick="switchAccTab('receipts')" id="acc-tab-receipts" style="font-size:0.85rem"><i data-lucide="arrow-down-circle" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>سندات القبض</button>
           <button class="topbar-btn btn-outline" onclick="switchAccTab('expenses')" id="acc-tab-expenses" style="font-size:0.85rem"><i data-lucide="arrow-up-circle" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>سندات الصرف</button>
+          <button class="topbar-btn btn-outline" onclick="switchAccTab('cheques')" id="acc-tab-cheques" style="font-size:0.85rem"><i data-lucide="banknote" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>الشيكات</button>
           <button class="topbar-btn btn-outline" onclick="switchAccTab('customers')" id="acc-tab-customers" style="font-size:0.85rem"><i data-lucide="users" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>العملاء</button>
         </div>
 
@@ -907,6 +908,43 @@
               </tr>
             </thead>
             <tbody id="expenses-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Cheques Panel -->
+      <div id="acc-panel-cheques" class="acc-panel" style="display:none;margin-top:16px">
+        <div class="table-header" style="margin-bottom:12px;flex-wrap:wrap;gap:10px;">
+          <h3><i data-lucide="banknote" style="width:18px;height:18px;vertical-align:middle;margin-left:6px"></i> الشيكات</h3>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <select id="cheque-status-filter" onchange="filterChequesTable()" style="padding:6px 12px;border:1px solid var(--admin-border);border-radius:8px;font-size:0.8rem;background:var(--admin-bg);color:var(--admin-text);">
+              <option value="all">الكل</option>
+              <option value="pending">قيد التحصيل</option>
+              <option value="collected">تم التحصيل</option>
+              <option value="returned">مرتجع</option>
+              <option value="cancelled">ملغي</option>
+            </select>
+            <input type="text" id="cheque-search-input" placeholder="بحث بالعميل أو رقم الشيك..." style="padding:6px 12px;border:1px solid var(--admin-border);border-radius:8px;font-size:0.8rem;background:var(--admin-bg);color:var(--admin-text);min-width:220px;" oninput="filterChequesTable()">
+          </div>
+        </div>
+        <div id="cheques-empty-state" style="display:none;text-align:center;padding:40px 20px;font-weight:600;color:var(--admin-subtext);font-size:1.05rem;">لا توجد شيكات</div>
+        <div style="overflow-x:auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>العميل</th>
+                <th>رقم الشيك</th>
+                <th>البنك</th>
+                <th>المبلغ</th>
+                <th>تاريخ الاستحقاق</th>
+                <th>الأيام</th>
+                <th>الحالة</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="cheques-table-body">
               <!-- Rendered dynamically -->
             </tbody>
           </table>
@@ -2593,7 +2631,7 @@
         </div>
         <div class="form-row">
           <label for="rcpt-method">طريقة الدفع <span style="color:var(--admin-danger)">*</span></label>
-          <select id="rcpt-method">
+          <select id="rcpt-method" onchange="toggleChequeFields()">
             <option value="cash">نقداً</option>
             <option value="cheque">شيك</option>
             <option value="bank_transfer">تحويل بنكي</option>
@@ -2605,9 +2643,17 @@
           <label for="rcpt-reference">رقم المرجع</label>
           <input type="text" id="rcpt-reference" placeholder="رقم الفاتورة / رقم التحويل" />
         </div>
-        <div class="form-row">
+        <div class="form-row cheque-field" id="rcpt-cheque-row" style="display:none">
           <label for="rcpt-cheque">رقم الشيك</label>
-          <input type="text" id="rcpt-cheque" placeholder="رقم الشيك (إن وجد)" />
+          <input type="text" id="rcpt-cheque" placeholder="رقم الشيك" />
+        </div>
+        <div class="form-row cheque-field" style="display:none">
+          <label for="rcpt-bank">البنك</label>
+          <input type="text" id="rcpt-bank" placeholder="اسم البنك" />
+        </div>
+        <div class="form-row cheque-field" style="display:none">
+          <label for="rcpt-due">تاريخ الاستحقاق</label>
+          <input type="date" id="rcpt-due" />
         </div>
         <div class="form-row">
           <label for="rcpt-notes">ملاحظات</label>

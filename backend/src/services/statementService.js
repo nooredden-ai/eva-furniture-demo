@@ -1,3 +1,8 @@
+function chequeNoteLabel(chequeStatus) {
+  const labels = { collected: 'شيك تم تحصيله', pending: 'شيك قيد التحصيل', returned: 'شيك مرتجع', cancelled: 'شيك ملغي' };
+  return labels[chequeStatus] || 'شيك قيد التحصيل';
+}
+
 function getCustomerKey(name, phone) {
   const n = (name || '').trim().replace(/\s+/g, ' ').toLowerCase();
   const p = (phone || '').trim().replace(/[^0-9]/g, '');
@@ -23,7 +28,10 @@ function getCustomerStatus(c) {
 
 function isReceiptCreditable(r) {
   if (r.status === 'cancelled') return false;
-  if (r.paymentMethod === 'cheque' && r.chequeStatus && r.chequeStatus !== 'collected') return false;
+  if (r.paymentMethod === 'cheque') {
+    if (!r.chequeStatus) return true;
+    if (r.chequeStatus !== 'collected') return false;
+  }
   return true;
 }
 
@@ -108,7 +116,7 @@ function getCustomerStatement(name, phone, invoices, receipts) {
       chequeStatus: r.chequeStatus,
       status: r.status,
       isInvoice: false,
-      note: !creditable && r.paymentMethod === 'cheque' ? `شيك ${r.chequeStatus || 'قيد التحصيل'}` : ''
+      note: !creditable && r.paymentMethod === 'cheque' ? chequeNoteLabel(r.chequeStatus) : ''
     });
   });
 
@@ -194,5 +202,6 @@ module.exports = {
   getCustomerStatement,
   getCustomerSummary,
   getAgingReport,
-  isReceiptCreditable
+  isReceiptCreditable,
+  chequeNoteLabel
 };

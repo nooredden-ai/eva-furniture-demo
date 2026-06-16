@@ -500,7 +500,7 @@ function showAccountingHome() {
 // ===== Accounting Tab Switching =====
 function switchAccTab(tab) {
   _activeAccTab = tab;
-  ['summary', 'receipts', 'expenses', 'customers'].forEach(t => {
+  ['summary', 'receipts', 'expenses', 'cheques', 'customers'].forEach(t => {
     const btn = $a('acc-tab-' + t);
     if (btn) {
       if (t === tab) { btn.className = 'topbar-btn btn-primary'; btn.style.fontSize = '0.85rem'; }
@@ -511,6 +511,7 @@ function switchAccTab(tab) {
   });
   if (tab === 'receipts') loadReceiptsSection();
   if (tab === 'expenses') loadExpensesSection();
+  if (tab === 'cheques') loadChequesSection();
   if (tab === 'customers') loadCustomersSection();
 }
 
@@ -1938,7 +1939,10 @@ function computeInvoicePaymentStatus(invoice, allReceipts) {
   const linked = (allReceipts || []).filter(r =>
     r.linkedTo === 'invoice' && String(r.linkedId) === String(invoice.id) && r.status !== 'cancelled'
   );
-  const totalPaid = linked.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const totalPaid = linked.reduce((s, r) => {
+    if (!isReceiptCreditable(r)) return s;
+    return s + (Number(r.amount) || 0);
+  }, 0);
   const total = Number(invoice.total) || 0;
   const remaining = Math.max(0, total - totalPaid);
   let paymentStatus, badgeClass, badgeText;
@@ -1950,6 +1954,15 @@ function computeInvoicePaymentStatus(invoice, allReceipts) {
     paymentStatus = 'partial'; badgeClass = 'badge-info'; badgeText = 'مدفوعة جزئياً';
   }
   return { paymentStatus, totalPaid, remaining, badgeClass, badgeText, receiptCount: linked.length };
+}
+
+function isReceiptCreditable(r) {
+  if (r.status === 'cancelled') return false;
+  if (r.paymentMethod === 'cheque') {
+    if (!r.chequeStatus) return true;
+    if (r.chequeStatus !== 'collected') return false;
+  }
+  return true;
 }
 
 function getPaymentMethodText(method) {
@@ -2005,7 +2018,7 @@ function renderReceiptsSection() {
       '<td style="padding:8px 12px">' + (r.date ? new Date(r.date).toLocaleDateString('ar-EG') : '—') + '</td>' +
       '<td style="padding:8px 12px">' + escapeHtml(r.customerName || '—') + '</td>' +
       '<td style="padding:8px 12px;font-weight:600">' + Number(r.amount).toFixed(2) + ' ₪</td>' +
-      '<td style="padding:8px 12px">' + getPaymentMethodText(r.paymentMethod) + '</td>' +
+      '<td style="padding:8px 12px">' + getPaymentMethodText(r.paymentMethod) + (r.paymentMethod === 'cheque' && r.chequeStatus ? '<br><span class="status-badge badge-warning" style="font-size:0.65rem;margin-top:2px">' + chequeStatusLabel(r.chequeStatus) + '</span>' : '') + '</td>' +
       '<td style="padding:8px 12px;font-size:0.8rem">' + getLinkedToText(r.linkedTo, r.linkedId) + '</td>' +
       '<td style="padding:8px 12px">' + statusBadge + '</td>' +
       '<td style="padding:8px 12px">' + actions + '</td></tr>';
@@ -2024,7 +2037,10 @@ function openAddReceipt() {
   $a('rcpt-method').value = 'cash';
   $a('rcpt-reference').value = '';
   $a('rcpt-cheque').value = '';
+  $a('rcpt-bank').value = '';
+  $a('rcpt-due').value = '';
   $a('rcpt-notes').value = '';
+  toggleChequeFields();
   openModal('receipt-modal');
 }
 
@@ -2042,8 +2058,25 @@ function recordInvoicePayment(invoiceId) {
   $a('rcpt-method').value = 'cash';
   $a('rcpt-reference').value = '';
   $a('rcpt-cheque').value = '';
+  $a('rcpt-bank').value = '';
+  $a('rcpt-due').value = '';
   $a('rcpt-notes').value = '';
+  toggleChequeFields();
   openModal('receipt-modal');
+}
+
+// ===== Cheque Fields Toggle =====
+function toggleChequeFields() {
+  const method = $a('rcpt-method')?.value;
+  const fields = document.querySelectorAll('.cheque-field');
+  const row = $a('rcpt-cheque-row');
+  if (method === 'cheque') {
+    fields.forEach(f => f.style.display = '');
+    if (row) row.style.display = '';
+  } else {
+    fields.forEach(f => f.style.display = 'none');
+    if (row) row.style.display = 'none';
+  }
 }
 
 async function saveReceipt() {
@@ -2052,6 +2085,8 @@ async function saveReceipt() {
   const customerName = $a('rcpt-customer')?.value?.trim() || '';
   const reference = $a('rcpt-reference')?.value?.trim() || '';
   const cheque = $a('rcpt-cheque')?.value?.trim() || '';
+  const bankName = $a('rcpt-bank')?.value?.trim() || '';
+  const dueDate = $a('rcpt-due')?.value || '';
   const notes = $a('rcpt-notes')?.value?.trim() || '';
   if (!amount || amount <= 0) { showAdminToast('المبلغ مطلوب ويجب أن يكون أكبر من صفر', 'error'); return; }
   const payload = {
@@ -2061,6 +2096,8 @@ async function saveReceipt() {
     customerPhone: '',
     referenceNumber: reference,
     chequeNumber: cheque,
+    bankName,
+    dueDate,
     notes,
     linkedTo: _activeReceiptInvoiceId ? 'invoice' : 'none',
     linkedId: _activeReceiptInvoiceId || null
@@ -2139,7 +2176,7 @@ function printReceiptById(id) {
   win.document.write('<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>سند قبض - ' + r.voucherNumber + '</title><style>@page{size:A4;margin:12mm}*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;color:#222;font-size:13px;line-height:1.5;direction:rtl;background:#fff}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}.store{text-align:right}.store-logo{max-height:70px;margin-bottom:10px;display:block}.store-name{font-size:22px;font-weight:700;color:#111}.store-info{font-size:12px;color:#555;line-height:1.6}.meta{text-align:left}.doc-title{font-size:20px;font-weight:700;color:#111;margin-bottom:6px}.doc-info{font-size:12px;color:#555}.divider{height:1px;background:#ddd;margin:16px 0}.section-title{font-size:14px;font-weight:700;color:#333;margin-bottom:8px}.info-table{width:100%;border-collapse:collapse;font-size:13px}.info-table td{padding:3px 0;border:none}.info-table td.lbl{width:120px;font-weight:600;color:#555}.signature-area{margin-top:50px;display:flex;justify-content:space-between}.signature-box{text-align:center}.signature-line{width:200px;height:1px;background:#333;margin:40px auto 6px}.signature-label{font-size:12px;color:#555}.footer{text-align:center;margin-top:40px;padding-top:16px;border-top:1px solid #ddd}.footer-text{font-size:16px;font-weight:600;color:#333;margin-bottom:4px}.footer-sub{font-size:11px;color:#888}</style></head><body>');
   win.document.write('<div class="header"><div class="store"><div class="store-name">' + escapeHtml(window.storeName || '') + '</div></div><div class="meta"><div class="doc-title">سند قبض</div><div class="doc-info">الرقم: ' + (r.voucherNumber || r.id) + '</div><div class="doc-info">التاريخ: ' + new Date(r.date || r.createdAt).toLocaleString('ar-EG') + '</div></div></div>');
   win.document.write('<div class="divider"></div><div class="section-title">بيانات العميل</div><table class="info-table"><tr><td class="lbl">الاسم</td><td>' + escapeHtml(r.customerName || '—') + '</td></tr><tr><td class="lbl">الهاتف</td><td>' + escapeHtml(r.customerPhone || '—') + '</td></tr></table>');
-  win.document.write('<div class="divider"></div><div class="section-title">تفاصيل السند</div><table class="info-table"><tr><td class="lbl">المبلغ</td><td style="font-weight:700;font-size:15px">' + Number(r.amount).toFixed(2) + ' ₪</td></tr><tr><td class="lbl">طريقة الدفع</td><td>' + (methodLabels[r.paymentMethod] || r.paymentMethod) + '</td></tr>' + (r.referenceNumber ? '<tr><td class="lbl">رقم المرجع</td><td>' + escapeHtml(r.referenceNumber) + '</td></tr>' : '') + (r.linkedTo === 'invoice' && r.linkedId ? '<tr><td class="lbl">مرتبط بفاتورة</td><td>' + escapeHtml(r.linkedId) + '</td></tr>' : '') + (r.chequeNumber ? '<tr><td class="lbl">رقم الشيك</td><td>' + escapeHtml(r.chequeNumber) + '</td></tr>' : '') + (r.notes ? '<tr><td class="lbl">ملاحظات</td><td>' + escapeHtml(r.notes) + '</td></tr>' : '') + '</table>');
+  win.document.write('<div class="divider"></div><div class="section-title">تفاصيل السند</div><table class="info-table"><tr><td class="lbl">المبلغ</td><td style="font-weight:700;font-size:15px">' + Number(r.amount).toFixed(2) + ' ₪</td></tr><tr><td class="lbl">طريقة الدفع</td><td>' + (methodLabels[r.paymentMethod] || r.paymentMethod) + '</td></tr>' + (r.referenceNumber ? '<tr><td class="lbl">رقم المرجع</td><td>' + escapeHtml(r.referenceNumber) + '</td></tr>' : '') + (r.linkedTo === 'invoice' && r.linkedId ? '<tr><td class="lbl">مرتبط بفاتورة</td><td>' + escapeHtml(r.linkedId) + '</td></tr>' : '') + (r.chequeNumber ? '<tr><td class="lbl">رقم الشيك</td><td>' + escapeHtml(r.chequeNumber) + '</td></tr>' : '') + (r.bankName ? '<tr><td class="lbl">البنك</td><td>' + escapeHtml(r.bankName) + '</td></tr>' : '') + (r.dueDate ? '<tr><td class="lbl">تاريخ الاستحقاق</td><td>' + new Date(r.dueDate).toLocaleDateString('ar-EG') + '</td></tr>' : '') + (r.paymentMethod === 'cheque' && r.chequeStatus ? '<tr><td class="lbl">حالة الشيك</td><td>' + chequeStatusLabel(r.chequeStatus) + '</td></tr>' : '') + (r.notes ? '<tr><td class="lbl">ملاحظات</td><td>' + escapeHtml(r.notes) + '</td></tr>' : '') + '</table>');
   win.document.write('<div class="signature-area"><div class="signature-box"><div class="signature-line"></div><div class="signature-label">التوقيع</div></div><div class="signature-box"><div class="signature-line"></div><div class="signature-label">ختم الشركة</div></div></div>');
   win.document.write('<div class="footer"><div class="footer-text">شكراً لتعاملكم معنا</div><div class="footer-sub">Generated by EVA System</div></div>');
   win.document.write('</body></html>');
@@ -2229,7 +2266,131 @@ async function downloadStatementPdf() {
   }
 }
 
-// ===== Expense Vouchers =====
+// ===== Cheque Status Label =====
+function chequeStatusLabel(status) {
+  const labels = { collected: 'تم التحصيل', pending: 'قيد التحصيل', returned: 'مرتجع', cancelled: 'ملغي' };
+  return labels[status] || status;
+}
+
+// ===== Cheques Section =====
+let _chequesCache = [];
+
+async function loadChequesSection() {
+  try {
+    const tbody = $a('cheques-table-body');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;">جاري التحميل...</td></tr>';
+    const res = await fetchWithStability('/api/accounting/cheques');
+    _chequesCache = (res && res.success && Array.isArray(res.data)) ? res.data : (Array.isArray(res) ? res : []);
+    renderChequesSection();
+  } catch (err) {
+    console.error('Error loading cheques:', err);
+    showAdminToast('فشل تحميل الشيكات', 'error');
+    _chequesCache = [];
+    renderChequesSection();
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderChequesSection() {
+  const tbody = $a('cheques-table-body');
+  const emptyState = $a('cheques-empty-state');
+  if (!tbody) return;
+  if (!_chequesCache.length) {
+    tbody.innerHTML = '';
+    if (emptyState) emptyState.style.display = 'block';
+    return;
+  }
+  if (emptyState) emptyState.style.display = 'none';
+  tbody.innerHTML = _chequesCache.map(c => {
+    const statusClass = {
+      pending: 'badge-warning',
+      collected: 'badge-success',
+      returned: 'badge-danger',
+      cancelled: 'badge-secondary'
+    };
+    const dueColor = c.daysLabel && c.daysLabel.indexOf('متأخر') === 0 ? 'color:#991b1b' : (c.daysLabel === 'اليوم' ? 'color:#d97706' : '');
+    const isPending = c.chequeStatus === 'pending';
+    const actions = isPending
+      ? '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center">' +
+        '<button class="topbar-btn btn-outline btn-sm" onclick="collectCheque(\'' + c.id + '\')" style="padding:2px 6px;font-size:0.7rem;color:var(--admin-success)" title="تحصيل"><i data-lucide="check-circle" style="width:10px;height:10px"></i></button>' +
+        '<button class="topbar-btn btn-outline btn-sm" onclick="returnCheque(\'' + c.id + '\')" style="padding:2px 6px;font-size:0.7rem;color:var(--admin-danger)" title="إرجاع"><i data-lucide="undo-2" style="width:10px;height:10px"></i></button>' +
+        '<button class="topbar-btn btn-outline btn-sm" onclick="cancelCheque(\'' + c.id + '\')" style="padding:2px 6px;font-size:0.7rem;color:var(--admin-text2)" title="إلغاء"><i data-lucide="x-circle" style="width:10px;height:10px"></i></button>' +
+        '</div>'
+      : '<span style="color:var(--admin-text2);font-size:0.8rem">—</span>';
+    return '<tr>' +
+      '<td style="padding:8px 12px">' + escapeHtml(c.customerName || '—') + '</td>' +
+      '<td style="padding:8px 12px;font-family:monospace;font-size:0.8rem">' + escapeHtml(c.chequeNumber) + '</td>' +
+      '<td style="padding:8px 12px">' + escapeHtml(c.bankName) + '</td>' +
+      '<td style="padding:8px 12px;font-weight:600">' + Number(c.amount).toFixed(2) + ' ₪</td>' +
+      '<td style="padding:8px 12px;font-size:0.8rem">' + (c.dueDate ? new Date(c.dueDate).toLocaleDateString('ar-EG') : '—') + '</td>' +
+      '<td style="padding:8px 12px;font-size:0.8rem;' + dueColor + '">' + c.daysLabel + '</td>' +
+      '<td style="padding:8px 12px"><span class="status-badge ' + statusClass[c.chequeStatus] + '" style="font-size:0.75rem">' + chequeStatusLabel(c.chequeStatus) + '</span></td>' +
+      '<td style="padding:8px 12px">' + actions + '</td></tr>';
+  }).join('');
+}
+
+function filterChequesTable() {
+  const filter = $a('cheque-status-filter')?.value || 'all';
+  const search = ($a('cheque-search-input')?.value || '').trim().toLowerCase();
+  const filtered = _chequesCache.filter(c => {
+    if (filter !== 'all' && c.chequeStatus !== filter) return false;
+    if (search) {
+      const name = (c.customerName || '').toLowerCase();
+      const num = (c.chequeNumber || '').toLowerCase();
+      if (name.indexOf(search) === -1 && num.indexOf(search) === -1) return false;
+    }
+    return true;
+  });
+  const tbody = $a('cheques-table-body');
+  const emptyState = $a('cheques-empty-state');
+  if (!tbody) return;
+  if (!filtered.length) {
+    tbody.innerHTML = '';
+    if (emptyState) emptyState.style.display = 'block';
+    return;
+  }
+  if (emptyState) emptyState.style.display = 'none';
+  const orig = _chequesCache;
+  _chequesCache = filtered;
+  renderChequesSection();
+  _chequesCache = orig;
+}
+
+// ===== Cheque Actions =====
+async function updateChequeStatus(id, status, actionLabel) {
+  const origTxt = event?.target?.innerHTML;
+  if (event?.target) { event.target.disabled = true; event.target.innerHTML = '...'; }
+  try {
+    const res = await fetchWithStability('/api/receipts/' + encodeURIComponent(id) + '/cheque-status', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chequeStatus: status })
+    });
+    if (!res.success) { showAdminToast(res.message || 'فشل تحديث حالة الشيك', 'error'); return; }
+    showAdminToast('تم ' + actionLabel + ' الشيك بنجاح');
+    await loadChequesSection();
+  } catch (err) {
+    console.error('Update cheque status error:', err);
+    showAdminToast('فشل تحديث حالة الشيك', 'error');
+  } finally {
+    if (event?.target) { event.target.disabled = false; event.target.innerHTML = origTxt; }
+  }
+}
+
+async function collectCheque(id) {
+  if (!confirm('تأكيد تحصيل الشيك؟')) return;
+  await updateChequeStatus(id, 'collected', 'تحصيل');
+}
+
+async function returnCheque(id) {
+  if (!confirm('تأكيد إرجاع الشيك؟')) return;
+  await updateChequeStatus(id, 'returned', 'إرجاع');
+}
+
+async function cancelCheque(id) {
+  if (!confirm('تأكيد إلغاء الشيك؟')) return;
+  await updateChequeStatus(id, 'cancelled', 'إلغاء');
+}
 async function loadExpensesSection() {
   try {
     const tbody = $a('expenses-table-body');
@@ -6520,7 +6681,7 @@ async function viewInvoice(id) {
               h += '</tbody></table>';
             }
             if (ps.remaining > 0) {
-              h += '<button class="topbar-btn btn-primary" onclick="recordInvoicePayment(' + inv.id + ')" style="font-size:0.85rem"><i data-lucide="arrow-down-circle" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>تسديد دفعة</button>';
+              h += '<button class="topbar-btn btn-primary" onclick="recordInvoicePayment(\'' + inv.id + '\')" style="font-size:0.85rem"><i data-lucide="arrow-down-circle" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i>تسديد دفعة</button>';
             }
             return h;
           })()}
