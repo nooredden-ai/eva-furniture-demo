@@ -37,7 +37,6 @@
     <div class="nav-item active" data-page="dashboard" id="nav-dashboard">
        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-bar-chart-2" viewBox="0 0 24 24"><path d="M3 3v18h18v-2H5V3H3z"/></svg></span> لوحة المعلومات
     </div>
-
     <div class="nav-section">المبيعات</div>
     <div class="nav-item" data-page="orders" id="nav-orders">
        <span class="nav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="icon-file-text" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/></svg></span> الطلبات
@@ -487,20 +486,15 @@
               <input type="number" id="direct-sale-price" min="0.01" step="0.01" required placeholder="أدخل سعر البيع الفعلي" style="width:100%;padding:10px;border:1px solid var(--admin-border);border-radius:4px;font-family:inherit;"/>
             </div>
 
-            <!-- Customer Details -->
+            <!-- Customer Selection -->
             <div>
-              <label style="display:block;font-weight:600;margin-bottom:8px;color:var(--admin-text)">اسم الزبون (اختياري):</label>
-              <input type="text" id="direct-sale-customer-name" placeholder="أدخل اسم الزبون" style="width:100%;padding:10px;border:1px solid var(--admin-border);border-radius:4px;font-family:inherit;"/>
-            </div>
-
-            <div>
-              <label style="display:block;font-weight:600;margin-bottom:8px;color:var(--admin-text)">رقم الهاتف (اختياري):</label>
-              <input type="text" id="direct-sale-customer-phone" placeholder="أدخل رقم الهاتف" style="width:100%;padding:10px;border:1px solid var(--admin-border);border-radius:4px;font-family:inherit;"/>
-            </div>
-
-            <div>
-              <label style="display:block;font-weight:600;margin-bottom:8px;color:var(--admin-text)">العنوان (اختياري):</label>
-              <input type="text" id="direct-sale-customer-address" placeholder="أدخل العنوان" style="width:100%;padding:10px;border:1px solid var(--admin-border);border-radius:4px;font-family:inherit;"/>
+              <label style="display:block;font-weight:600;margin-bottom:8px;color:var(--admin-text)">العميل:</label>
+              <div style="display:flex;gap:8px;align-items:stretch;">
+                <select id="direct-sale-customer" style="flex:1;padding:10px;border:1px solid var(--admin-border);border-radius:4px;font-family:inherit;background:white;color:black;">
+                  <option value="">-- بيع نقدي مباشر --</option>
+                </select>
+                <button type="button" id="ds-add-customer-btn" onclick="openDsQuickCustomer()" style="padding:10px 14px;background:var(--admin-primary);color:white;border:none;border-radius:4px;cursor:pointer;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:6px;">+ عميل جديد</button>
+              </div>
             </div>
 
             <!-- Note Input -->
@@ -2297,27 +2291,6 @@
         </div>
                   </div>
                 </div>
-                <!-- Card 7: EVA Flow -->
-                <div class="theme-gallery-card" data-theme-id="eva-flow">
-                  <div class="theme-card-preview">
-                    <div class="preview-palette">
-                      <span style="background:#E85D4A"></span>
-                      <span style="background:#FF8A71"></span>
-                      <span style="background:#F5F5F7"></span>
-                    </div>
-                  </div>
-                  <div class="theme-card-info">
-                    <div class="theme-card-header">
-                      <h5>EVA Flow - متجر عصري سريع</h5>
-                      <span class="theme-active-badge"><i data-lucide="check" style="width:12px;height:12px;margin-left:4px"></i>مفعّل حالياً</span>
-                    </div>
-                    <p>تصميم عصري سريع للتجارة الإلكترونية، مستوحى من Temu وTrendyol مع بطاقات منتجات مدمجة وتجربة تصفح سلسة.</p>
-                    <div class="theme-card-actions">
-                      <button type="button" class="btn-theme-action btn-preview-theme" onclick="previewTheme('eva-flow')">معاينة</button>
-                      <button type="button" class="btn-theme-action btn-select-theme" onclick="selectThemeCard('eva-flow')">تفعيل الثيم</button>
-                    </div>
-                  </div>
-                </div>
               </div>
 </div>
 
@@ -2529,6 +2502,32 @@
     </div>
     <div class="modal-footer" style="padding: 16px 24px; border-top: 1px solid var(--admin-border); display: flex; justify-content: flex-end;">
       <button class="topbar-btn btn-outline" onclick="closeModal('direct-sale-details-modal')">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Direct Sale Quick Customer Modal ===== -->
+<div class="modal-overlay" id="ds-quick-customer-modal" style="z-index: 9999;">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header">
+      <h3 style="margin:0;display:flex;align-items:center;gap:6px;"><i data-lucide="user-plus" style="width:18px;height:18px;"></i> إضافة عميل جديد</h3>
+      <button class="modal-close" onclick="closeModal('ds-quick-customer-modal')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:20px;">
+      <div style="display:grid;gap:12px;">
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:6px;color:var(--admin-text)">الاسم *</label>
+          <input type="text" id="ds-qc-name" placeholder="اسم العميل" style="width:100%;padding:10px;border:1px solid var(--admin-border);border-radius:4px;font-family:inherit;background:var(--admin-bg);color:var(--admin-text);"/>
+        </div>
+        <div>
+          <label style="display:block;font-weight:600;margin-bottom:6px;color:var(--admin-text)">رقم الهاتف</label>
+          <input type="text" id="ds-qc-phone" placeholder="رقم الهاتف" style="width:100%;padding:10px;border:1px solid var(--admin-border);border-radius:4px;font-family:inherit;background:var(--admin-bg);color:var(--admin-text);"/>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="padding:14px 20px;border-top:1px solid var(--admin-border);display:flex;gap:8px;justify-content:flex-end;">
+      <button class="topbar-btn btn-primary" onclick="saveDsQuickCustomer(this)"><i data-lucide="save" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> حفظ</button>
+      <button class="topbar-btn btn-outline" onclick="closeModal('ds-quick-customer-modal')">إلغاء</button>
     </div>
   </div>
 </div>

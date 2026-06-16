@@ -5767,12 +5767,81 @@ async function initDirectSale() {
       }
     };
 
+    await initDirectSaleCustomerSelector();
     await loadDirectSalesLog();
     renderDirectSaleLog();
     if (window.lucide) lucide.createIcons();
   } catch (error) {
     console.error('Error initializing direct sale:', error);
     showAdminToast('فشل تحميل المنتجات', 'error');
+  }
+}
+
+async function initDirectSaleCustomerSelector() {
+  const select = $a('direct-sale-customer');
+  if (!select) return;
+  const currentVal = select.value;
+  select.innerHTML = '<option value="">-- بيع نقدي مباشر --</option>';
+  try {
+    const res = await fetchWithStability('/api/accounting/customer-summaries?includeNotes=true');
+    if (res.success && Array.isArray(res.data)) {
+      res.data.forEach(c => {
+        if (!c.name) return;
+        const key = getCustomerKeyStr(c.name, c.phone || '');
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = c.name + (c.phone ? ' (' + c.phone + ')' : '');
+        select.appendChild(opt);
+      });
+    }
+  } catch (err) {
+    console.error('Error loading customer selector:', err);
+  }
+  if (currentVal) select.value = currentVal;
+}
+
+function openDsQuickCustomer() {
+  $a('ds-qc-name').value = '';
+  $a('ds-qc-phone').value = '';
+  openModal('ds-quick-customer-modal');
+  if (window.lucide) lucide.createIcons();
+}
+
+async function saveDsQuickCustomer(btn) {
+  const name = $a('ds-qc-name').value.trim();
+  const phone = $a('ds-qc-phone').value.trim();
+  if (!name) { showAdminToast('الرجاء إدخال اسم العميل', 'error'); return; }
+  const key = getCustomerKeyStr(name, phone);
+  const originalHtml = btn.innerHTML;
+  btn.classList.add('btn-loading');
+  btn.innerHTML = 'جاري الحفظ...';
+  try {
+    const res = await fetchWithStability('/api/accounting/customer-notes', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        key, name, phone,
+        notes: [],
+        tags: ['عميل مباشر'],
+        lastContactAt: null,
+        lastContactNote: null
+      })
+    });
+    if (res.success) {
+      closeModal('ds-quick-customer-modal');
+      showAdminToast('تم إضافة العميل بنجاح', 'success');
+      await initDirectSaleCustomerSelector();
+      const select = $a('direct-sale-customer');
+      if (select) select.value = key;
+    } else {
+      showAdminToast(res.message || 'فشل حفظ العميل', 'error');
+    }
+  } catch (err) {
+    console.error('Error saving quick customer:', err);
+    showAdminToast('فشل حفظ العميل', 'error');
+  } finally {
+    btn.innerHTML = originalHtml;
+    btn.classList.remove('btn-loading');
   }
 }
 
@@ -5783,9 +5852,13 @@ async function registerDirectSale() {
       const quantity = parseInt($a('direct-sale-quantity').value, 10);
       const salePrice = Number($a('direct-sale-price').value);
       const note = ($a('direct-sale-note').value || '').trim();
-      const customerName = ($a('direct-sale-customer-name').value || '').trim();
-      const customerPhone = ($a('direct-sale-customer-phone').value || '').trim();
-      const customerAddress = ($a('direct-sale-customer-address').value || '').trim();
+      const customerSelector = $a('direct-sale-customer');
+      let customerName = '', customerPhone = '', customerAddress = '';
+      if (customerSelector && customerSelector.value) {
+        const parts = customerSelector.value.split('|');
+        customerName = parts[0] || '';
+        customerPhone = parts[1] || '';
+      }
 
       if (!productId || !quantity || quantity <= 0 || !salePrice || salePrice <= 0) {
         showAdminToast('يرجى ملء جميع الحقول المطلوبة بشكل صحيح', 'error');
@@ -5814,9 +5887,7 @@ async function registerDirectSale() {
         $a('direct-sale-quantity').value = '';
         $a('direct-sale-price').value = '';
         $a('direct-sale-note').value = '';
-        $a('direct-sale-customer-name').value = '';
-        $a('direct-sale-customer-phone').value = '';
-        $a('direct-sale-customer-address').value = '';
+        $a('direct-sale-customer').value = '';
         $a('direct-sale-stock-info').style.display = 'none';
 
         directSaleLog.unshift({

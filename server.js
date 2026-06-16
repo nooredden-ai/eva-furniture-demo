@@ -1462,6 +1462,34 @@ app.post('/api/direct-sale', (req, res) => {
       console.error('[INVOICE GENERATION ERROR FOR DIRECT SALE]', err);
     }
 
+    // CRM Sync: create/update customer note when customer is identified
+    if (saleRecord.customerName) {
+      try {
+        const allNotes = readJSON('customer-notes.json') || [];
+        const key = statementService.getCustomerKey(saleRecord.customerName, saleRecord.customerPhone);
+        const idx = allNotes.findIndex(n => n.key === key);
+        const entry = {
+          key,
+          name: saleRecord.customerName,
+          phone: saleRecord.customerPhone || '',
+          notes: idx >= 0 ? allNotes[idx].notes : [],
+          tags: idx >= 0 ? allNotes[idx].tags : ['عميل مباشر'],
+          lastContactAt: idx >= 0 ? allNotes[idx].lastContactAt : null,
+          lastContactNote: idx >= 0 ? allNotes[idx].lastContactNote : null,
+          createdAt: idx >= 0 ? allNotes[idx].createdAt : new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        if (idx >= 0) {
+          allNotes[idx] = entry;
+        } else {
+          allNotes.push(entry);
+        }
+        writeJSON('customer-notes.json', allNotes);
+      } catch (crmErr) {
+        console.error('[CRM SYNC ERROR FOR DIRECT SALE]', crmErr);
+      }
+    }
+
     console.log(`[DIRECT-SALE] ${product.name}: ${qty} unit(s) sold at ${price}. Stock: ${currentStock} → ${product.stock}`);
 
     res.json({
