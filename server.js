@@ -3270,6 +3270,10 @@ app.get('/print-order', (req, res) => {
   return res.sendFile(path.join(__dirname, 'print-order.html'));
 });
 
+app.get('/product-label', (req, res) => {
+  return res.sendFile(path.join(__dirname, 'product-label.html'));
+});
+
 /* =========================
    STATIC FILES (After all API routes)
 ========================= */
