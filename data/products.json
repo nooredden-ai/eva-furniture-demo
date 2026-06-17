@@ -1,240 +1,558 @@
 [
   {
     "id": 1,
-    "name": "طقم ضيافة مودرن",
-    "category": "living-room",
-    "emoji": "",
-    "bg": "linear-gradient(135deg,#F8E8D5,#F5E1C4)",
-    "price": 2850,
-    "oldPrice": 3200,
-    "rating": 4.9,
-    "reviews": 88,
-    "badge": "حصري",
+    "name": "برتر كلاسيك",
+    "category": "burgers",
+    "emoji": "🍔",
+    "bg": "linear-gradient(135deg,#FBE9E7,#FFCCBC)",
+    "price": 28,
+    "oldPrice": null,
+    "rating": 4.8,
+    "reviews": 156,
+    "badge": "الأكثر مبيعاً",
     "active": true,
-    "stock": 12,
-    "description": "طقم ضيافة فاخر بتصميم مفتوح وخطوط أنيقة، يمزج بين الراحة والفخامة في غرفة المعيشة.",
+    "stock": 49,
+    "description": "برغر لحم بقري طازج مع خس طازج وطماطم وجبنة شيدر وصلصة خاصة مع خبز طري محمص.",
     "images": [],
-    "image": "/images/products/BR1.jpg"
+    "image": "/images/products/food-burger-classic.jpg",
+    "options": [
+      {
+        "name": "نوع الشريحة",
+        "nameEn": "Patty Type",
+        "type": "select",
+        "required": true,
+        "choices": [
+          {
+            "label": "لحم بقري",
+            "labelEn": "Beef",
+            "priceDelta": 0
+          },
+          {
+            "label": "دجاج",
+            "labelEn": "Chicken",
+            "priceDelta": 0
+          }
+        ]
+      },
+      {
+        "name": "إضافات",
+        "nameEn": "Extras",
+        "type": "checkbox",
+        "required": false,
+        "choices": [
+          {
+            "label": "جبنة إضافية",
+            "labelEn": "Extra Cheese",
+            "priceDelta": 3
+          },
+          {
+            "label": "بطاطا",
+            "labelEn": "Fries",
+            "priceDelta": 5
+          },
+          {
+            "label": "مشروب",
+            "labelEn": "Drink",
+            "priceDelta": 4
+          }
+        ]
+      }
+    ]
   },
   {
     "id": 2,
-    "name": "طاولة قهوة هندسية",
-    "category": "tables",
-    "emoji": "",
-    "bg": "linear-gradient(135deg,#E8D5C3,#D4B59A)",
-    "price": 1290,
-    "oldPrice": 1490,
-    "rating": 4.8,
-    "reviews": 64,
-    "badge": "تخفيض",
+    "name": "برتر بالجبنة",
+    "category": "burgers",
+    "emoji": "🧀",
+    "bg": "linear-gradient(135deg,#FFF3E0,#FFE0B2)",
+    "price": 32,
+    "oldPrice": null,
+    "rating": 4.9,
+    "reviews": 134,
+    "badge": "جديد",
     "active": true,
-    "stock": 20,
-    "description": "طاولة قهوة بتصميم هندسي مميز، سطح خشبي طبيعي وقاعدة معدنية جريئة.",
+    "stock": 41,
+    "description": "برغر لحم ممتاز مع طبقة مزدوجة من جبنة الشيدر وجبنة الموزاريلا مع صلصة الباربكيو.",
     "images": [],
-    "image": "/images/products/BR2.jpg"
+    "image": "/images/products/food-burger-cheese.jpg",
+    "options": [
+      {
+        "name": "نوع الشريحة",
+        "nameEn": "Patty Type",
+        "type": "select",
+        "required": true,
+        "choices": [
+          {
+            "label": "مفردة",
+            "labelEn": "Single",
+            "priceDelta": 0
+          },
+          {
+            "label": "مزدوجة",
+            "labelEn": "Double",
+            "priceDelta": 8
+          }
+        ]
+      },
+      {
+        "name": "إضافات",
+        "nameEn": "Extras",
+        "type": "checkbox",
+        "required": false,
+        "choices": [
+          {
+            "label": "جبنة إضافية",
+            "labelEn": "Extra Cheese",
+            "priceDelta": 2
+          },
+          {
+            "label": "بطاطا",
+            "labelEn": "Fries",
+            "priceDelta": 5
+          },
+          {
+            "label": "مشروب",
+            "labelEn": "Drink",
+            "priceDelta": 4
+          }
+        ]
+      }
+    ]
   },
   {
     "id": 3,
-    "name": "طاولة وسط فاخرة",
-    "category": "special",
-    "emoji": "",
-    "bg": "linear-gradient(135deg,#ECD7C1,#D4B89D)",
-    "price": 1620,
-    "oldPrice": 1890,
+    "name": "برتر دجاج",
+    "category": "burgers",
+    "emoji": "🍗",
+    "bg": "linear-gradient(135deg,#FCE4EC,#F8BBD0)",
+    "price": 26,
+    "oldPrice": null,
     "rating": 4.7,
-    "reviews": 53,
-    "badge": "حصري",
+    "reviews": 112,
+    "badge": null,
     "active": true,
-    "stock": 8,
-    "description": "طاولة وسط فاخرة بلمسات ذهبية وخامة خشبية مميزة تناسب الصالون الراقي.",
+    "stock": 50,
+    "description": "برغر دجاج مقرمش مع خس طازج وصلصة الثومية اللذيذة وخبز طري.",
     "images": [],
-    "image": "/images/products/BR3.jpg"
+    "image": "/images/products/food-burger-chicken.jpg"
   },
   {
     "id": 4,
-    "name": "غرفة نوم مودرن",
-    "category": "bedroom",
-    "emoji": "",
-    "bg": "linear-gradient(135deg,#F5E7E0,#E8D4C7)",
-    "price": 4890,
+    "name": "برتر دبل",
+    "category": "burgers",
+    "emoji": "🍔",
+    "bg": "linear-gradient(135deg,#EFEBE9,#D7CCC8)",
+    "price": 39,
     "oldPrice": null,
     "rating": 4.9,
-    "reviews": 102,
-    "badge": "جديد",
+    "reviews": 98,
+    "badge": "الأكثر مبيعاً",
     "active": true,
-    "stock": 6,
-    "description": "مجموعة نوم متكاملة بتصميم عصري ودرج تخزين سخي، تضفي دفءً وأناقة لغرفة النوم.",
+    "stock": 35,
+    "description": "برغر لحم دبل مع شريحتين من اللحم المشوي وجبنة مزدوجة مع خضار طازجة.",
     "images": [],
-    "image": "/images/products/M1.jpg"
+    "image": "/images/products/food-burger-double.jpg"
   },
   {
     "id": 5,
-    "name": "خزانة ملابس أنيقة",
-    "category": "bedroom",
-    "emoji": "",
-    "bg": "linear-gradient(135deg,#EEE0D6,#D7BCAB)",
-    "price": 2950,
-    "oldPrice": 3350,
-    "rating": 4.8,
-    "reviews": 72,
+    "name": "برتر نباتي",
+    "category": "burgers",
+    "emoji": "🥬",
+    "bg": "linear-gradient(135deg,#E8F5E9,#C8E6C9)",
+    "price": 24,
+    "oldPrice": null,
+    "rating": 4.6,
+    "reviews": 74,
     "badge": null,
     "active": true,
-    "stock": 14,
-    "description": "خزانة ملابس فاخرة بسعة تخزين واسعة وأبواب انزلاقية بلمسة خشبية عميقة.",
+    "stock": 30,
+    "description": "برغر نباتي بالخضار المشوية والحمص مع صلصة طحينية وخس طازج.",
     "images": [],
-    "image": "/images/products/M2.jpg"
+    "image": "/images/products/food-burger-veggie.jpg"
   },
   {
     "id": 6,
-    "name": "سرير فاخر",
-    "category": "bedroom",
-    "emoji": "",
-    "bg": "linear-gradient(135deg,#F5F0EA,#D8C7B4)",
-    "price": 3590,
+    "name": "بيتزا مارغريتا",
+    "category": "pizzas",
+    "emoji": "🍕",
+    "bg": "linear-gradient(135deg,#FFF8E1,#FFECB3)",
+    "price": 35,
     "oldPrice": null,
-    "rating": 4.9,
-    "reviews": 84,
-    "badge": null,
+    "rating": 4.8,
+    "reviews": 145,
+    "badge": "الأكثر مبيعاً",
     "active": true,
-    "stock": 10,
-    "description": "سرير ملكي بغطاء قماش ناعم وهيكل متين، يوفر راحة فائقة ومظهرًا راقيًا.",
+    "stock": 40,
+    "description": "بيتزا كلاسيكية بصلصة الطماطم الطازجة وجبنة الموزاريلا والريحان الأخضر.",
     "images": [],
-    "image": "/images/products/M3.jpg"
+    "image": "/images/products/food-pizza-margherita.jpg",
+    "options": [
+      {
+        "name": "الحجم",
+        "nameEn": "Size",
+        "type": "select",
+        "required": true,
+        "choices": [
+          {
+            "label": "صغير",
+            "labelEn": "Small",
+            "priceDelta": 0
+          },
+          {
+            "label": "وسط",
+            "labelEn": "Medium",
+            "priceDelta": 5
+          },
+          {
+            "label": "كبير",
+            "labelEn": "Large",
+            "priceDelta": 10
+          }
+        ]
+      },
+      {
+        "name": "إضافات",
+        "nameEn": "Extras",
+        "type": "checkbox",
+        "required": false,
+        "choices": [
+          {
+            "label": "جبنة إضافية",
+            "labelEn": "Extra Cheese",
+            "priceDelta": 3
+          },
+          {
+            "label": "مشروم",
+            "labelEn": "Mushrooms",
+            "priceDelta": 2
+          },
+          {
+            "label": "زيتون",
+            "labelEn": "Olives",
+            "priceDelta": 2
+          }
+        ]
+      }
+    ]
   },
   {
     "id": 7,
-    "name": "كرسي استرخاء فاخر",
-    "category": "chairs",
-    "emoji": "",
-    "bg": "linear-gradient(135deg,#F5E7D6,#E2C6A8)",
-    "price": 1120,
-    "oldPrice": 1290,
-    "rating": 4.7,
-    "reviews": 48,
-    "badge": "جديد",
+    "name": "بيتزا بيبروني",
+    "category": "pizzas",
+    "emoji": "🍕",
+    "bg": "linear-gradient(135deg,#FFEBEE,#FFCDD2)",
+    "price": 38,
+    "oldPrice": null,
+    "rating": 4.9,
+    "reviews": 167,
+    "badge": null,
     "active": true,
-    "stock": 18,
-    "description": "كرسي مريح مع دعامة ظهر مبطنة وتنجيد فاخر مثالي لزاوية القراءة.",
+    "stock": 38,
+    "description": "بيتزا بطبقة سخية من البيبروني الحار وجبنة الموزاريلا وصلصة الطماطم.",
     "images": [],
-    "image": "/images/products/PRO1.jpg"
+    "image": "/images/products/food-pizza-pepperoni.jpg",
+    "options": [
+      {
+        "name": "الحجم",
+        "nameEn": "Size",
+        "type": "select",
+        "required": true,
+        "choices": [
+          {
+            "label": "صغير",
+            "labelEn": "Small",
+            "priceDelta": 0
+          },
+          {
+            "label": "وسط",
+            "labelEn": "Medium",
+            "priceDelta": 5
+          },
+          {
+            "label": "كبير",
+            "labelEn": "Large",
+            "priceDelta": 10
+          }
+        ]
+      },
+      {
+        "name": "إضافات",
+        "nameEn": "Extras",
+        "type": "checkbox",
+        "required": false,
+        "choices": [
+          {
+            "label": "جبنة إضافية",
+            "labelEn": "Extra Cheese",
+            "priceDelta": 3
+          },
+          {
+            "label": "بيبروني إضافي",
+            "labelEn": "Extra Pepperoni",
+            "priceDelta": 4
+          },
+          {
+            "label": "فلفل حار",
+            "labelEn": "Chili Peppers",
+            "priceDelta": 2
+          }
+        ]
+      }
+    ]
   },
   {
     "id": 8,
-    "name": "كرسي تصميم عصري",
-    "category": "chairs",
-    "emoji": "",
-    "bg": "linear-gradient(135deg,#EFE2D8,#D1B49A)",
-    "price": 940,
+    "name": "بيتزا خضار",
+    "category": "pizzas",
+    "emoji": "🥗",
+    "bg": "linear-gradient(135deg,#E8F5E9,#A5D6A7)",
+    "price": 32,
     "oldPrice": null,
     "rating": 4.6,
-    "reviews": 60,
-    "badge": null,
-    "active": true,
-    "stock": 22,
-    "description": "كرسي عصري بخطوط ناعمة وقاعدة معدنية، يناسب غرفة المعيشة أو المكتب المنزلي.",
-    "images": [],
-    "image": "/images/products/PRO2.jpg"
-  },
-  {
-    "id": 9,
-    "name": "جلوسة خارجية راقية",
-    "category": "outdoor",
-    "emoji": "",
-    "bg": "linear-gradient(135deg,#E9E5DE,#C6B8A8)",
-    "price": 4200,
-    "oldPrice": 4700,
-    "rating": 4.8,
-    "reviews": 39,
-    "badge": null,
-    "active": true,
-    "stock": 7,
-    "description": "مجموعة جلوس خارجية أنيقة مقاومة للعوامل الجوية، توفر مساحة فخمة للاسترخاء في الهواء الطلق.",
-    "images": [],
-    "image": "/images/products/N4.jpg"
-  },
-  {
-    "id": 10,
-    "name": "طاولة حديقة أنيقة",
-    "category": "outdoor",
-    "emoji": "",
-    "bg": "linear-gradient(135deg,#F7EEE5,#D6BFAE)",
-    "price": 1680,
-    "oldPrice": 1890,
-    "rating": 4.7,
-    "reviews": 27,
-    "badge": "جديد",
-    "active": true,
-    "stock": 12,
-    "description": "طاولة حديقة فاخرة بتصميم متين وسطح مقاوم للماء، مثالية لتنسيق مساحة خارجية مميزة.",
-    "images": [],
-    "image": "/images/products/N2.jpg"
-  },
-  {
-    "id": 11,
-    "name": "كنبة زاوية فاخرة",
-    "category": "sofas",
-    "emoji": "",
-    "bg": "linear-gradient(135deg,#EFE6E0,#D7C1B1)",
-    "price": 5250,
-    "oldPrice": null,
-    "rating": 4.9,
-    "reviews": 111,
-    "badge": "حصري",
-    "active": true,
-    "stock": 9,
-    "description": "كنبة زاوية فاخرة بتنجيد مخملي وخطوط هندسية تضيف دفءً وجاذبية للصالون.",
-    "images": [],
-    "image": "/images/products/PRO4.jpg"
-  },
-  {
-    "id": 12,
-    "name": "كنبة جلدية ساحرة",
-    "category": "sofas",
-    "emoji": "",
-    "bg": "linear-gradient(135deg,#EDE2D8,#C8A78F)",
-    "price": 4780,
-    "oldPrice": 5390,
-    "rating": 4.8,
     "reviews": 68,
     "badge": null,
     "active": true,
-    "stock": 11,
-    "description": "كنبة جلدية فاخرة بخامة ناعمة وداعمة تبرز أسلوبًا راقياً ومريحاً.",
+    "stock": 25,
+    "description": "بيتزا غنية بالخضار الطازجة: فلفل ألوان، زيتون، مشروم، بصل وطماطم مع جبنة موزاريلا.",
     "images": [],
-    "image": "/images/products/PRO5.jpg"
+    "image": "/images/products/food-pizza-vegetable.jpg"
+  },
+  {
+    "id": 9,
+    "name": "بيتزا مكس",
+    "category": "pizzas",
+    "emoji": "🍕",
+    "bg": "linear-gradient(135deg,#F3E5F5,#CE93D8)",
+    "price": 42,
+    "oldPrice": null,
+    "rating": 4.8,
+    "reviews": 93,
+    "badge": "جديد",
+    "active": true,
+    "stock": 30,
+    "description": "بيتزا مشكلة باللحم المفروم والبيبروني والفلفل والزيتون وجبنة موزاريلا طازجة.",
+    "images": [],
+    "image": "/images/products/food-pizza-mixed.jpg"
+  },
+  {
+    "id": 10,
+    "name": "ساندويش شاورما",
+    "category": "sandwiches",
+    "emoji": "🥙",
+    "bg": "linear-gradient(135deg,#EFEBE9,#BCAAA4)",
+    "price": 22,
+    "oldPrice": null,
+    "rating": 4.8,
+    "reviews": 189,
+    "badge": "الأكثر مبيعاً",
+    "active": true,
+    "stock": 60,
+    "description": "ساندويش شاورما دجاج أو لحم مع خضار مخلل وثومية، ملفوف بخبز عربي طري.",
+    "images": [],
+    "image": "/images/products/food-sandwich-shawarma.jpg"
+  },
+  {
+    "id": 11,
+    "name": "ساندويش دجاج مشوي",
+    "category": "sandwiches",
+    "emoji": "🥪",
+    "bg": "linear-gradient(135deg,#FFFDE7,#FFF9C4)",
+    "price": 25,
+    "oldPrice": null,
+    "rating": 4.7,
+    "reviews": 87,
+    "badge": null,
+    "active": true,
+    "stock": 45,
+    "description": "ساندويش دجاج مشوي بالخضار الطازجة مع صلصة الرانش في خبز الساندويش الطري.",
+    "images": [],
+    "image": "/images/products/food-sandwich-grilled.jpg"
+  },
+  {
+    "id": 12,
+    "name": "ساندويش سب",
+    "category": "sandwiches",
+    "emoji": "🥖",
+    "bg": "linear-gradient(135deg,#E0F7FA,#B2EBF2)",
+    "price": 28,
+    "oldPrice": null,
+    "rating": 4.6,
+    "reviews": 56,
+    "badge": null,
+    "active": true,
+    "stock": 35,
+    "description": "ساندويش سب طويل باللحم البقري المشوي مع الخس والطماطم والمايونيز والكاتشب.",
+    "images": [],
+    "image": "/images/products/food-sandwich-sub.jpg"
   },
   {
     "id": 13,
-    "name": "طاولة طعام خشبية فاخرة",
-    "category": "tables",
-    "emoji": "",
-    "bg": "linear-gradient(135deg,#F0E4D8,#D1B9A8)",
-    "price": 4290,
-    "oldPrice": 4890,
+    "name": "بطاطا مقلية",
+    "category": "appetizers",
+    "emoji": "🍟",
+    "bg": "linear-gradient(135deg,#FFF8E1,#FFE082)",
+    "price": 10,
+    "oldPrice": null,
     "rating": 4.7,
-    "reviews": 58,
+    "reviews": 234,
     "badge": null,
     "active": true,
-    "stock": 5,
-    "description": "طاولة طعام خشبية كبيرة بتصميم فخم وتفاصيل دقيقة، تناسب العائلة والمناسبات.",
+    "stock": 100,
+    "description": "بطاطا مقلية طازجة ومقرمشة ذهبية اللون، تقدم مع كاتشب ومايونيز.",
     "images": [],
-    "image": "/images/products/BR4.jpg"
+    "image": "/images/products/food-app-fries.jpg"
   },
   {
     "id": 14,
-    "name": "ديكور منزلي أنيق",
-    "category": "decor",
-    "emoji": "",
-    "bg": "linear-gradient(135deg,#F4E8DE,#D9C7B4)",
-    "price": 620,
-    "oldPrice": 820,
+    "name": "حلقات بصل",
+    "category": "appetizers",
+    "emoji": "🧅",
+    "bg": "linear-gradient(135deg,#FBE9E7,#FFAB91)",
+    "price": 14,
+    "oldPrice": null,
+    "rating": 4.5,
+    "reviews": 67,
+    "badge": null,
+    "active": true,
+    "stock": 60,
+    "description": "حلقات بصل مقلية مقرمشة مغطاة بطبقة خفيفة من الخبز، تقدم مع صلصة الرانش.",
+    "images": [],
+    "image": "/images/products/food-app-onionrings.jpg"
+  },
+  {
+    "id": 15,
+    "name": "ناجتس دجاج",
+    "category": "appetizers",
+    "emoji": "🐔",
+    "bg": "linear-gradient(135deg,#FFF3E0,#FFCC80)",
+    "price": 16,
+    "oldPrice": null,
     "rating": 4.6,
-    "reviews": 33,
-    "badge": "تخفيض",
+    "reviews": 112,
+    "badge": "جديد",
+    "active": true,
+    "stock": 70,
+    "description": "قطع ناجتس دجاج مقرمشة ومحمرة، تقدم مع صلصة الباربكيو أو الكاتشب.",
+    "images": [],
+    "image": "/images/products/food-app-nuggets.jpg"
+  },
+  {
+    "id": 16,
+    "name": "أصابع موزاريلا",
+    "category": "appetizers",
+    "emoji": "🧀",
+    "bg": "linear-gradient(135deg,#FFFDE7,#FFF176)",
+    "price": 18,
+    "oldPrice": null,
+    "rating": 4.7,
+    "reviews": 89,
+    "badge": null,
+    "active": true,
+    "stock": 50,
+    "description": "أصابع جبنة موزاريلا مقلية ومقرمشة مع صلصة المارينارا الحارة.",
+    "images": [],
+    "image": "/images/products/food-app-mozzarella.jpg"
+  },
+  {
+    "id": 17,
+    "name": "كولا",
+    "category": "drinks",
+    "emoji": "🥤",
+    "bg": "linear-gradient(135deg,#E3F2FD,#90CAF9)",
+    "price": 6,
+    "oldPrice": null,
+    "rating": 4.5,
+    "reviews": 312,
+    "badge": null,
+    "active": true,
+    "stock": 200,
+    "description": "مشروب كولا غازي بارد ومنعش، متوفر بحجم كبير.",
+    "images": [],
+    "image": "/images/products/food-drink-cola.jpg"
+  },
+  {
+    "id": 18,
+    "name": "عصير طازج",
+    "category": "drinks",
+    "emoji": "🧃",
+    "bg": "linear-gradient(135deg,#E8F5E9,#81C784)",
+    "price": 10,
+    "oldPrice": null,
+    "rating": 4.6,
+    "reviews": 98,
+    "badge": "جديد",
+    "active": true,
+    "stock": 80,
+    "description": "عصير طبيعي طازج من الفواكه الموسمية، متوفر برتقال ومانجو ورمان.",
+    "images": [],
+    "image": "/images/products/food-drink-juice.jpg"
+  },
+  {
+    "id": 19,
+    "name": "ماء معدني",
+    "category": "drinks",
+    "emoji": "💧",
+    "bg": "linear-gradient(135deg,#E0F7FA,#80DEEA)",
+    "price": 3,
+    "oldPrice": null,
+    "rating": 4.4,
+    "reviews": 420,
+    "badge": null,
+    "active": true,
+    "stock": 300,
+    "description": "مياه معدنية طبيعية بحجم 500 مل، منعشة ومثالية مع وجبتك.",
+    "images": [],
+    "image": "/images/products/food-drink-water.jpg"
+  },
+  {
+    "id": 20,
+    "name": "كيكة شوكولاتة",
+    "category": "desserts",
+    "emoji": "🍫",
+    "bg": "linear-gradient(135deg,#FCE4EC,#F48FB1)",
+    "price": 18,
+    "oldPrice": null,
+    "rating": 4.9,
+    "reviews": 156,
+    "badge": "الأكثر مبيعاً",
     "active": true,
     "stock": 25,
-    "description": "قطع ديكور أنيقة من المعدن والخشب، تضيف لمسة فنية ودفءً راقيًا لكل زاوية في المنزل.",
+    "description": "كيكة شوكولاتة فاخرة بطبقة غنية من الشوكولاتة البلجيكية مع كريمة الفانيليا.",
     "images": [],
-    "image": "/images/products/BR5.jpg"
+    "image": "/images/products/food-dessert-cake.jpg"
+  },
+  {
+    "id": 21,
+    "name": "آيس كريم فانيليا",
+    "category": "desserts",
+    "emoji": "🍦",
+    "bg": "linear-gradient(135deg,#F3E5F5,#CE93D8)",
+    "price": 12,
+    "oldPrice": null,
+    "rating": 4.7,
+    "reviews": 134,
+    "badge": null,
+    "active": true,
+    "stock": 60,
+    "description": "آيس كريم فانيليا ناعم وكريمي مع صوص شوكولاتة وحبات المكسرات الطازجة.",
+    "images": [],
+    "image": "/images/products/food-dessert-icecream.jpg"
+  },
+  {
+    "id": 22,
+    "name": "وجبة العائلة",
+    "category": "offers",
+    "emoji": "🎉",
+    "bg": "linear-gradient(135deg,#E53935,#FFCC02)",
+    "price": 89,
+    "oldPrice": 120,
+    "rating": 4.9,
+    "reviews": 203,
+    "badge": "عرض",
+    "active": true,
+    "stock": 20,
+    "description": "وجبة العائلة المميزة: 2 برغر كلاسيك، 1 بيتزا عائلية، بطاطا كبيرة، 4 مشروبات، وأصابع موزاريلا.",
+    "images": [],
+    "image": "/images/products/food-combo-family.jpg"
   }
 ]

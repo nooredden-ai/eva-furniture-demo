@@ -2,46 +2,41 @@
   {
     "id": "all",
     "name": "الكل",
-    "image": "/images/products/BR1.jpg"
+    "image": "/images/products/food-burger-classic.jpg"
   },
   {
-    "id": "living-room",
-    "name": "غرف جلوس",
-    "image": "/images/products/BR3.jpg"
+    "id": "burgers",
+    "name": "برجر",
+    "image": "/images/products/food-burger-cheese.jpg"
   },
   {
-    "id": "bedroom",
-    "name": "غرف نوم",
-    "image": "/images/products/M1.jpg"
+    "id": "pizzas",
+    "name": "بيتزا",
+    "image": "/images/products/food-pizza-margherita.jpg"
   },
   {
-    "id": "sofas",
-    "name": "كنب وأرائك",
-    "image": "/images/products/PRO4.jpg"
+    "id": "sandwiches",
+    "name": "ساندويش",
+    "image": "/images/products/food-sandwich-shawarma.jpg"
   },
   {
-    "id": "tables",
-    "name": "طاولات",
-    "image": "/images/products/BR2.jpg"
+    "id": "appetizers",
+    "name": "مقبلات",
+    "image": "/images/products/food-app-fries.jpg"
   },
   {
-    "id": "chairs",
-    "name": "كراسي ومقاعد",
-    "image": "/images/products/PRO2.jpg"
+    "id": "drinks",
+    "name": "مشروبات",
+    "image": "/images/products/food-drink-cola.jpg"
   },
   {
-    "id": "outdoor",
-    "name": "أثاث خارجي",
-    "image": "/images/products/N4.jpg"
+    "id": "desserts",
+    "name": "حلويات",
+    "image": "/images/products/food-dessert-cake.jpg"
   },
   {
-    "id": "decor",
-    "name": "ديكور منزلي",
-    "image": "/images/products/BR5.jpg"
-  },
-  {
-    "id": "special",
-    "name": "عروض خاصة",
-    "image": "/images/products/PRO1.jpg"
+    "id": "offers",
+    "name": "عروض",
+    "image": "/images/products/food-combo-family.jpg"
   }
 ]

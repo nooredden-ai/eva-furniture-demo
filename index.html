@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>EVA Furniture | إيفا للمفروشات</title>
-  <meta name="description" content="إيفا للمفروشات - متجر أثاث فاخر يوفر تشكيلات غرف جلوس، غرف نوم، كنب، طاولات وديكور منزلي بأناقة عصرية." />
+  <meta name="description" content="FoodExpress - مطعم وجبات سريعة يقدم البرغر والبيتزا والساندويشات والمشروبات والحلويات مع خدمة توصيل سريعة." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
@@ -51,7 +51,7 @@
     <div class="cart-empty">
       <i data-lucide="shopping-bag" class="cart-empty-icon"></i>
       <h3>سلتك فارغة</h3>
-      <p>اكتشفي تشكيلتنا الفاخرة وابدئي التسوق</p>
+      <p>اكتشف قائمتنا الشهية وابدأ الطلب</p>
       <button class="cart-empty-cta" onclick="closeCart()">تسوقي الآن</button>
     </div>
   </div>
@@ -133,10 +133,18 @@
     </div>
   </div>
 
+  <!-- OPTIONS MODAL -->
+  <div id="options-modal-overlay" onclick="if (event.target === this) closeOptionsModal()">
+    <div class="options-modal">
+      <button class="options-close" onclick="closeOptionsModal()" aria-label="إغلاق">✕</button>
+      <div id="options-modal-body"></div>
+    </div>
+  </div>
+
   <!-- CATEGORIES -->
   <section class="section" id="categories" style="padding-bottom:16px">
     <h2 class="section-title"><i data-lucide="folder-heart" style="width:24px;height:24px;color:var(--primary);vertical-align:middle;margin-left:8px"></i>تسوق حسب الفئة</h2>
-    <p class="section-subtitle">اختر أفضل قطع الأثاث والديكور لمنزلك</p>
+    <p class="section-subtitle">اختر وجبتك المفضلة من قائمتنا الشهية</p>
     <div class="categories-scroll" id="categories-container"></div>
     <div class="subcategories-scroll" id="subcategories-container"></div>
     <div class="category-breadcrumb" id="category-breadcrumb"></div>
@@ -152,7 +160,7 @@
   <!-- PRODUCTS -->
   <section class="section" id="products">
     <h2 class="section-title"><i data-lucide="sparkles" style="width:24px;height:24px;color:var(--primary);vertical-align:middle;margin-left:8px"></i>منتجاتنا المميزة</h2>
-    <p class="section-subtitle">تصفّح قطع الأثاث والديكور المختارة بعناية لتجربة منزلية متكاملة</p>
+    <p class="section-subtitle">تصفّح قائمة طعامنا المختارة بعناية لتجربة مذاق لا تُنسى</p>
     <div class="filters-bar" id="filters-bar">
       <div class="filters-row" id="filters-row">
         <div class="filter-group filter-group-price">
@@ -443,7 +451,7 @@
 </main>
 
 <!-- ===== WhatsApp Float ===== -->
-<a href="https://wa.me/9660000000" class="whatsapp-float" title="تواصل معنا على واتساب" aria-label="واتساب">
+<a href="https://wa.me/971506011007" class="whatsapp-float" title="تواصل معنا على واتساب" aria-label="واتساب">
   <i data-lucide="message-circle" style="width:28px;height:28px"></i>
 </a>
 

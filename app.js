@@ -855,7 +855,128 @@ function closeCart() {
   $('cart-sidebar').classList.remove('open');
 }
 
+/* Options modal state */
+let _optionsModalProduct = null;
+
+function showOptionsModal(product) {
+  _optionsModalProduct = product;
+  const overlay = document.getElementById('options-modal-overlay');
+  const body = document.getElementById('options-modal-body');
+  if (!overlay || !body) return;
+  
+  const currency = getCurrency();
+  const optionsHtml = product.options.map((opt, oi) => {
+    const choicesHtml = opt.choices.map((ch, ci) => {
+      if (opt.type === 'select') {
+        const checked = ci === 0 ? 'checked' : '';
+        return `<label class="option-choice"><input type="radio" name="opt_${oi}" value="${ci}" ${checked} onchange="updateOptionsTotal()"><span class="option-label">${ch.label}${ch.priceDelta ? ` (+${ch.priceDelta} ${currency})` : ''}</span></label>`;
+      }
+      return `<label class="option-choice"><input type="checkbox" name="opt_${oi}" value="${ci}" onchange="updateOptionsTotal()"><span class="option-label">${ch.label}${ch.priceDelta ? ` (+${ch.priceDelta} ${currency})` : ''}</span></label>`;
+    }).join('');
+    return `<div class="options-group"><h4>${opt.required ? '* ' : ''}${opt.name}</h4>${choicesHtml}</div>`;
+  }).join('');
+  
+  body.innerHTML = `
+    <div class="options-product-info">
+      ${product.image ? `<img src="${product.image}" alt="${product.name}">` : `<span style="font-size:2rem">${product.emoji || ''}</span>`}
+      <div><div class="options-product-name">${product.name}</div><div class="options-base-price">${product.price} ${currency}</div></div>
+    </div>
+    ${optionsHtml}
+    <div class="options-summary" id="options-modal-summary"></div>
+    <div class="options-total" id="options-modal-total"><span class="options-total-label">الإجمالي:</span> ${product.price} ${currency}</div>
+    <div class="options-actions">
+      <button class="options-cancel" onclick="closeOptionsModal()">إلغاء</button>
+      <button class="options-confirm" onclick="confirmOptionsModal()">أضف للسلة</button>
+    </div>
+  `;
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  updateOptionsTotal();
+}
+
+function closeOptionsModal() {
+  const overlay = document.getElementById('options-modal-overlay');
+  if (overlay) overlay.classList.remove('open');
+  document.body.style.overflow = '';
+  _optionsModalProduct = null;
+}
+
+function updateOptionsTotal() {
+  if (!_optionsModalProduct) return;
+  const overlay = document.getElementById('options-modal-overlay');
+  if (!overlay) return;
+  const totalEl = document.getElementById('options-modal-total');
+  const summaryEl = document.getElementById('options-modal-summary');
+  if (!totalEl) return;
+  
+  let extra = 0;
+  const summaryParts = [];
+  const currency = getCurrency();
+  _optionsModalProduct.options.forEach((opt, oi) => {
+    const inputs = overlay.querySelectorAll(`input[name="opt_${oi}"]:checked`);
+    const labels = [];
+    inputs.forEach(inp => {
+      const ci = parseInt(inp.value);
+      const ch = opt.choices[ci];
+      if (ch) {
+        labels.push(ch.label);
+        if (ch.priceDelta) extra += ch.priceDelta;
+      }
+    });
+    if (labels.length) {
+      summaryParts.push(`${opt.name}: ${labels.join('، ')}`);
+    }
+  });
+  
+  totalEl.innerHTML = `<span class="options-total-label">الإجمالي:</span> ${_optionsModalProduct.price + extra} ${currency}`;
+  
+  if (summaryEl) {
+    if (summaryParts.length) {
+      summaryEl.innerHTML = `<div class="options-summary-label">الاختيارات:</div>${summaryParts.map(s => `<div class="options-summary-item">${s}</div>`).join('')}`;
+      summaryEl.style.display = '';
+    } else {
+      summaryEl.style.display = 'none';
+    }
+  }
+}
+
+function confirmOptionsModal() {
+  if (!_optionsModalProduct) return;
+  const overlay = document.getElementById('options-modal-overlay');
+  if (!overlay) return;
+  
+  const selectedOptions = [];
+  let extra = 0;
+  _optionsModalProduct.options.forEach((opt, oi) => {
+    const inputs = overlay.querySelectorAll(`input[name="opt_${oi}"]:checked`);
+    const selected = [];
+    inputs.forEach(inp => {
+      const ci = parseInt(inp.value);
+      const ch = opt.choices[ci];
+      if (ch) {
+        selected.push({ label: ch.label, labelEn: ch.labelEn, priceDelta: ch.priceDelta || 0 });
+        if (ch.priceDelta) extra += ch.priceDelta;
+      }
+    });
+    if (selected.length) {
+      selectedOptions.push({ name: opt.name, nameEn: opt.nameEn, type: opt.type, selected });
+    }
+  });
+  
+  const unitPrice = _optionsModalProduct.price + extra;
+  processAddToCart(_optionsModalProduct.id, selectedOptions, unitPrice);
+  closeOptionsModal();
+}
+
 function addToCart(productId, btnElement) {
+  const product = allProducts.find(p => p.id === productId);
+  if (!product) return;
+  
+  if (product.options && product.options.length) {
+    showOptionsModal(product);
+    return;
+  }
+  
   if (btnElement) {
     const originalHtml = btnElement.innerHTML;
     btnElement.classList.add('btn-loading');
@@ -871,15 +992,25 @@ function addToCart(productId, btnElement) {
   }
 }
 
-function processAddToCart(productId) {
+function processAddToCart(productId, selectedOptions, unitPrice) {
   const product = allProducts.find(p => p.id === productId);
   if (!product) return;
   
-  const existing = cart.find(i => i.id === productId);
-  if (existing) {
-    existing.qty += 1;
+  if (selectedOptions) {
+    const optKey = productId + '|' + JSON.stringify(selectedOptions);
+    const existing = cart.find(i => i._optionKey === optKey);
+    if (existing) {
+      existing.qty += 1;
+    } else {
+      cart.push({ ...product, qty: 1, selectedOptions, _optionKey: optKey, price: unitPrice });
+    }
   } else {
-    cart.push({ ...product, qty: 1 });
+    const existing = cart.find(i => i.id === productId && !i._optionKey);
+    if (existing) {
+      existing.qty += 1;
+    } else {
+      cart.push({ ...product, qty: 1 });
+    }
   }
   
   saveCart();
@@ -887,12 +1018,16 @@ function processAddToCart(productId) {
   openCart();
 }
 
-function updateQty(productId, change, btn) {
-  const item = cart.find(i => i.id === productId);
+function getItemKey(item) {
+  return item._optionKey || String(item.id);
+}
+
+function updateQty(itemKey, change, btn) {
+  const item = cart.find(i => getItemKey(i) === itemKey);
   if (item) {
     item.qty += change;
     if (item.qty <= 0) {
-      removeFromCart(productId, btn);
+      removeFromCart(itemKey, btn);
       return;
     }
     saveCart();
@@ -900,20 +1035,20 @@ function updateQty(productId, change, btn) {
   }
 }
 
-function removeFromCart(productId, btn) {
+function removeFromCart(itemKey, btn) {
   if (btn) {
     const itemEl = btn.closest('.cart-item');
     if (itemEl) {
       itemEl.classList.add('removing');
       setTimeout(() => {
-        cart = cart.filter(i => i.id !== productId);
+        cart = cart.filter(i => getItemKey(i) !== itemKey);
         saveCart();
         renderCart();
       }, 300);
       return;
     }
   }
-  cart = cart.filter(i => i.id !== productId);
+  cart = cart.filter(i => getItemKey(i) !== itemKey);
   saveCart();
   renderCart();
 }
@@ -948,7 +1083,13 @@ function renderCart() {
     return;
   }
   
-  container.innerHTML = cart.map(item => `
+  container.innerHTML = cart.map(item => {
+    const key = getItemKey(item);
+    const safeKey = String(key).replace(/"/g, '&quot;');
+    const optionsLabel = item.selectedOptions ? item.selectedOptions.map(og =>
+      og.selected.map(s => s.label).join(' + ')
+    ).join(' | ') : '';
+    return `
     <div class="cart-item">
       <div class="cart-item-img" style="background: ${item.bg || 'var(--bg)'};display:flex;align-items:center;justify-content:center">
         ${item.image || (item.images && item.images[0]) 
@@ -957,18 +1098,19 @@ function renderCart() {
       </div>
       <div class="cart-item-info">
         <div class="cart-item-name">${item.name}</div>
+        ${optionsLabel ? `<div class="cart-item-options">${optionsLabel}</div>` : ''}
         <div class="cart-item-price">${item.price} ${getCurrency()}</div>
         <div class="cart-item-controls">
           <div class="qty-controls">
-            <button class="qty-btn" onclick="updateQty(${item.id}, 1, this)">+</button>
+            <button class="qty-btn" onclick="updateQty('${safeKey}', 1, this)">+</button>
             <span class="qty-value">${item.qty}</span>
-            <button class="qty-btn" onclick="updateQty(${item.id}, -1, this)">-</button>
+            <button class="qty-btn" onclick="updateQty('${safeKey}', -1, this)">-</button>
           </div>
-          <button class="remove-item" onclick="removeFromCart(${item.id}, this)">حذف</button>
+          <button class="remove-item" onclick="removeFromCart('${safeKey}', this)">حذف</button>
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
   if (window.lucide) lucide.createIcons();
 }
 
