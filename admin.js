@@ -3497,6 +3497,13 @@ function updateOrderFilterCounts(orders) {
   });
 }
 
+function orderItemOptionsSummary(item) {
+  if (!item.selectedOptions || !item.selectedOptions.length) return '';
+  return item.selectedOptions.map(og =>
+    og.selected.map(s => s.label).join(' + ')
+  ).join(' | ');
+}
+
 function renderOrdersTable() {
   Promise.all([API.getOrders(), API.getStoreSettings(), API.getUsers()]).then(([orders, store, users]) => {
     updateOrderFilterCounts(orders);
@@ -3524,7 +3531,7 @@ function renderOrdersTable() {
           <div style="font-weight:600">${o.customer}</div>
           <div style="font-size:0.78rem;color:var(--admin-text2)">${o.phone}</div>
         </td>
-        <td>${o.items.map(i => `${i.emoji || ''} ${i.name} ×${i.qty}`).join('<br>')}</td>
+        <td>${o.items.map(i => `${i.emoji || ''} ${i.name}${i.selectedOptions ? ' (' + orderItemOptionsSummary(i) + ')' : ''} ×${i.qty}`).join('<br>')}</td>
         <td><strong>${o.total.toLocaleString('ar-SA')} ${currency}</strong></td>
         <td>
           <span class="status-badge status-${o.status}">${statusText(o.status)}</span>
@@ -3781,6 +3788,7 @@ async function openOrderDetails(orderId) {
           </div>
           <div style="flex: 1;">
             <div style="font-weight: 700; color: var(--admin-text); font-size: 0.95rem;">${item.name}</div>
+            ${item.selectedOptions ? `<div style="font-size: 0.8rem; color: var(--admin-primary); margin-top: 2px;">${orderItemOptionsSummary(item)}</div>` : ''}
             <div style="font-size: 0.85rem; color: var(--admin-text2); margin-top: 2px;">سعر الوحدة: ${item.price.toLocaleString('ar-SA')} ${currency}</div>
           </div>
           <div style="text-align: left;">

@@ -1166,6 +1166,36 @@ app.post('/api/orders', (req, res) => {
       return res.status(400).json({ success: false, message: 'بيانات الطلب غير مكتملة' });
     }
 
+    const products = readJSON('products.json');
+    for (const item of items) {
+      if (item.selectedOptions) {
+        const product = products.find(p => String(p.id) === String(item.productId));
+        if (!product) {
+          return res.status(400).json({ success: false, message: `المنتج "${item.name}" غير موجود` });
+        }
+        if (!product.options || !product.options.length) {
+          return res.status(400).json({ success: false, message: `المنتج "${item.name}" لا يحتوي على خيارات` });
+        }
+        let expectedPrice = product.price;
+        for (const opt of item.selectedOptions) {
+          const productOpt = product.options.find(o => o.name === opt.name && o.type === opt.type);
+          if (!productOpt) {
+            return res.status(400).json({ success: false, message: `خيار "${opt.name}" غير صحيح للمنتج "${item.name}"` });
+          }
+          for (const sel of opt.selected) {
+            const match = productOpt.choices.find(c => c.label === sel.label && c.labelEn === sel.labelEn);
+            if (!match) {
+              return res.status(400).json({ success: false, message: `الاختيار "${sel.label}" غير صحيح للمنتج "${item.name}"` });
+            }
+            expectedPrice += match.priceDelta;
+          }
+        }
+        if (Number(item.price) !== expectedPrice) {
+          return res.status(400).json({ success: false, message: `سعر المنتج "${item.name}" غير صحيح` });
+        }
+      }
+    }
+
     // Recalculate shipping from settings to prevent client-side manipulation
     const settings = settingsRepository.findFirst();
     const shippingZones = (settings && settings.shippingZones) || [];
