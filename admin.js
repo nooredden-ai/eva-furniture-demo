@@ -2901,7 +2901,7 @@ async function renderProductsTable() {
     <tr>
       <td>
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:40px;height:40px;border-radius:8px;background:${p.bg};display:flex;align-items:center;justify-content:center;font-size:1.3rem;overflow:hidden">
+          <div style="width:56px;height:56px;border-radius:10px;background:${p.bg};display:flex;align-items:center;justify-content:center;font-size:1.5rem;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.06)">
             ${p.image || (p.images && p.images[0]) 
               ? `<img src="${p.image || p.images[0]}" style="width:100%;height:100%;object-fit:cover" />` 
               : (p.emoji && p.emoji.length <= 4 ? p.emoji : `<i data-lucide="package" style="width:20px;height:20px;opacity:0.5"></i>`)}
@@ -2922,11 +2922,11 @@ async function renderProductsTable() {
       <td>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
           ${canEdit ? `
-          <button class="topbar-btn btn-outline btn-sm" onclick="openEditProduct(${p.id})"><i data-lucide="edit" style="width:14px;height:14px;vertical-align:middle;margin-left:2px"></i> تعديل</button>
-          <button class="topbar-btn btn-danger btn-sm" onclick="deleteProduct(${p.id})" style="margin-right:4px"><i data-lucide="trash-2" style="width:14px;height:14px;vertical-align:middle"></i></button>
+          <button class="topbar-btn btn-outline btn-sm btn-action" onclick="openEditProduct(${p.id})"><i data-lucide="edit" style="width:14px;height:14px;vertical-align:middle;margin-left:2px"></i> تعديل</button>
+          <button class="topbar-btn btn-danger btn-sm btn-action" onclick="deleteProduct(${p.id})" style="margin-right:4px"><i data-lucide="trash-2" style="width:14px;height:14px;vertical-align:middle"></i></button>
           ` : ''}
-          <button class="topbar-btn btn-outline btn-sm" onclick="printProductLabel(${p.id})"><i data-lucide="printer" style="width:14px;height:14px;vertical-align:middle;margin-left:2px"></i> طباعة ليبل</button>
-          <button class="topbar-btn btn-outline btn-sm" onclick="downloadProductLabelPdf(this,${p.id})">تحميل PDF</button>
+          <button class="topbar-btn btn-outline btn-sm btn-action" onclick="printProductLabel(${p.id})"><i data-lucide="printer" style="width:14px;height:14px;vertical-align:middle;margin-left:2px"></i> طباعة ليبل</button>
+          <button class="topbar-btn btn-outline btn-sm btn-action" onclick="downloadProductLabelPdf(this,${p.id})"><i data-lucide="file-down" style="width:14px;height:14px;vertical-align:middle;margin-left:2px"></i> تحميل PDF</button>
         </div>
       </td>
     </tr>`;
