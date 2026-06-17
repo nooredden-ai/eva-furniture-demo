@@ -11,7 +11,7 @@
     "reviews": 156,
     "badge": "الأكثر مبيعاً",
     "active": true,
-    "stock": 49,
+    "stock": 48,
     "description": "برغر لحم بقري طازج مع خس طازج وطماطم وجبنة شيدر وصلصة خاصة مع خبز طري محمص.",
     "images": [],
     "image": "/images/products/food-burger-classic.jpg",
@@ -431,7 +431,7 @@
     "reviews": 112,
     "badge": "جديد",
     "active": true,
-    "stock": 70,
+    "stock": 69,
     "description": "قطع ناجتس دجاج مقرمشة ومحمرة، تقدم مع صلصة الباربكيو أو الكاتشب.",
     "images": [],
     "image": "/images/products/food-app-nuggets.jpg"
