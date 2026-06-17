@@ -1196,6 +1196,13 @@ app.post('/api/orders', (req, res) => {
       }
     }
 
+    // Sanitize notes on all items
+    for (const item of items) {
+      if (item.notes) {
+        item.notes = String(item.notes).trim().slice(0, 200);
+      }
+    }
+
     // Recalculate shipping from settings to prevent client-side manipulation
     const settings = settingsRepository.findFirst();
     const shippingZones = (settings && settings.shippingZones) || [];

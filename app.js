@@ -28,6 +28,10 @@ function getEnabledZones() {
   return getShippingZones().filter(z => z.enabled !== false);
 }
 
+function escapeHtml(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
 // DOM Elements
 const $ = id => document.getElementById(id);
 
@@ -883,6 +887,10 @@ function showOptionsModal(product) {
     </div>
     ${optionsHtml}
     <div class="options-summary" id="options-modal-summary"></div>
+    <div class="options-notes-group">
+      <label for="options-product-notes">ملاحظات على المنتج</label>
+      <textarea id="options-product-notes" maxlength="200" placeholder="مثلاً: بدون بصل، حار جداً..." rows="2"></textarea>
+    </div>
     <div class="options-total" id="options-modal-total"><span class="options-total-label">الإجمالي:</span> ${product.price} ${currency}</div>
     <div class="options-actions">
       <button class="options-cancel" onclick="closeOptionsModal()">إلغاء</button>
@@ -964,7 +972,9 @@ function confirmOptionsModal() {
   });
   
   const unitPrice = _optionsModalProduct.price + extra;
-  processAddToCart(_optionsModalProduct.id, selectedOptions, unitPrice);
+  const notesEl = document.getElementById('options-product-notes');
+  const notes = notesEl ? notesEl.value.trim() : '';
+  processAddToCart(_optionsModalProduct.id, selectedOptions, unitPrice, notes || undefined);
   closeOptionsModal();
 }
 
@@ -992,17 +1002,18 @@ function addToCart(productId, btnElement) {
   }
 }
 
-function processAddToCart(productId, selectedOptions, unitPrice) {
+function processAddToCart(productId, selectedOptions, unitPrice, notes) {
   const product = allProducts.find(p => p.id === productId);
   if (!product) return;
   
   if (selectedOptions) {
-    const optKey = productId + '|' + JSON.stringify(selectedOptions);
+    const notesSuffix = notes ? '|n:' + encodeURIComponent(notes) : '';
+    const optKey = productId + '|' + JSON.stringify(selectedOptions) + notesSuffix;
     const existing = cart.find(i => i._optionKey === optKey);
     if (existing) {
       existing.qty += 1;
     } else {
-      cart.push({ ...product, qty: 1, selectedOptions, _optionKey: optKey, price: unitPrice });
+      cart.push({ ...product, qty: 1, selectedOptions, _optionKey: optKey, price: unitPrice, ...(notes ? { notes } : {}) });
     }
   } else {
     const existing = cart.find(i => i.id === productId && !i._optionKey);
@@ -1099,6 +1110,7 @@ function renderCart() {
       <div class="cart-item-info">
         <div class="cart-item-name">${item.name}</div>
         ${optionsLabel ? `<div class="cart-item-options">${optionsLabel}</div>` : ''}
+        ${item.notes ? `<div class="cart-item-notes">ملاحظة: ${escapeHtml(item.notes)}</div>` : ''}
         <div class="cart-item-price">${item.price} ${getCurrency()}</div>
         <div class="cart-item-controls">
           <div class="qty-controls">
@@ -1401,7 +1413,8 @@ function placeOrder() {
       emoji: i.emoji || '',
       qty: i.qty,
       price: i.price,
-      ...(i.selectedOptions ? { selectedOptions: i.selectedOptions } : {})
+      ...(i.selectedOptions ? { selectedOptions: i.selectedOptions } : {}),
+      ...(i.notes ? { notes: i.notes } : {})
     })),
     subtotal,
     shipping,
