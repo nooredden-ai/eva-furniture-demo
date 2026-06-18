@@ -3566,6 +3566,7 @@ function renderOrdersTable() {
               <button class="topbar-btn btn-outline btn-sm" onclick="printOrder('${orderKey}','label')">طباعة ليبل</button>
               <button class="topbar-btn btn-outline btn-sm" onclick="downloadOrderPdf(this,'${orderKey}','label')">تحميل PDF</button>
               <button class="topbar-btn btn-outline btn-sm" onclick="printOrder('${orderKey}','packing')">طباعة Packing</button>
+              <button class="topbar-btn btn-outline btn-sm" onclick="printOrder('${orderKey}','kitchen')">🍳 طباعة تذكرة</button>
             </div>
             <button class="topbar-btn btn-danger btn-sm action-delete_orders" onclick="confirmDeleteOrder('${o.id}')"><i data-lucide="trash-2" style="width:14px;height:14px;vertical-align:middle;margin-left:2px"></i> حذف</button>
           </div>

@@ -78,6 +78,7 @@
             <option value="invoice">فاتورة (A4)</option>
             <option value="label">ملصق شحن (80mm)</option>
             <option value="packing">Packing Slip</option>
+            <option value="kitchen">تذكرة مطبخ</option>
           </select>
         </div>
         <div class="actions">
@@ -226,6 +227,7 @@
               const invoice = await fetchInvoiceForOrder(id);
               node = buildLabel(order, store, invoice);
             } else if (mode === 'packing') node = buildPackingSlip(order, store);
+            else if (mode === 'kitchen') node = buildKitchenTicket(order, store);
             else node = buildInvoice(order, store);
             root.appendChild(node);
           }
@@ -234,6 +236,41 @@
           if (ids.length === 1 && document.getElementById('auto-print')?.checked) {
             setTimeout(()=> window.print(), 400);
           }
+        }
+
+        function buildKitchenTicket(order, store){
+          const doc = document.createElement('article'); doc.className='doc';
+          const time = order.lastUpdated ? new Date(order.lastUpdated).toLocaleTimeString('ar-SA', {hour:'2-digit', minute:'2-digit'}) : '-';
+          const totalQty = (order.items||[]).reduce((s,i) => s + (i.qty || 0), 0);
+          doc.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <img src="${store?.branding?.logo || '/images/branding/logo.png'}" alt="logo" style="height:36px;object-fit:contain" onerror="this.style.display='none'">
+                <div style="font-weight:800;font-size:1.05rem">${store?.name || 'متجرك'}</div>
+              </div>
+            </div>
+            <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+              <div style="font-weight:900;font-size:1.25rem">${order.id}</div>
+              <div style="font-size:0.9rem;color:var(--muted)">${time}</div>
+            </div>
+            <div style="margin-top:4px;font-size:0.85rem;color:#f59e0b">⭐ عادي</div>
+            <hr style="margin:8px 0;border:none;border-top:1px dashed #ddd">
+            ${(order.items||[]).map(item => `
+              <div style="margin-bottom:8px">
+                <div style="font-weight:700;font-size:0.95rem">${item.emoji || ''} ${item.qty} × ${item.name}</div>
+                ${item.selectedOptions ? item.selectedOptions.map(og =>
+                  og.selected.map(s => `<div style="font-size:0.85rem;color:var(--muted);padding-right:14px">• ${s.label}</div>`).join('')
+                ).join('') : ''}
+                ${item.notes ? `<div style="font-size:0.85rem;color:#dc3545;padding-right:14px">⚠️ ${item.notes}</div>` : ''}
+              </div>
+            `).join('')}
+            <hr style="margin:8px 0;border:none;border-top:1px dashed #ddd">
+            <div style="display:flex;justify-content:space-between;font-size:0.9rem">
+              <div><strong>المجموع:</strong> ${totalQty} قطعة</div>
+              <div><strong>العميل:</strong> ${order.customer || '-'}</div>
+            </div>
+          `;
+          return doc;
         }
 
         function onModeChange(){ const m = document.getElementById('print-mode').value; const u = new URL(window.location.href); u.searchParams.set('type', m); window.location.replace(u.toString()); }
