@@ -1402,10 +1402,12 @@ function placeOrder() {
 
   let valid = true;
   if (nameEl && !nameEl.value.trim()) { setFieldError(nameEl, 'الرجاء إدخال الاسم الكامل'); valid = false; }
-  if (cityEl && !cityEl.value.trim()) { setFieldError(cityEl, 'الرجاء إدخال المدينة'); valid = false; }
   if (phoneEl && !phoneEl.value.trim()) { setFieldError(phoneEl, 'الرجاء إدخال رقم الجوال'); valid = false; }
-  if (zoneEl && !zoneEl.value) { setFieldError(zoneEl, 'الرجاء اختيار منطقة التوصيل'); valid = false; }
-  if (addressEl && !addressEl.value.trim()) { setFieldError(addressEl, 'الرجاء إدخال العنوان (الشارع والبناية)'); valid = false; }
+  if (selectedOrderType === 'delivery') {
+    if (cityEl && !cityEl.value.trim()) { setFieldError(cityEl, 'الرجاء إدخال المدينة'); valid = false; }
+    if (zoneEl && !zoneEl.value) { setFieldError(zoneEl, 'الرجاء اختيار منطقة التوصيل'); valid = false; }
+    if (addressEl && !addressEl.value.trim()) { setFieldError(addressEl, 'الرجاء إدخال العنوان (الشارع والبناية)'); valid = false; }
+  }
   if (privacyCheckbox && !privacyCheckbox.checked) { showToast('يجب الموافقة على سياسة الخصوصية والشروط والأحكام'); valid = false; }
   if (cart.length === 0) { showToast('السلة فارغة'); valid = false; }
   if (paymentMethod === 'visa') {
@@ -1435,6 +1437,7 @@ function placeOrder() {
     address: addressEl ? addressEl.value.trim() : '',
     zone: zoneEl.value,
     zoneName: zoneEl.options[zoneEl.selectedIndex]?.textContent || '',
+    orderType: selectedOrderType || 'delivery',
     items: cart.map(i => ({
       productId: i.id,
       name: i.name,

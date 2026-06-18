@@ -1160,10 +1160,18 @@ app.post('/api/orders', (req, res) => {
       return res.status(403).json({ success: false, message: 'المتجر لا يقبل طلبات حالياً (الميزة غير مفعّلة في خطة المتجر)' });
     }
 
-    const { customer, phone, city, address, zone, zoneName, items, subtotal: rawSubtotal, shipping: rawShipping, total: rawTotal, notes, paymentMethod, couponCode, discount } = req.body;
+    const { customer, phone, city, address, zone, zoneName, items, subtotal: rawSubtotal, shipping: rawShipping, total: rawTotal, notes, paymentMethod, couponCode, discount, orderType } = req.body;
 
     if (!customer || !phone || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ success: false, message: 'بيانات الطلب غير مكتملة' });
+    }
+
+    const validatedOrderType = ['delivery', 'pickup', 'dinein'].includes(orderType) ? orderType : 'delivery';
+
+    if (validatedOrderType === 'delivery') {
+      if (!city || !zone || !address) {
+        return res.status(400).json({ success: false, message: 'بيانات التوصيل مطلوبة (المدينة، المنطقة، العنوان)' });
+      }
     }
 
     const products = readJSON('products.json');
@@ -1204,15 +1212,24 @@ app.post('/api/orders', (req, res) => {
     }
 
     // Recalculate shipping from settings to prevent client-side manipulation
-    const settings = settingsRepository.findFirst();
-    const shippingZones = (settings && settings.shippingZones) || [];
     let calculatedShipping = 0;
-    let calculatedZoneName = zoneName || '';
-    if (zone && shippingZones.length) {
-      const matchedZone = shippingZones.find(z => z.id === zone && z.enabled !== false);
-      if (matchedZone) {
-        calculatedShipping = matchedZone.price || 0;
-        calculatedZoneName = matchedZone.name;
+    let calculatedZoneName = '';
+    let storedAddress = '';
+    let storedZone = '';
+    let storedCity = '';
+
+    if (validatedOrderType === 'delivery') {
+      const settings = settingsRepository.findFirst();
+      const shippingZones = (settings && settings.shippingZones) || [];
+      storedAddress = address || '';
+      storedZone = zone || '';
+      storedCity = city || '';
+      if (zone && shippingZones.length) {
+        const matchedZone = shippingZones.find(z => z.id === zone && z.enabled !== false);
+        if (matchedZone) {
+          calculatedShipping = matchedZone.price || 0;
+          calculatedZoneName = matchedZone.name;
+        }
       }
     }
 
@@ -1223,10 +1240,11 @@ app.post('/api/orders', (req, res) => {
     const newOrderPayload = {
       customer,
       phone,
-      address: address || '',
-      city: city || '',
-      zone: zone || '',
+      address: storedAddress,
+      city: storedCity,
+      zone: storedZone,
       zoneName: calculatedZoneName,
+      orderType: validatedOrderType,
       items,
       subtotal: calculatedSubtotal,
       shipping: calculatedShipping,
