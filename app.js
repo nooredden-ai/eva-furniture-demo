@@ -10,6 +10,7 @@ let storeSettings = null;
 let _storeLock = false; // prevent double actions
 let appliedCoupon = null; // track applied coupon
 let discountAmount = 0; // track discount amount
+let selectedOrderType = 'delivery';
 
 const DEFAULT_ZONES = [
   { id: 'zone_westbank', name: 'الضفة الغربية', price: 15, enabled: true, sortOrder: 1 },
@@ -1180,7 +1181,17 @@ function goToCheckout() {
   closeCart();
   renderCheckoutSummary();
   syncPaymentMethodVisibility();
+  setOrderType('delivery');
   showPage('checkout');
+}
+
+function setOrderType(type) {
+  selectedOrderType = type;
+  document.querySelectorAll('.order-type-card').forEach(card => {
+    card.classList.toggle('active', card.dataset.type === type);
+  });
+  const el = document.getElementById('delivery-fields');
+  if (el) el.style.display = (type === 'delivery') ? '' : 'none';
 }
 
 function renderCheckoutSummary() {

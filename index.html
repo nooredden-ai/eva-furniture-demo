@@ -252,6 +252,27 @@
       </div>
 
       <div class="form-section">
+        <h3>نوع الطلب</h3>
+        <div class="order-type-selector">
+          <div class="order-type-card active" data-type="delivery" onclick="setOrderType('delivery')">
+            <div class="type-icon">🚚</div>
+            <div class="type-label">توصيل</div>
+            <div class="type-desc">توصيل إلى العنوان</div>
+          </div>
+          <div class="order-type-card" data-type="pickup" onclick="setOrderType('pickup')">
+            <div class="type-icon">🏃</div>
+            <div class="type-label">استلام من الفرع</div>
+            <div class="type-desc">استلام من موقع الفرع</div>
+          </div>
+          <div class="order-type-card" data-type="dinein" onclick="setOrderType('dinein')">
+            <div class="type-icon">🍽️</div>
+            <div class="type-label">داخل المطعم</div>
+            <div class="type-desc">تناول الطعام في المكان</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
         <h3>معلومات التوصيل</h3>
         <div class="form-grid">
           <div class="form-group" id="group-name">
@@ -259,6 +280,7 @@
             <label for="field-name">الاسم الكامل *</label>
             <div class="error-msg"></div>
           </div>
+          <div id="delivery-fields">
           <div class="form-group" id="group-city">
             <input type="text" id="field-city" placeholder="مثال: رام الله" />
             <label for="field-city">المدينة *</label>
@@ -280,6 +302,7 @@
             <textarea id="field-address" placeholder="مثال: شارع الجامعة، عمارة 12، دور 3"></textarea>
             <label for="field-address">العنوان (الشارع والبناية) *</label>
             <div class="error-msg"></div>
+          </div>
           </div>
           <div class="form-group full-width">
             <textarea id="field-notes" placeholder="أي ملاحظات خاصة بطلبك..."></textarea>

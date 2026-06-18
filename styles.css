@@ -768,6 +768,35 @@ input, select, textarea { font-family: var(--font); }
 .page.active { display: block; opacity: 1; }
 .checkout-page { max-width: 1200px; margin: 0 auto; padding: 40px 24px 80px; }
 
+/* Order Type Selector */
+.order-type-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.order-type-card {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 18px 12px;
+  border: 2px solid rgba(0,0,0,0.08);
+  border-radius: 16px; cursor: pointer;
+  transition: all 0.25s ease; background: #fff; text-align: center;
+  user-select: none;
+}
+.order-type-card:hover {
+  border-color: var(--primary);
+  background: rgba(51,92,125,0.04);
+}
+.order-type-card.active {
+  border-color: var(--primary);
+  background: rgba(51,92,125,0.08);
+  box-shadow: 0 0 0 1px var(--primary);
+  transform: translateY(-1px);
+}
+.order-type-card .type-icon { font-size: 1.75rem; line-height: 1; }
+.order-type-card .type-label { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+.order-type-card .type-desc { font-size: 0.78rem; color: var(--text-light); }
+
 /* Progress Indicator */
 .checkout-progress {
   display: flex; align-items: center; justify-content: center; margin-bottom: 40px;
