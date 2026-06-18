@@ -32,6 +32,12 @@ function escapeHtml(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function getProductState(product) {
+  if (product.active === false) return 'hidden';
+  if (product.temporarilyUnavailable) return 'temporary';
+  return 'available';
+}
+
 // DOM Elements
 const $ = id => document.getElementById(id);
 
@@ -828,12 +834,18 @@ function renderProducts() {
           const badgeClass = badgeType === 'تخفيض' ? 'badge-sale' : (badgeType === 'حصري' ? 'badge-exclusive' : 'badge-new');
           return `<div class="product-badge ${badgeClass}">${p.badge}</div>`;
         })() : ''}
+        ${getProductState(p) === 'temporary' ? '<div class="product-state-badge state-temporary">نفد مؤقتاً</div>' : ''}
       </div>
       <div class="product-info">
         <div class="product-name">${p.name}</div>
         <div class="product-cat">${getCategoryName(p.category)}</div>
         <div class="product-price">${p.price} <span class="currency">${getCurrency()}</span></div>
-        <button class="add-to-cart-btn btn-active-scale" onclick="addToCart(${p.id}, this)">أضف للسلة</button>
+        ${(() => {
+          const state = getProductState(p);
+          if (state === 'available') return `<button class="add-to-cart-btn btn-active-scale" onclick="addToCart(${p.id}, this)">أضف للسلة</button>`;
+          if (state === 'temporary') return `<button class="add-to-cart-btn btn-unavailable" disabled>نفد مؤقتاً</button>`;
+          return '';
+        })()}
       </div>
     </div>
   `).join('');
@@ -981,6 +993,11 @@ function confirmOptionsModal() {
 function addToCart(productId, btnElement) {
   const product = allProducts.find(p => p.id === productId);
   if (!product) return;
+  
+  if (getProductState(product) === 'temporary') {
+    showToast('هذا المنتج غير متوفر حالياً');
+    return;
+  }
   
   if (product.options && product.options.length) {
     showOptionsModal(product);

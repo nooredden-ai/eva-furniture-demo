@@ -2915,8 +2915,12 @@ async function renderProductsTable() {
       <td>${renderStockCell(p)}</td>
       <td><i data-lucide="star" style="width:14px;height:14px;color:#F59E0B;vertical-align:middle;margin-left:2px"></i> ${p.rating}</td>
       <td>
-        <span class="${canEdit ? 'product-toggle' : ''}" ${canEdit ? `onclick="toggleProduct(${p.id})"` : ''} title="${p.active ? 'إيقاف' : 'تفعيل'}" style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:${p.active ? '#22c55e22' : '#ef444422'}">
-          <i data-lucide="${p.active ? 'check-circle' : 'x-circle'}" style="width:16px;height:16px;color:${p.active ? '#22c55e' : '#ef4444'}"></i>
+        <span class="${canEdit ? 'product-toggle' : ''}" ${canEdit ? `onclick="toggleProduct(${p.id})"` : ''} style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;${(() => {
+          if (p.active === false) return 'background:#ef444422';
+          if (p.temporarilyUnavailable) return 'background:#f59e0b22';
+          return 'background:#22c55e22';
+        })()}">
+          <i data-lucide="${p.active === false ? 'x-circle' : (p.temporarilyUnavailable ? 'alert-circle' : 'check-circle')}" style="width:16px;height:16px;color:${p.active === false ? '#ef4444' : (p.temporarilyUnavailable ? '#f59e0b' : '#22c55e')}"></i>
         </span>
       </td>
       <td>
@@ -2949,7 +2953,8 @@ function toggleProduct(productId) {
   withLock('toggle-' + productId, () => {
     return API.getProduct(productId).then(p => {
       if (p) {
-        return API.updateProduct(productId, { ...p, active: !p.active }).then(res => {
+        const isHidden = p.active === false;
+        return API.updateProduct(productId, { ...p, active: isHidden ? true : false, temporarilyUnavailable: false }).then(res => {
           if (res && res.success === false) { showAdminToast(res.message || 'فشل التحديث', 'error'); }
           renderProductsTable();
         });
@@ -3021,6 +3026,7 @@ function openAddProduct() {
   $a('pm-bg').value      = '#FFE8F0,#FFB3D1';
   $a('pm-rating').value  = '4.5';
   $a('pm-reviews').value = '0';
+  $a('pm-state').value   = 'available';
   clearImagePreview();
   populateProductCategories();
   $a('product-modal').classList.add('open');
@@ -3044,6 +3050,13 @@ function openEditProduct(productId) {
     $a('pm-badge').value      = p.badge || '';
     $a('pm-rating').value     = p.rating;
     $a('pm-reviews').value    = p.reviews;
+    if (p.active === false) {
+      $a('pm-state').value = 'hidden';
+    } else if (p.temporarilyUnavailable) {
+      $a('pm-state').value = 'temporary';
+    } else {
+      $a('pm-state').value = 'available';
+    }
     
     const existingImg = p.image || (p.images && p.images[0]);
     if (existingImg) {
@@ -3091,8 +3104,10 @@ async function processSaveProduct() {
     badge:    $a('pm-badge').value || null,
     rating:   parseFloat($a('pm-rating').value) || 4.5,
     reviews:  parseInt($a('pm-reviews').value) || 0,
-    active:   true,
   };
+  const pmState = $a('pm-state').value;
+  data.active = pmState !== 'hidden';
+  data.temporarilyUnavailable = pmState === 'temporary';
   if (!data.name || !data.price) { showAdminToast('الرجاء إدخال اسم المنتج والسعر', 'error'); return; }
 
   // ===== SAFE Image Upload (ADDITION ONLY) =====
