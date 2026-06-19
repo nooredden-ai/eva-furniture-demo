@@ -3519,6 +3519,25 @@ function orderItemOptionsSummary(item) {
   ).join(' | ');
 }
 
+const ORDER_TYPE_MAP = {
+  delivery: { icon: '🚚', label: 'توصيل' },
+  pickup: { icon: '🏃', label: 'استلام من الفرع' },
+  dinein: { icon: '🍽️', label: 'داخل المطعم' }
+};
+
+function orderTypeIcon(type) {
+  return (ORDER_TYPE_MAP[type] || ORDER_TYPE_MAP.delivery).icon;
+}
+
+function orderTypeLabel(type) {
+  return (ORDER_TYPE_MAP[type] || ORDER_TYPE_MAP.delivery).label;
+}
+
+function orderTypeBadgeHtml(type) {
+  const t = ORDER_TYPE_MAP[type] || ORDER_TYPE_MAP.delivery;
+  return `<span style="font-size:0.78rem;color:var(--admin-text2)">${t.icon} ${t.label}</span>`;
+}
+
 function orderItemNotesHtml(item) {
   if (!item.notes) return '';
   return `<div style="font-size:0.78rem;color:var(--admin-danger, #dc3545);margin-top:1px">ملاحظة: ${item.notes}</div>`;
@@ -3546,7 +3565,7 @@ function renderOrdersTable() {
       return `
       <tr>
         <td style="text-align:center"><input type="checkbox" class="order-select" data-id="${orderKey}"></td>
-        <td><strong>${orderKey}</strong>${assigneeText}</td>
+        <td><strong>${orderKey}</strong><br>${orderTypeBadgeHtml(o.orderType)}${assigneeText}</td>
         <td>
           <div style="font-weight:600">${o.customer}</div>
           <div style="font-size:0.78rem;color:var(--admin-text2)">${o.phone}</div>
@@ -3760,6 +3779,10 @@ async function openOrderDetails(orderId) {
       <div style="display:flex; flex-direction:column; gap:4px;">
         <span style="font-size:0.8rem; color:var(--admin-text2)">آخر تحديث</span>
         <strong style="font-size:0.95rem; color:var(--admin-text)">${lastUpdated}</strong>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <span style="font-size:0.8rem; color:var(--admin-text2)">نوع الطلب</span>
+        <strong style="font-size:0.95rem; color:var(--admin-text)">${orderTypeBadgeHtml(order.orderType)}</strong>
       </div>
       <div style="display:flex; flex-direction:column; gap:4px;">
         <span style="font-size:0.8rem; color:var(--admin-text2)">إجمالي الطلب</span>
