@@ -95,6 +95,13 @@
         function goBack(){ try{ if (window.opener && !window.opener.closed) { window.close(); window.opener.focus(); window.opener.location = '/admin'; } else { location.href = '/admin'; } } catch(e){ location.href = '/admin'; } }
         function doPrint(){ window.print(); }
 
+        const ORDER_TYPE_LABELS = {
+          delivery: '🚚 توصيل',
+          pickup: '🏃 استلام من الفرع',
+          dinein: '🍽️ داخل المطعم'
+        };
+        function orderTypeText(type) { return ORDER_TYPE_LABELS[type] || ORDER_TYPE_LABELS.delivery; }
+
         const selectedMode = qParam('type') || qParam('mode') || 'invoice';
         const idParam = qParam('id');
         const idsParam = qParam('ids');
@@ -120,7 +127,7 @@
           doc.innerHTML = `
             <div class="head">
               <div class="brand"><img src="${store?.branding?.logo || '/images/branding/logo.png'}" alt="logo" onerror="this.src='${placeholderImg()}'"><div><div class="store-name">${store?.name || 'متجرك'}</div><div style="color:var(--muted)">${store?.phone || ''} • ${store?.email || ''}</div></div></div>
-              <div class="meta"><div><strong>رقم الطلب:</strong> ${order.id}</div><div><strong>التاريخ:</strong> ${order.date}</div><div><strong>الحالة:</strong> ${order.status}</div></div>
+              <div class="meta"><div><strong>رقم الطلب:</strong> ${order.id}</div><div><strong>التاريخ:</strong> ${order.date}</div><div><strong>الحالة:</strong> ${order.status}</div><div><strong>نوع الطلب:</strong> ${orderTypeText(order.orderType)}</div></div>
             </div>
             <div class="customer">
               <div class="left">
@@ -253,7 +260,7 @@
               <div style="font-weight:900;font-size:1.25rem">${order.id}</div>
               <div style="font-size:0.9rem;color:var(--muted)">${time}</div>
             </div>
-            <div style="margin-top:4px;font-size:0.85rem;color:#f59e0b">⭐ عادي</div>
+            <div style="margin-top:4px;font-size:0.85rem;color:#f59e0b">${orderTypeText(order.orderType)}</div>
             <hr style="margin:8px 0;border:none;border-top:1px dashed #ddd">
             ${(order.items||[]).map(item => `
               <div style="margin-bottom:8px">
