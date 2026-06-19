@@ -2610,7 +2610,7 @@ async function renderDashboard() {
       <td>${o.customer}</td>
       <td>${o.items.length} منتج</td>
       <td><strong>${o.total.toLocaleString('ar-SA')} ${currency}</strong></td>
-      <td><span class="status-badge status-${o.status}">${statusText(o.status)}</span></td>
+      <td><span class="status-badge status-${o.status}">${statusText(o.status, o.orderType)}</span></td>
       <td>${o.date}</td>
     </tr>`).join('');
   } catch(e) {
@@ -2621,8 +2621,17 @@ async function renderDashboard() {
   }
 }
 
-function statusText(s) {
-  return { pending: 'قيد الانتظار', processing: 'جاري التجهيز', shipped: 'تم الشحن', delivered: 'تم التوصيل', cancelled: 'ملغي' }[s] || s;
+function statusText(s, orderType) {
+  const type = orderType || 'delivery';
+  const labels = {
+    pending: 'قيد الانتظار',
+    confirmed: 'تم التأكيد',
+    processing: 'جاري التجهيز',
+    shipped: type !== 'delivery' ? 'جاهز' : 'تم الشحن',
+    delivered: type !== 'delivery' ? 'تم' : 'تم التوصيل',
+    cancelled: 'ملغي'
+  };
+  return labels[s] || s;
 }
 
 // ===== Simplified Merchant Dashboard (with caching) =====
@@ -2775,7 +2784,7 @@ async function renderMerchantDashboard() {
       orders.slice(0,10).forEach(o => ti.push({
         dot:'order', title:`طلب جديد #${o.id||o.orderNumber||''}`, sub:o.customer||'عميل',
         tm:fm(o.date||o.createdAt), sd:o.date||o.createdAt,
-        r:`<span class="dash-timeline-status status-badge status-${o.status}">${statusText(o.status)}</span><span class="dash-timeline-total">${Number(o.total||0).toLocaleString('ar-SA')} ${sym}</span>`,
+        r:`<span class="dash-timeline-status status-badge status-${o.status}">${statusText(o.status, o.orderType)}</span><span class="dash-timeline-total">${Number(o.total||0).toLocaleString('ar-SA')} ${sym}</span>`,
         pg:'orders' }));
       invoices.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5).forEach(inv => ti.push({
         dot:'invoice', title:`فاتورة #${inv.id}`, sub:inv.customer?.name||'عميل',
@@ -3573,7 +3582,7 @@ function renderOrdersTable() {
         <td>${o.items.map(i => `${i.emoji || ''} ${i.name}${i.selectedOptions ? ' (' + orderItemOptionsSummary(i) + ')' : ''}${orderItemNotesHtml(i)} ×${i.qty}`).join('<br>')}</td>
         <td><strong>${o.total.toLocaleString('ar-SA')} ${currency}</strong></td>
         <td>
-          <span class="status-badge status-${o.status}">${statusText(o.status)}</span>
+          <span class="status-badge status-${o.status}">${statusText(o.status, o.orderType)}</span>
         </td>
         <td>
           <div style="font-size:0.82rem;color:var(--admin-text2);margin-bottom:6px">${new Date(o.date).toLocaleDateString('ar-SA')}</div>
@@ -3988,12 +3997,13 @@ function renderOrderStatusWorkflow(order) {
   if (!currentDisplay || !actionsContainer) return;
 
   const currentStatus = order.status || 'pending';
+  const isPickup = order.orderType && order.orderType !== 'delivery';
   const statusLabels = {
     pending: 'قيد الانتظار',
     confirmed: 'تم التأكيد',
     processing: 'جاري التجهيز',
-    shipped: 'تم الشحن',
-    delivered: 'تم التوصيل',
+    shipped: isPickup ? 'جاهز' : 'تم الشحن',
+    delivered: isPickup ? 'تم' : 'تم التوصيل',
     cancelled: 'ملغي'
   };
 
@@ -4012,12 +4022,12 @@ function renderOrderStatusWorkflow(order) {
     `;
   } else if (currentStatus === 'processing') {
     html = `
-      <button class="topbar-btn btn-primary btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px;" onclick="handleWorkflowStatusTransition('shipped')">تم الشحن</button>
+      <button class="topbar-btn btn-primary btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px;" onclick="handleWorkflowStatusTransition('shipped')">${isPickup ? 'جاهز' : 'تم الشحن'}</button>
       <button class="topbar-btn btn-danger btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px; margin-top: 4px;" onclick="handleWorkflowStatusTransition('cancelled')">إلغاء وإرجاع المخزون</button>
     `;
   } else if (currentStatus === 'shipped') {
     html = `
-      <button class="topbar-btn btn-primary btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px;" onclick="handleWorkflowStatusTransition('delivered')">تم التوصيل</button>
+      <button class="topbar-btn btn-primary btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px;" onclick="handleWorkflowStatusTransition('delivered')">${isPickup ? 'تم' : 'تم التوصيل'}</button>
       <button class="topbar-btn btn-danger btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px; margin-top: 4px;" onclick="handleWorkflowStatusTransition('cancelled')">إلغاء وإرجاع المخزون</button>
     `;
   } else if (currentStatus === 'delivered') {
@@ -4056,9 +4066,9 @@ async function handleWorkflowStatusTransition(nextStatus) {
     } else if (nextStatus === 'processing') {
       toastMsg = 'تم بدء تجهيز الطلب.';
     } else if (nextStatus === 'shipped') {
-      toastMsg = 'تم شحن الطلب.';
+      toastMsg = currentViewOrder.orderType && currentViewOrder.orderType !== 'delivery' ? 'الطلب جاهز.' : 'تم شحن الطلب.';
     } else if (nextStatus === 'delivered') {
-      toastMsg = 'تم تسليم الطلب.';
+      toastMsg = currentViewOrder.orderType && currentViewOrder.orderType !== 'delivery' ? 'تم إنهاء الطلب.' : 'تم تسليم الطلب.';
     }
     
     showAdminToast(toastMsg);
