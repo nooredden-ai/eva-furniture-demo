@@ -1542,16 +1542,18 @@ app.delete('/api/orders/:id', requirePerm('delete_orders'), (req, res) => {
     const order = orderRepository.findByIdOrNumber(req.params.id);
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
-    if (order.status !== 'pending') {
+    const isSuperAdmin = req.user && req.user.role === 'super_admin';
+
+    if (order.status !== 'pending' && !isSuperAdmin) {
       return res.status(400).json({ success: false, message: 'لا يمكن حذف طلب تم تأكيده أو معالجته. يمكن إلغاء الطلب بدلاً من حذفه.' });
     }
 
-    if (order.stockDeducted === true) {
+    if (order.stockDeducted === true && !isSuperAdmin) {
       return res.status(400).json({ success: false, message: 'لا يمكن حذف طلب أثّر على المخزون. قم بإلغاء الطلب بدلاً من الحذف.' });
     }
 
     const invoice = invoiceRepository.findBySource('order', order.id);
-    if (invoice) {
+    if (invoice && !isSuperAdmin) {
       return res.status(400).json({ success: false, message: 'لا يمكن حذف طلب مرتبط بفاتورة. قم بإلغاء الطلب بدلاً من الحذف.' });
     }
 
