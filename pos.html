@@ -213,7 +213,7 @@ input,select,textarea{font-family:inherit}
           <button class="type-btn" data-type="pickup" onclick="setOrderType('pickup')">استلام</button>
           <button class="type-btn" data-type="delivery" onclick="setOrderType('delivery')">توصيل</button>
         </div>
-        <input class="table-input" id="table-input" type="text" placeholder="رقم الطاولة (مثال: T01)" style="display:block">
+        <input class="table-input" id="table-input" type="text" placeholder="رقم الطاولة * (مثال: T01)" required style="display:block">
         <div class="pay-group" id="pay-group">
           <button class="pay-btn active" data-pay="cash" onclick="setPayment('cash')">نقدي</button>
           <button class="pay-btn" data-pay="card" onclick="setPayment('card')">بطاقة</button>
@@ -509,8 +509,14 @@ input,select,textarea{font-family:inherit}
   function setOrderType(type){
     orderType=type;
     document.querySelectorAll('.type-btn').forEach(b=>b.classList.toggle('active',b.dataset.type===type));
-    $('table-input').style.display=type==='dinein'?'block':'none';
-    if(type!=='dinein'){
+    if(type==='dinein'){
+      $('table-input').style.display='block';
+      $('table-input').required=true;
+      $('table-input').placeholder='رقم الطاولة * (مثال: T01)';
+    }else{
+      $('table-input').style.display='none';
+      $('table-input').required=false;
+      $('table-input').placeholder='رقم الطاولة (مثال: T01)';
       $('table-input').value='';
       var badge=$('pos-table-badge');
       if(badge) badge.style.display='none';
@@ -525,6 +531,11 @@ input,select,textarea{font-family:inherit}
 
   async function submitOrder(){
     if(cart.length===0) return;
+    if(orderType==='dinein'&&!$('table-input').value.trim()){
+      alert('يرجى إدخال رقم الطاولة للطلب داخل المطعم');
+      $('table-input').focus();
+      return;
+    }
     const btn=$('btn-submit');
     btn.disabled=true;
     btn.innerHTML='جاري...';
