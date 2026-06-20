@@ -1,7 +1,7 @@
 [
   {
     "id": 1,
-    "name": "برتر كلاسيك",
+    "name": "برغر كلاسيك",
     "category": "burgers",
     "emoji": "🍔",
     "bg": "linear-gradient(135deg,#FBE9E7,#FFCCBC)",
@@ -11,10 +11,10 @@
     "reviews": 156,
     "badge": "الأكثر مبيعاً",
     "active": true,
-    "stock": 48,
+    "stock": 45,
     "description": "برغر لحم بقري طازج مع خس طازج وطماطم وجبنة شيدر وصلصة خاصة مع خبز طري محمص.",
     "images": [],
-    "image": "/images/products/food-burger-classic.jpg",
+    "image": "/images/products/1781912502638-ChatGPT_Image_20____________2026___02_41_24___.png",
     "options": [
       {
         "name": "نوع الشريحة",
@@ -57,11 +57,13 @@
           }
         ]
       }
-    ]
+    ],
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 2,
-    "name": "برتر بالجبنة",
+    "name": "برغر بالجبنة",
     "category": "burgers",
     "emoji": "🧀",
     "bg": "linear-gradient(135deg,#FFF3E0,#FFE0B2)",
@@ -71,10 +73,10 @@
     "reviews": 134,
     "badge": "جديد",
     "active": true,
-    "stock": 41,
+    "stock": 40,
     "description": "برغر لحم ممتاز مع طبقة مزدوجة من جبنة الشيدر وجبنة الموزاريلا مع صلصة الباربكيو.",
     "images": [],
-    "image": "/images/products/food-burger-cheese.jpg",
+    "image": "/images/products/1781912577174-ChatGPT_Image_20____________2026___02_42_45___.png",
     "options": [
       {
         "name": "نوع الشريحة",
@@ -117,11 +119,13 @@
           }
         ]
       }
-    ]
+    ],
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 3,
-    "name": "برتر دجاج",
+    "name": "برغر دجاج",
     "category": "burgers",
     "emoji": "🍗",
     "bg": "linear-gradient(135deg,#FCE4EC,#F8BBD0)",
@@ -134,11 +138,56 @@
     "stock": 50,
     "description": "برغر دجاج مقرمش مع خس طازج وصلصة الثومية اللذيذة وخبز طري.",
     "images": [],
-    "image": "/images/products/food-burger-chicken.jpg"
+    "image": "/images/products/1781912666539-ChatGPT_Image_20____________2026___02_44_13___.png",
+    "options": [
+      {
+        "name": "نوع الشريحة",
+        "nameEn": "Patty Type",
+        "type": "select",
+        "required": true,
+        "choices": [
+          {
+            "label": "مقرمشة",
+            "labelEn": "Crispy",
+            "priceDelta": 0
+          },
+          {
+            "label": "مشوية",
+            "labelEn": "Grilled",
+            "priceDelta": 0
+          }
+        ]
+      },
+      {
+        "name": "إضافات",
+        "nameEn": "Extras",
+        "type": "checkbox",
+        "required": false,
+        "choices": [
+          {
+            "label": "جبنة شيدر",
+            "labelEn": "Cheddar Cheese",
+            "priceDelta": 3
+          },
+          {
+            "label": "بطاطا",
+            "labelEn": "Fries",
+            "priceDelta": 5
+          },
+          {
+            "label": "صوص الثومية",
+            "labelEn": "Garlic Sauce",
+            "priceDelta": 2
+          }
+        ]
+      }
+    ],
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 4,
-    "name": "برتر دبل",
+    "name": "برغر دبل",
     "category": "burgers",
     "emoji": "🍔",
     "bg": "linear-gradient(135deg,#EFEBE9,#D7CCC8)",
@@ -148,14 +197,41 @@
     "reviews": 98,
     "badge": "الأكثر مبيعاً",
     "active": true,
-    "stock": 35,
+    "stock": 36,
     "description": "برغر لحم دبل مع شريحتين من اللحم المشوي وجبنة مزدوجة مع خضار طازجة.",
     "images": [],
-    "image": "/images/products/food-burger-double.jpg"
+    "image": "/images/products/1781912763527-ChatGPT_Image_20____________2026___02_45_53___.png",
+    "options": [
+      {
+        "name": "إضافات",
+        "nameEn": "Extras",
+        "type": "checkbox",
+        "required": false,
+        "choices": [
+          {
+            "label": "جبنة إضافية",
+            "labelEn": "Extra Cheese",
+            "priceDelta": 3
+          },
+          {
+            "label": "لحم إضافي",
+            "labelEn": "Extra Patty",
+            "priceDelta": 8
+          },
+          {
+            "label": "بطاطا",
+            "labelEn": "Fries",
+            "priceDelta": 5
+          }
+        ]
+      }
+    ],
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 5,
-    "name": "برتر نباتي",
+    "name": "برغر نباتي",
     "category": "burgers",
     "emoji": "🥬",
     "bg": "linear-gradient(135deg,#E8F5E9,#C8E6C9)",
@@ -168,7 +244,9 @@
     "stock": 30,
     "description": "برغر نباتي بالخضار المشوية والحمص مع صلصة طحينية وخس طازج.",
     "images": [],
-    "image": "/images/products/food-burger-veggie.jpg"
+    "image": "/images/products/1781912868655-ChatGPT_Image_20____________2026___02_47_34___.png",
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 6,
@@ -182,10 +260,10 @@
     "reviews": 145,
     "badge": "الأكثر مبيعاً",
     "active": true,
-    "stock": 40,
+    "stock": 41,
     "description": "بيتزا كلاسيكية بصلصة الطماطم الطازجة وجبنة الموزاريلا والريحان الأخضر.",
     "images": [],
-    "image": "/images/products/food-pizza-margherita.jpg",
+    "image": "/images/products/1781912956786-ChatGPT_Image_20____________2026___02_49_02___.png",
     "options": [
       {
         "name": "الحجم",
@@ -233,7 +311,9 @@
           }
         ]
       }
-    ]
+    ],
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 7,
@@ -247,10 +327,10 @@
     "reviews": 167,
     "badge": null,
     "active": true,
-    "stock": 38,
+    "stock": 39,
     "description": "بيتزا بطبقة سخية من البيبروني الحار وجبنة الموزاريلا وصلصة الطماطم.",
     "images": [],
-    "image": "/images/products/food-pizza-pepperoni.jpg",
+    "image": "/images/products/1781913015461-ChatGPT_Image_20____________2026___02_50_02___.png",
     "options": [
       {
         "name": "الحجم",
@@ -298,7 +378,9 @@
           }
         ]
       }
-    ]
+    ],
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 8,
@@ -315,7 +397,9 @@
     "stock": 25,
     "description": "بيتزا غنية بالخضار الطازجة: فلفل ألوان، زيتون، مشروم، بصل وطماطم مع جبنة موزاريلا.",
     "images": [],
-    "image": "/images/products/food-pizza-vegetable.jpg"
+    "image": "/images/products/1781913052327-ChatGPT_Image_20____________2026___02_50_39___.png",
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 9,
@@ -332,7 +416,9 @@
     "stock": 30,
     "description": "بيتزا مشكلة باللحم المفروم والبيبروني والفلفل والزيتون وجبنة موزاريلا طازجة.",
     "images": [],
-    "image": "/images/products/food-pizza-mixed.jpg"
+    "image": "/images/products/1781913161335-ChatGPT_Image_20____________2026___02_52_28___.png",
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 10,
@@ -349,7 +435,52 @@
     "stock": 60,
     "description": "ساندويش شاورما دجاج أو لحم مع خضار مخلل وثومية، ملفوف بخبز عربي طري.",
     "images": [],
-    "image": "/images/products/food-sandwich-shawarma.jpg"
+    "image": "/images/products/1781913374382-ChatGPT_Image_20____________2026___02_55_51___.png",
+    "options": [
+      {
+        "name": "النوع",
+        "nameEn": "Type",
+        "type": "select",
+        "required": true,
+        "choices": [
+          {
+            "label": "شاورما دجاج",
+            "labelEn": "Chicken Shawarma",
+            "priceDelta": 0
+          },
+          {
+            "label": "شاورما لحم",
+            "labelEn": "Beef Shawarma",
+            "priceDelta": 3
+          }
+        ]
+      },
+      {
+        "name": "إضافات",
+        "nameEn": "Extras",
+        "type": "checkbox",
+        "required": false,
+        "choices": [
+          {
+            "label": "جبنة",
+            "labelEn": "Cheese",
+            "priceDelta": 2
+          },
+          {
+            "label": "بطاطا مقلية",
+            "labelEn": "Fries",
+            "priceDelta": 4
+          },
+          {
+            "label": "مخلل",
+            "labelEn": "Pickles",
+            "priceDelta": 1
+          }
+        ]
+      }
+    ],
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 11,
@@ -366,7 +497,9 @@
     "stock": 45,
     "description": "ساندويش دجاج مشوي بالخضار الطازجة مع صلصة الرانش في خبز الساندويش الطري.",
     "images": [],
-    "image": "/images/products/food-sandwich-grilled.jpg"
+    "image": "/images/products/1781913320557-ChatGPT_Image_20____________2026___02_55_02___.png",
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 12,
@@ -383,7 +516,9 @@
     "stock": 35,
     "description": "ساندويش سب طويل باللحم البقري المشوي مع الخس والطماطم والمايونيز والكاتشب.",
     "images": [],
-    "image": "/images/products/food-sandwich-sub.jpg"
+    "image": "/images/products/1781913467374-ChatGPT_Image_20____________2026___02_57_34___.png",
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 13,
@@ -397,10 +532,12 @@
     "reviews": 234,
     "badge": null,
     "active": true,
-    "stock": 100,
+    "stock": 101,
     "description": "بطاطا مقلية طازجة ومقرمشة ذهبية اللون، تقدم مع كاتشب ومايونيز.",
     "images": [],
-    "image": "/images/products/food-app-fries.jpg"
+    "image": "/images/products/1781913593298-ChatGPT_Image_20____________2026___02_59_30___.png",
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 14,
@@ -417,7 +554,9 @@
     "stock": 60,
     "description": "حلقات بصل مقلية مقرمشة مغطاة بطبقة خفيفة من الخبز، تقدم مع صلصة الرانش.",
     "images": [],
-    "image": "/images/products/food-app-onionrings.jpg"
+    "image": "/images/products/1781913687768-ChatGPT_Image_20____________2026___03_01_14___.png",
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 15,
@@ -431,10 +570,12 @@
     "reviews": 112,
     "badge": "جديد",
     "active": true,
-    "stock": 69,
+    "stock": 70,
     "description": "قطع ناجتس دجاج مقرمشة ومحمرة، تقدم مع صلصة الباربكيو أو الكاتشب.",
     "images": [],
-    "image": "/images/products/food-app-nuggets.jpg"
+    "image": "/images/products/1781913759252-ChatGPT_Image_20____________2026___03_02_16_____1_.png",
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 16,
@@ -451,7 +592,9 @@
     "stock": 50,
     "description": "أصابع جبنة موزاريلا مقلية ومقرمشة مع صلصة المارينارا الحارة.",
     "images": [],
-    "image": "/images/products/food-app-mozzarella.jpg"
+    "image": "/images/products/1781913848327-ChatGPT_Image_20____________2026___03_03_14___.png",
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 17,
@@ -465,10 +608,32 @@
     "reviews": 312,
     "badge": null,
     "active": true,
-    "stock": 200,
+    "stock": 201,
     "description": "مشروب كولا غازي بارد ومنعش، متوفر بحجم كبير.",
     "images": [],
-    "image": "/images/products/food-drink-cola.jpg"
+    "image": "/images/products/1781913931322-ChatGPT_Image_20____________2026___03_05_18___.png",
+    "options": [
+      {
+        "name": "الحجم",
+        "nameEn": "Size",
+        "type": "select",
+        "required": true,
+        "choices": [
+          {
+            "label": "صغير",
+            "labelEn": "Small",
+            "priceDelta": 0
+          },
+          {
+            "label": "كبير",
+            "labelEn": "Large",
+            "priceDelta": 3
+          }
+        ]
+      }
+    ],
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 18,
@@ -482,10 +647,55 @@
     "reviews": 98,
     "badge": "جديد",
     "active": true,
-    "stock": 80,
+    "stock": 82,
     "description": "عصير طبيعي طازج من الفواكه الموسمية، متوفر برتقال ومانجو ورمان.",
     "images": [],
-    "image": "/images/products/food-drink-juice.jpg"
+    "image": "/images/products/1781914008243-ChatGPT_Image_20____________2026___03_06_37___.png",
+    "options": [
+      {
+        "name": "الحجم",
+        "nameEn": "Size",
+        "type": "select",
+        "required": true,
+        "choices": [
+          {
+            "label": "صغير",
+            "labelEn": "Small",
+            "priceDelta": 0
+          },
+          {
+            "label": "كبير",
+            "labelEn": "Large",
+            "priceDelta": 4
+          }
+        ]
+      },
+      {
+        "name": "النكهة",
+        "nameEn": "Flavor",
+        "type": "select",
+        "required": true,
+        "choices": [
+          {
+            "label": "برتقال",
+            "labelEn": "Orange",
+            "priceDelta": 0
+          },
+          {
+            "label": "مانجو",
+            "labelEn": "Mango",
+            "priceDelta": 0
+          },
+          {
+            "label": "رمان",
+            "labelEn": "Pomegranate",
+            "priceDelta": 2
+          }
+        ]
+      }
+    ],
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 19,
@@ -502,7 +712,9 @@
     "stock": 300,
     "description": "مياه معدنية طبيعية بحجم 500 مل، منعشة ومثالية مع وجبتك.",
     "images": [],
-    "image": "/images/products/food-drink-water.jpg"
+    "image": "/images/products/1781914086034-ChatGPT_Image_20____________2026___03_07_55___.png",
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 20,
@@ -516,10 +728,12 @@
     "reviews": 156,
     "badge": "الأكثر مبيعاً",
     "active": true,
-    "stock": 25,
+    "stock": 24,
     "description": "كيكة شوكولاتة فاخرة بطبقة غنية من الشوكولاتة البلجيكية مع كريمة الفانيليا.",
     "images": [],
-    "image": "/images/products/food-dessert-cake.jpg"
+    "image": "/images/products/1781914163148-ChatGPT_Image_20____________2026___03_09_07___.png",
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 21,
@@ -533,10 +747,12 @@
     "reviews": 134,
     "badge": null,
     "active": true,
-    "stock": 60,
+    "stock": 59,
     "description": "آيس كريم فانيليا ناعم وكريمي مع صوص شوكولاتة وحبات المكسرات الطازجة.",
     "images": [],
-    "image": "/images/products/food-dessert-icecream.jpg"
+    "image": "/images/products/1781914218694-ChatGPT_Image_20____________2026___03_10_06___.png",
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   },
   {
     "id": 22,
@@ -553,6 +769,113 @@
     "stock": 20,
     "description": "وجبة العائلة المميزة: 2 برغر كلاسيك، 1 بيتزا عائلية، بطاطا كبيرة، 4 مشروبات، وأصابع موزاريلا.",
     "images": [],
-    "image": "/images/products/food-combo-family.jpg"
+    "image": "/images/products/1781914350567-ChatGPT_Image_20____________2026___03_12_11___.png",
+    "costPrice": 0,
+    "temporarilyUnavailable": false
+  },
+  {
+    "id": 23,
+    "name": "بيتزا دجاج",
+    "category": "pizzas",
+    "emoji": "🐔",
+    "bg": "linear-gradient(135deg,#FFF3E0,#FFE0B2)",
+    "price": 36,
+    "oldPrice": null,
+    "rating": 4.7,
+    "reviews": 89,
+    "badge": null,
+    "active": true,
+    "stock": 35,
+    "description": "بيتزا بقطع الدجاج المشوي مع الفلفل الألوان والزيتون وجبنة الموزاريلا.",
+    "images": [],
+    "image": "/images/products/1781913255492-ChatGPT_Image_20____________2026___02_53_43___.png",
+    "options": [
+      {
+        "name": "الحجم",
+        "nameEn": "Size",
+        "type": "select",
+        "required": true,
+        "choices": [
+          {
+            "label": "صغير",
+            "labelEn": "Small",
+            "priceDelta": 0
+          },
+          {
+            "label": "وسط",
+            "labelEn": "Medium",
+            "priceDelta": 5
+          },
+          {
+            "label": "كبير",
+            "labelEn": "Large",
+            "priceDelta": 10
+          }
+        ]
+      },
+      {
+        "name": "إضافات",
+        "nameEn": "Extras",
+        "type": "checkbox",
+        "required": false,
+        "choices": [
+          {
+            "label": "جبنة إضافية",
+            "labelEn": "Extra Cheese",
+            "priceDelta": 3
+          },
+          {
+            "label": "دجاج إضافي",
+            "labelEn": "Extra Chicken",
+            "priceDelta": 5
+          },
+          {
+            "label": "فلفل حار",
+            "labelEn": "Chili Peppers",
+            "priceDelta": 2
+          }
+        ]
+      }
+    ],
+    "costPrice": 0,
+    "temporarilyUnavailable": false
+  },
+  {
+    "id": 24,
+    "name": "وجبة برغر",
+    "category": "offers",
+    "emoji": "🍔",
+    "bg": "linear-gradient(135deg,#E53935,#FFCC02)",
+    "price": 45,
+    "oldPrice": 55,
+    "rating": 4.8,
+    "reviews": 176,
+    "badge": "عرض",
+    "active": true,
+    "stock": 30,
+    "description": "وجبة برغر كلاسيك مع بطاطا مقلية ومشروب غازي وصوص من اختيارك.",
+    "images": [],
+    "image": "/images/products/1781914409838-ChatGPT_Image_20____________2026___03_13_15___.png",
+    "costPrice": 0,
+    "temporarilyUnavailable": false
+  },
+  {
+    "id": 25,
+    "name": "تشيز كيك",
+    "category": "desserts",
+    "emoji": "🍰",
+    "bg": "linear-gradient(135deg,#FCE4EC,#F48FB1)",
+    "price": 16,
+    "oldPrice": null,
+    "rating": 4.8,
+    "reviews": 67,
+    "badge": "جديد",
+    "active": true,
+    "stock": 20,
+    "description": "تشيز كيك ناعم بطبقة من الجبنة الكريمية مع قاعدة بسكويت وصلصة التوت الأحمر.",
+    "images": [],
+    "image": "/images/products/1781914264544-ChatGPT_Image_20____________2026___03_10_50___.png",
+    "costPrice": 0,
+    "temporarilyUnavailable": false
   }
 ]

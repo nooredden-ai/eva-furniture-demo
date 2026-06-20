@@ -1,293 +1,347 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
-    <head>
-      <meta charset="utf-8" />
-      <meta name="viewport" content="width=device-width,initial-scale=1" />
-      <title>طباعة الطلب</title>
-      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-      <script src="https://unpkg.com/lucide@latest"></script>
-      <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-      <style>
-        :root{--page-bg:#fff;--text:#0f172a;--muted:#6b7280;--accent:#0ea5a4}
-        html,body{height:100%;margin:0;font-family:'Cairo',sans-serif;color:var(--text);background:#f3f4f6}
-        .toolbar{padding:10px 14px;background:#fff;border-bottom:1px solid #e6e9ee;display:flex;gap:10px;align-items:center;justify-content:space-between}
-        .toolbar .actions{display:flex;gap:8px}
-        .btn{padding:8px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;cursor:pointer;font-weight:600}
-        .btn.primary{background:var(--accent);color:#fff;border-color:transparent}
-        .print-container{max-width:1100px;margin:18px auto;padding:8px}
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>طباعة الطلب</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--page-bg:#fff;--text:#0f172a;--muted:#6b7280;--accent:#d35400;--border:#ebedf0}
+html,body{height:100%;margin:0;font-family:'Cairo',sans-serif;color:var(--text);background:#f3f4f6}
+.toolbar{padding:10px 14px;background:#fff;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.toolbar .actions{display:flex;gap:8px;align-items:center}
+.btn{padding:8px 16px;border-radius:8px;border:1px solid #d1d5db;background:#fff;cursor:pointer;font-weight:700;font-size:.82rem;display:inline-flex;align-items:center;gap:6px;font-family:'Cairo',sans-serif}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.primary:hover{background:#e67e22}
+.print-container{max-width:1000px;margin:18px auto;padding:8px}
 
-        /* Document card */
-        .doc{background:var(--page-bg);padding:18px;border-radius:6px;margin-bottom:18px;box-shadow:0 2px 8px rgba(2,6,23,0.04);-webkit-print-color-adjust:exact}
-        .doc .head{display:flex;justify-content:space-between;gap:12px;align-items:center}
-        .brand{display:flex;gap:12px;align-items:center}
-        .brand img{height:64px;object-fit:contain}
-        .store-name{font-weight:800;font-size:1.15rem}
-        .doc .meta{text-align:left}
-        .meta div{margin-bottom:6px}
-        .customer{margin-top:14px;display:flex;justify-content:space-between;gap:12px}
-        .customer .left{flex:1}
-        .items{margin-top:14px;width:100%;border-collapse:collapse}
-        .items th,.items td{border:1px solid #eef2f7;padding:10px;text-align:right;font-size:0.98rem}
-        .items th{background:#fafafa;font-weight:800;color:var(--muted)}
-        .item-img{width:64px;height:64px;object-fit:cover;border-radius:6px}
-        .summary{margin-top:12px;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
-        .summary .row{display:flex;gap:12px;font-weight:700}
-        .barcode-qr{display:flex;gap:18px;align-items:center;margin-top:12px}
-        .shipping-label{border:2px dashed #e5e7eb;padding:10px;border-radius:6px;margin-top:12px;text-align:center;color:var(--muted)}
+/* Documents */
+.doc{background:var(--page-bg);padding:24px 32px;border-radius:8px;margin-bottom:18px;box-shadow:0 2px 10px rgba(2,6,23,.06);-webkit-print-color-adjust:exact;page-break-inside:avoid}
+.doc .head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.brand{display:flex;gap:12px;align-items:center}
+.brand img{height:56px;object-fit:contain}
+.store-name{font-weight:900;font-size:1.2rem}
+.store-info{font-size:.78rem;color:var(--muted);line-height:1.6}
+.order-meta{text-align:left;font-size:.88rem;line-height:1.7;min-width:200px}
+.order-meta strong{font-weight:700}
+.meta-badge{display:inline-block;padding:2px 12px;border-radius:9999px;font-size:.78rem;font-weight:700}
+.badge-delivery{background:#fef3c7;color:#92400e}
+.badge-pickup{background:#e0f2fe;color:#075985}
+.badge-dinein{background:#ffedd5;color:#9a3412}
 
-        /* Prevent splitting */
-        .doc{page-break-inside:avoid}
+.customer-info{border-top:1px solid var(--border);margin-top:14px;padding-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.9rem}
+.customer-info .label{color:var(--muted);font-size:.78rem;font-weight:700}
+.customer-info .value{font-weight:700}
 
-        /* Printing sizes */
-        @page { size: A4; margin: 12mm; }
-        @media print{
-          body{background:transparent}
-          .toolbar{display:none !important}
-          .print-container{max-width:100%;margin:0;padding:0}
-          .doc{box-shadow:none;border-radius:0;margin:0;padding:10mm}
-          .doc + .doc{page-break-before:always}
-          .no-print{display:none !important}
-        }
+.items-table{width:100%;border-collapse:collapse;margin-top:14px}
+.items-table th,.items-table td{border:1px solid var(--border);padding:10px 12px;text-align:right;font-size:.9rem}
+.items-table th{background:#fafafa;font-weight:800;color:var(--muted);font-size:.82rem}
+.items-table .item-img{width:48px;height:48px;object-fit:cover;border-radius:6px}
+.items-table .item-options{font-size:.8rem;color:var(--muted);font-weight:400}
+.items-table .item-notes{font-size:.8rem;color:#b91c1c;font-weight:600}
+.summary{margin-top:14px;display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:.92rem}
+.summary .row{display:flex;gap:14px;font-weight:700}
+.summary-total{font-size:1.15rem;font-weight:900;color:var(--accent);border-top:2px solid var(--text);padding-top:6px;margin-top:4px}
+.barcode-qr{display:flex;gap:18px;align-items:center;margin-top:14px;justify-content:center}
+.signature{margin-top:20px;display:flex;justify-content:space-between;font-size:.85rem}
+.footer-note{margin-top:14px;text-align:center;font-size:.85rem;color:var(--muted);border-top:1px solid var(--border);padding-top:14px}
+.thankyou{font-size:.9rem;font-weight:700;color:var(--accent);margin-top:8px;text-align:center}
 
-        /* Label (thermal 80mm) */
-        .label .doc{width:80mm;max-width:80mm;padding:6px;margin:0}
-        @media print and (width:80mm){
-          @page{size:80mm auto;margin:4mm}
-          .doc + .doc{page-break-before:always}
-          .items th:nth-child(1),.items td:nth-child(1){display:none}
-          .items th,.items td{font-size:12px;padding:6px}
-        }
+/* Kitchen Ticket */
+.kitchen-ticket{padding:20px 24px}
+.kt-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.kt-brand{display:flex;align-items:center;gap:8px}
+.kt-brand img{height:32px;object-fit:contain}
+.kt-brand-name{font-weight:800;font-size:1rem}
+.kt-time{font-size:.85rem;color:var(--muted)}
+.kt-order-id{font-size:2rem;font-weight:900;letter-spacing:2px;line-height:1.1;color:var(--text)}
+.kt-type{display:inline-flex;align-items:center;gap:5px;font-size:.85rem;font-weight:700;padding:4px 14px;border-radius:9999px;margin-top:6px}
+.kt-type-delivery{background:#fef3c7;color:#92400e}
+.kt-type-pickup{background:#e0f2fe;color:#075985}
+.kt-type-dinein{background:#ffedd5;color:#9a3412}
+.kt-table{display:inline-flex;align-items:center;gap:6px;font-size:1.3rem;font-weight:900;color:#9a3412;background:#ffedd5;padding:6px 18px;border-radius:10px;margin-top:8px}
+.kt-divider{border:none;border-top:1px dashed #d1d5db;margin:10px 0}
+.kt-item{margin-bottom:10px}
+.kt-item-qty{font-weight:900;font-size:1.05rem;color:var(--accent);margin-left:6px}
+.kt-item-name{font-weight:700;font-size:.95rem}
+.kt-item-options{font-size:.85rem;color:var(--muted);padding-right:22px;margin-top:2px}
+.kt-item-options::before{content:'•';margin-left:4px}
+.kt-item-note{font-size:.85rem;color:#b91c1c;background:#fef2f2;padding:4px 10px;border-radius:6px;margin-top:4px;margin-right:22px;display:inline-block;font-weight:600}
+.kt-footer{margin-top:10px;display:flex;justify-content:space-between;font-size:.88rem;color:var(--muted)}
+.kt-footer strong{font-weight:700;color:var(--text)}
 
-        /* Packing slip compact */
-        .packing .items th,.packing .items td{font-size:0.95rem}
-        .packing .check{width:18px;height:18px;border:1px solid #cbd5e1;border-radius:4px;display:inline-block;margin-left:6px}
+/* Label (thermal 80mm) */
+.label .doc{width:80mm;max-width:80mm;padding:6px;margin:0}
+@media print and (width:80mm){
+  @page{size:80mm auto;margin:4mm}
+  .doc+.doc{page-break-before:always}
+  .items-table th:nth-child(1),.items-table td:nth-child(1){display:none}
+  .items-table th,.items-table td{font-size:12px;padding:6px}
+}
 
-        /* RTL adjustments */
-        body[dir="rtl"] .meta{text-align:left}
+/* Packing slip */
+.packing .items-table th,.packing .items-table td{font-size:.9rem}
+.packing .check{width:18px;height:18px;border:1px solid #cbd5e1;border-radius:4px;display:inline-block;margin-left:6px}
 
-        /* Responsive */
-        @media (max-width:600px){.brand img{height:48px}.items th,.items td{font-size:12px}}
-      </style>
-    </head>
-    <body dir="rtl">
-      <div class="toolbar no-print">
-        <div style="display:flex;align-items:center;gap:12px">
-          <button class="btn" onclick="goBack()"><i data-lucide="arrow-right"></i> العودة للوحة</button>
-          <select id="print-mode" onchange="onModeChange()" class="btn">
-            <option value="invoice">فاتورة (A4)</option>
-            <option value="label">ملصق شحن (80mm)</option>
-            <option value="packing">Packing Slip</option>
-            <option value="kitchen">تذكرة مطبخ</option>
-          </select>
-        </div>
-        <div class="actions">
-          <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="auto-print"/> طباعة تلقائية</label>
-          <button class="btn primary" id="do-print" onclick="doPrint()"><i data-lucide="printer"></i> طباعة / حفظ PDF</button>
+@page{size:A4;margin:12mm}
+@media print{
+  body{background:transparent}
+  .toolbar{display:none !important}
+  .print-container{max-width:100%;margin:0;padding:0}
+  .doc{box-shadow:none;border-radius:0;margin:0;padding:10mm}
+  .doc+.doc{page-break-before:always}
+  .no-print{display:none !important}
+}
+
+@media(max-width:600px){
+  .print-container{margin:8px;padding:4px}
+  .doc{padding:14px 16px}
+  .customer-info{grid-template-columns:1fr}
+  .items-table th,.items-table td{font-size:12px;padding:6px}
+  .kt-order-id{font-size:1.5rem}
+  .order-meta{text-align:right}
+}
+</style>
+</head>
+<body dir="rtl">
+<div class="toolbar no-print">
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <button class="btn" onclick="goBack()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg> العودة للوحة</button>
+    <select id="print-mode" onchange="onModeChange()" class="btn">
+      <option value="invoice">فاتورة (A4)</option>
+      <option value="label">ملصق شحن (80mm)</option>
+      <option value="packing">Packing Slip</option>
+      <option value="kitchen">تذكرة مطبخ</option>
+    </select>
+  </div>
+  <div class="actions">
+    <label style="display:flex;align-items:center;gap:6px;font-size:.82rem;font-weight:600;cursor:pointer"><input type="checkbox" id="auto-print"/> طباعة تلقائية</label>
+    <button class="btn primary" id="do-print" onclick="doPrint()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> طباعة / حفظ PDF</button>
+  </div>
+</div>
+
+<main class="print-container" id="print-root"></main>
+
+<script>
+function qParam(key){ const u = new URL(window.location.href); return u.searchParams.get(key); }
+function goBack(){ try{ if (window.opener && !window.opener.closed) { window.close(); window.opener.focus(); window.opener.location = '/admin'; } else { location.href = '/admin'; } } catch(e){ location.href = '/admin'; } }
+function doPrint(){ window.print(); }
+
+const ORDER_TYPE_LABELS = {
+  delivery: { text: 'توصيل', cls: 'badge-delivery kt-type-delivery' },
+  pickup: { text: 'استلام', cls: 'badge-pickup kt-type-pickup' },
+  dinein: { text: 'داخلي', cls: 'badge-dinein kt-type-dinein' }
+};
+function orderTypeText(type) { const t = ORDER_TYPE_LABELS[type] || ORDER_TYPE_LABELS.delivery; return t.text; }
+function orderTypeBadge(type) { const t = ORDER_TYPE_LABELS[type] || ORDER_TYPE_LABELS.delivery; return `<span class="meta-badge ${t.cls}">${t.text}</span>`; }
+function orderTypeKtBadge(type) { const t = ORDER_TYPE_LABELS[type] || ORDER_TYPE_LABELS.delivery; return `<span class="kt-type ${t.cls}">${t.text}</span>`; }
+
+const selectedMode = qParam('type') || qParam('mode') || 'invoice';
+const idParam = qParam('id');
+const idsParam = qParam('ids');
+const ids = idsParam ? idsParam.split(',').map(s=>s.trim()).filter(Boolean) : (idParam ? [idParam] : []);
+document.getElementById('print-mode').value = selectedMode;
+
+async function fetchStore(){ try{ const res = await fetch('/api/settings'); if(!res.ok) throw new Error('settings fetch failed'); return await res.json(); }catch(e){ console.error(e); return null; } }
+async function fetchOrder(id){ try{ const res = await fetch('/api/orders/'+encodeURIComponent(id)); if(!res.ok) return null; return await res.json(); }catch(e){ console.error(e); return null; } }
+async function fetchInvoiceForOrder(orderId){
+  try{ const res = await fetch('/api/invoices'); if(!res.ok) return null; const all = await res.json(); const arr = Array.isArray(all) ? all : (all.data || []); return arr.find(inv => inv.sourceType === 'order' && String(inv.sourceId) === String(orderId)) || null;
+  }catch(e){ console.error(e); return null; }
+}
+
+function formatNotes(notes){ if(!notes) return ''; if(Array.isArray(notes)) return notes.filter(Boolean).join(' | '); if(typeof notes==='string') return notes; return ''; }
+function formatCurrency(v,c){ return Number(v||0).toLocaleString('ar-SA') + (c ? ' ' + c : ''); }
+function createBarcode(id, target){ try{ JsBarcode(target, String(id), {format:'CODE128', displayValue:true, height:36, fontSize:12}); }catch(e){console.error(e)} }
+function createQRCode(text, container){ try{ new QRCode(container, {text:text, width:80, height:80}); }catch(e){console.error(e)} }
+function placeholderImg(){ return '/images/branding/placeholder.png'; }
+
+function buildInvoice(order, store){
+  const currency = store?.currencySymbol || store?.currency || '';
+  const doc = document.createElement('article'); doc.className='doc invoice';
+  const barcodeId = 'bc-'+order.id;
+  const qrId = 'qr-'+order.id;
+  doc.innerHTML = `
+    <div class="head">
+      <div class="brand">
+        <img src="${store?.branding?.logo || '/images/branding/logo.png'}" alt="logo" onerror="this.src='${placeholderImg()}'">
+        <div>
+          <div class="store-name">${store?.name || 'متجرك'}</div>
+          <div class="store-info">${store?.phone || ''}${store?.email ? ' • ' + store?.email : ''}</div>
         </div>
       </div>
+      <div class="order-meta">
+        <div><strong>رقم الطلب:</strong> ${order.id}</div>
+        <div><strong>التاريخ:</strong> ${order.date}</div>
+        <div><strong>الحالة:</strong> ${order.status}</div>
+        <div><strong>نوع الطلب:</strong> ${orderTypeBadge(order.orderType)}</div>
+        ${order.tableNumber ? '<div><strong>طاولة:</strong> '+order.tableNumber+'</div>' : ''}
+      </div>
+    </div>
+    <div class="customer-info">
+      <div><div class="label">العميل</div><div class="value">${order.customer || '-'}</div></div>
+      <div><div class="label">الهاتف</div><div class="value">${order.phone || '-'}</div></div>
+      <div><div class="label">المنطقة</div><div class="value">${order.zoneName || order.zone || '-'}</div></div>
+      <div><div class="label">العنوان</div><div class="value">${order.address || '-'}</div></div>
+    </div>
+    ${order.notes ? '<div style="margin-top:10px;font-size:.88rem"><strong>ملاحظات الطلب:</strong> '+formatNotes(order.notes)+'</div>' : ''}
+    <table class="items-table"><thead><tr><th>المنتج</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead><tbody>
+    ${ (order.items||[]).map(it => {
+      const img = it.image || '';
+      const price = it.price || 0;
+      const qty = it.qty || 1;
+      const optsHtml = it.selectedOptions ? it.selectedOptions.map(og => og.selected.map(s => s.label).join(', ')).filter(Boolean).join(' | ') : '';
+      const notesHtml = it.notes ? '<div class="item-notes">'+it.notes+'</div>' : '';
+      return '<tr><td><div style="font-weight:700;display:flex;align-items:center;gap:8px">'+(img?'<img src="'+img+'" class="item-img" onerror="this.style.display=\'none\'">':'')+'<div>'+it.name+(optsHtml?'<div class="item-options">'+optsHtml+'</div>':'')+notesHtml+'</div></div></td><td>'+qty+'</td><td>'+formatCurrency(price,currency)+'</td><td>'+formatCurrency(price*qty,currency)+'</td></tr>'
+    }).join('') }
+    </tbody></table>
+    <div class="summary">
+      <div class="row">المجموع الفرعي: <span>${formatCurrency(order.subtotal||0,currency)}</span></div>
+      <div class="row">رسوم التوصيل: <span>${formatCurrency(order.shipping||0,currency)}</span></div>
+      ${ order.discount ? '<div class="row">الخصم: <span style="color:#059669">-'+formatCurrency(order.discount,currency)+'</span></div>' : '' }
+      <div class="row summary-total">الإجمالي: <span>${formatCurrency(order.total||0,currency)}</span></div>
+      <div class="row" style="font-weight:400;color:var(--muted)">طريقة الدفع: <span style="font-weight:700;color:var(--text)">${order.paymentMethod || '-'}</span></div>
+    </div>
+    <div class="signature">
+      <div>توقيع المستلم: ____________________</div>
+      <div>توقيع المتجر: ____________________</div>
+    </div>
+    <div class="barcode-qr"><svg id="${barcodeId}"></svg><div id="${qrId}"></div></div>
+    <div class="footer-note">
+      <div class="thankyou">شكراً لطلبك من ${store?.name || 'متجرنا'}</div>
+    </div>
+  `;
+  setTimeout(()=>{ try{ createBarcode(order.id, document.getElementById(barcodeId)); createQRCode(window.location.origin+'/admin?order='+encodeURIComponent(order.id), document.getElementById(qrId)); }catch(e){} },50);
+  return doc;
+}
 
-      <main class="print-container" id="print-root"></main>
+function buildLabel(order, store, invoice){
+  const currency = store?.currencySymbol || store?.currency || '';
+  const invId = invoice?.id || '-';
+  const total = order.total || 0;
+  const date = order.date || '-';
+  const payMethod = order.paymentMethod || '-';
+  const qrPayload = 'Order: '+order.id+'\nCustomer: '+(order.customer||'-')+'\nPhone: '+(order.phone||'-')+'\nAddress: '+(order.address||'-');
+  const doc = document.createElement('article'); doc.className='doc';
+  doc.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <div style="font-weight:800;font-size:1.1rem">${store?.name||'متجرك'}</div>
+      <div style="font-weight:900;font-size:1.35rem">${order.id}</div>
+    </div>
+    <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">
+      <div><strong>العميل:</strong> ${order.customer||'-'}</div>
+      <div><strong>الهاتف:</strong> ${order.phone||'-'}</div>
+    </div>
+    <div style="margin-top:8px"><strong>المنطقة:</strong> ${order.zoneName||order.zone||'-'}</div>
+    <div style="margin-top:8px;font-weight:700;font-size:1rem"><strong>العنوان:</strong> ${order.address||'-'}</div>
+    <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">
+      <div style="color:var(--muted);font-size:.9rem"><strong>رقم الفاتورة:</strong> ${invId}</div>
+      <div style="color:var(--muted);font-size:.9rem"><strong>طريقة الدفع:</strong> ${payMethod}</div>
+    </div>
+    <div style="margin-top:6px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">
+      <div style="color:var(--muted);font-size:.9rem"><strong>تاريخ الطلب:</strong> ${date}</div>
+      <div style="color:var(--muted);font-size:.9rem"><strong>الإجمالي:</strong> ${formatCurrency(total,currency)}</div>
+    </div>
+    <div style="margin-top:8px"><strong>ملاحظات:</strong> ${formatNotes(order.notes)||'-'}</div>
+    <div style="margin-top:8px"><strong>عدد القطع:</strong> ${(order.items||[]).reduce((s,i)=>s+(i.qty||1),0)}</div>
+    <div style="margin-top:12px;text-align:center"><svg id="bc-l-${order.id}"></svg><div id="qr-l-${order.id}"></div></div>
+    <div style="margin-top:12px;border:2px dashed #e5e7eb;padding:10px;border-radius:6px;text-align:center;color:var(--muted);font-size:.82rem">مساحة خاصة لشركة التوصيل — ضع هنا ملصق الشركة أو ختمها</div>
+  `;
+  setTimeout(()=>{ try{ createBarcode(order.id, document.getElementById('bc-l-'+order.id)); createQRCode(qrPayload, document.getElementById('qr-l-'+order.id)); }catch(e){} },50);
+  return doc;
+}
 
-      <script>
-        // Helpers
-        function qParam(key){ const u = new URL(window.location.href); return u.searchParams.get(key); }
-        function goBack(){ try{ if (window.opener && !window.opener.closed) { window.close(); window.opener.focus(); window.opener.location = '/admin'; } else { location.href = '/admin'; } } catch(e){ location.href = '/admin'; } }
-        function doPrint(){ window.print(); }
+function buildPackingSlip(order, store){
+  const doc = document.createElement('article'); doc.className='doc packing';
+  doc.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:800">Packing Slip</div><div style="font-weight:700">${order.id}</div></div>
+    <div style="margin-top:8px"><strong>العميل:</strong> ${order.customer||'-'} - ${order.phone||'-'}</div>
+    <table class="items-table" style="margin-top:12px"><thead><tr><th></th><th>المنتج</th><th>SKU</th><th>الكمية</th></tr></thead><tbody>
+    ${ (order.items||[]).map((it,idx)=>{
+      return '<tr><td><span class="check" data-idx="'+idx+'"></span></td><td>'+it.name+'</td><td>'+(it.sku||'')+'</td><td>'+(it.qty||1)+'</td></tr>'
+    }).join('') }
+    </tbody></table>
+    <div style="margin-top:12px"><strong>ملاحظات:</strong> ${formatNotes(order.notes)||'-'}</div>
+    <div style="margin-top:12px;display:flex;gap:18px"><div>تم التجهيز بواسطة: ________</div><div>تم الفحص بواسطة: ________</div></div>
+  `;
+  return doc;
+}
 
-        const ORDER_TYPE_LABELS = {
-          delivery: '🚚 توصيل',
-          pickup: '🏃 استلام من الفرع',
-          dinein: '🍽️ داخل المطعم'
-        };
-        function orderTypeText(type) { return ORDER_TYPE_LABELS[type] || ORDER_TYPE_LABELS.delivery; }
+function buildKitchenTicket(order, store){
+  const doc = document.createElement('article'); doc.className='doc kitchen-ticket';
+  const time = order.lastUpdated ? new Date(order.lastUpdated).toLocaleTimeString('ar-SA', {hour:'2-digit', minute:'2-digit'}) : '-';
+  const totalQty = (order.items||[]).reduce((s,i) => s + (i.qty || 0), 0);
+  const barcodeId = 'bc-kt-'+order.id;
+  doc.innerHTML = `
+    <div class="kt-header">
+      <div class="kt-brand">
+        <img src="${store?.branding?.logo || '/images/branding/logo.png'}" alt="logo" onerror="this.style.display='none'">
+        <span class="kt-brand-name">${store?.name || 'مطبخ'}</span>
+      </div>
+      <div class="kt-time">${time}</div>
+    </div>
+    <div style="margin-top:8px;text-align:center">
+      <div class="kt-order-id">#${order.orderNumber || order.id}</div>
+      <div style="margin-top:6px">${orderTypeKtBadge(order.orderType)}</div>
+      ${order.tableNumber ? '<div class="kt-table">طاولة '+order.tableNumber+'</div>' : ''}
+    </div>
+    <hr class="kt-divider">
+    ${(order.items||[]).map(item => `
+      <div class="kt-item">
+        <div><span class="kt-item-qty">${item.qty || 1}×</span><span class="kt-item-name">${item.name}</span></div>
+        ${item.selectedOptions ? item.selectedOptions.map(og =>
+          og.selected.map(s => '<div class="kt-item-options">'+s.label+'</div>').join('')
+        ).join('') : ''}
+        ${item.notes ? '<div class="kt-item-note">'+item.notes+'</div>' : ''}
+      </div>
+    `).join('')}
+    <hr class="kt-divider">
+    <div class="kt-footer">
+      <div><strong>المجموع:</strong> ${totalQty} قطعة</div>
+      ${order.notes ? '<div style="font-size:.85rem;color:#b91c1c">تنبيه: '+formatNotes(order.notes)+'</div>' : ''}
+    </div>
+    <div class="barcode-qr"><svg id="${barcodeId}"></svg></div>
+  `;
+  setTimeout(()=>{ try{ createBarcode(order.orderNumber || order.id, document.getElementById(barcodeId)); }catch(e){} },50);
+  return doc;
+}
 
-        const selectedMode = qParam('type') || qParam('mode') || 'invoice';
-        const idParam = qParam('id');
-        const idsParam = qParam('ids');
-        const ids = idsParam ? idsParam.split(',').map(s=>s.trim()).filter(Boolean) : (idParam ? [idParam] : []);
-        document.getElementById('print-mode').value = selectedMode;
+function onModeChange(){ const m = document.getElementById('print-mode').value; const u = new URL(window.location.href); u.searchParams.set('type', m); window.location.replace(u.toString()); }
 
-        async function fetchStore(){ try{ const res = await fetch('/api/settings'); if(!res.ok) throw new Error('settings fetch failed'); return await res.json(); }catch(e){ console.error(e); return null; } }
-        async function fetchOrder(id){ try{ const res = await fetch(`/api/orders/${encodeURIComponent(id)}`); if(!res.ok) return null; return await res.json(); }catch(e){ console.error(e); return null; } }
-        async function fetchInvoiceForOrder(orderId){
-          try{ const res = await fetch('/api/invoices'); if(!res.ok) return null; const all = await res.json(); const arr = Array.isArray(all) ? all : (all.data || []); return arr.find(inv => inv.sourceType === 'order' && String(inv.sourceId) === String(orderId)) || null;
-          }catch(e){ console.error(e); return null; }
-        }
+(async ()=>{
+  const mode = qParam('type') || 'invoice'; 
+  const modeEl = document.getElementById('print-mode');
+  if (modeEl) modeEl.value = mode;
+  
+  const root = document.getElementById('print-root');
+  const store = await fetchStore();
+  if (!store) { root.innerHTML = '<div class="doc">خطأ: فشل تحميل إعدادات المتجر.</div>'; return; }
+  if (!ids || ids.length === 0){ root.innerHTML = '<div class="doc">لم يتم تحديد أي طلب للطباعة.</div>'; return; }
+  
+  for (const id of ids){
+    const order = await fetchOrder(id);
+    if (!order){ const missing = document.createElement('div'); missing.className='doc'; missing.innerHTML = '<strong>الطلب '+id+' غير موجود.</strong>'; root.appendChild(missing); continue; }
+    let node;
+    const modeType = qParam('type') || document.getElementById('print-mode')?.value || 'invoice';
+    if (modeType === 'label') {
+      const invoice = await fetchInvoiceForOrder(id);
+      node = buildLabel(order, store, invoice);
+    } else if (modeType === 'packing') node = buildPackingSlip(order, store);
+    else if (modeType === 'kitchen') node = buildKitchenTicket(order, store);
+    else node = buildInvoice(order, store);
+    root.appendChild(node);
+  }
 
-        function formatCurrency(v, symbol){ try{ return Number(v).toLocaleString('ar-SA') + ' ' + (symbol||''); }catch(e){return v} }
-        function createBarcode(id, target){ try{ JsBarcode(target, String(id), {format:'CODE128', displayValue:true, height:40, fontSize:14}); }catch(e){console.error(e)} }
-        function createQRCode(text, container){ try{ new QRCode(container, {text:text, width:96, height:96}); }catch(e){console.error(e)} }
+  if (ids.length === 1 && document.getElementById('auto-print')?.checked) {
+    setTimeout(()=> window.print(), 400);
+  }
 
-        function placeholderImg(){ return '/images/branding/placeholder.png'; }
-
-        function buildInvoice(order, store){
-          const currency = store?.currencySymbol || store?.currency || '';
-          const doc = document.createElement('article'); doc.className='doc invoice';
-          doc.innerHTML = `
-            <div class="head">
-              <div class="brand"><img src="${store?.branding?.logo || '/images/branding/logo.png'}" alt="logo" onerror="this.src='${placeholderImg()}'"><div><div class="store-name">${store?.name || 'متجرك'}</div><div style="color:var(--muted)">${store?.phone || ''} • ${store?.email || ''}</div></div></div>
-              <div class="meta"><div><strong>رقم الطلب:</strong> ${order.id}</div><div><strong>التاريخ:</strong> ${order.date}</div><div><strong>الحالة:</strong> ${order.status}</div><div><strong>نوع الطلب:</strong> ${orderTypeText(order.orderType)}</div></div>
-            </div>
-            <div class="customer">
-              <div class="left">
-                <div><strong>العميل:</strong> ${order.customer || '-'}</div>
-                <div><strong>الهاتف:</strong> ${order.phone || '-'}</div>
-                <div><strong>المدينة:</strong> ${order.zoneName || order.zone || '-'}</div>
-                <div><strong>العنوان:</strong> ${order.address || '-'}</div>
-                <div><strong>ملاحظات:</strong> ${order.notes && order.notes.length ? order.notes.join(' | ') : '-'}</div>
-              </div>
-              <div style="text-align:center">
-                <svg id="bc-${order.id}"></svg>
-                <div id="qr-bc-${order.id}"></div>
-              </div>
-            </div>
-            <table class="items"><thead><tr><th>صورة</th><th>المنتج</th><th>الكمية</th><th>السعر</th><th>المجموع</th></tr></thead><tbody>
-            ${ (order.items||[]).map(it=>{
-              const img = it.image || '';
-              const price = it.price || 0;
-              const qty = it.qty || 1;
-              return `<tr><td>${img?`<img src="${img}" class="item-img" onerror="this.src='${placeholderImg()}'"/>`:`-`}</td><td><div style="font-weight:700">${it.name||''}</div><div style="color:var(--muted);font-size:0.9rem">${it.sku||''}</div></td><td>${qty}</td><td>${formatCurrency(price,currency)}</td><td>${formatCurrency(price*qty,currency)}</td></tr>`
-            }).join('') }
-            </tbody></table>
-            <div class="summary">
-              <div class="row">المجموع الفرعي: <span>${formatCurrency(order.subtotal||0,currency)}</span></div>
-              <div class="row">رسوم التوصيل: <span>${formatCurrency(order.shipping||0,currency)}</span></div>
-              ${ order.discount ? `<div class="row">الخصم: <span style="color:green">${formatCurrency(order.discount,currency)}</span></div>` : '' }
-              <div class="row" style="font-size:1.05rem">الإجمالي: <span style="font-weight:900">${formatCurrency(order.total||0,currency)}</span></div>
-              <div class="row">طريقة الدفع: <span>${order.paymentMethod || '-'}</span></div>
-              <div class="row">توقيع المتجر: ____________________</div>
-              <div class="row">شكراً لطلبك من ${store?.name || 'متجرنا'}! نقدر ثقتك.</div>
-            </div>
-          `;
-          // hook barcode/qr
-          setTimeout(()=>{ try{ createBarcode(order.id, document.getElementById(`bc-${order.id}`)); createQRCode(window.location.origin + '/admin?order=' + encodeURIComponent(order.id), document.getElementById(`qr-bc-${order.id}`)); }catch(e){} },50);
-          return doc;
-        }
-
-        function buildLabel(order, store, invoice){
-          const currency = store?.currencySymbol || store?.currency || '';
-          const invId = invoice?.id || '-';
-          const total = order.total || 0;
-          const date = order.date || '-';
-          const payMethod = order.paymentMethod || '-';
-          const qrPayload = `Order: ${order.id}\nCustomer: ${order.customer||'-'}\nPhone: ${order.phone||'-'}\nAddress: ${order.address||'-'}`;
-          const doc = document.createElement('article'); doc.className='doc';
-          doc.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-              <div style="font-weight:800;font-size:1.1rem">${store?.name||'متجرك'}</div>
-              <div style="font-weight:900;font-size:1.35rem">${order.id}</div>
-            </div>
-            <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">
-              <div><strong>العميل:</strong> ${order.customer||'-'}</div>
-              <div><strong>الهاتف:</strong> ${order.phone||'-'}</div>
-            </div>
-            <div style="margin-top:8px"><strong>المنطقة:</strong> ${order.zoneName||order.zone||'-'}</div>
-            <div style="margin-top:8px;font-weight:700;font-size:1rem">العنوان: ${order.address||'-'}</div>
-            <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">
-              <div style="color:var(--muted);font-size:0.9rem"><strong>رقم الفاتورة:</strong> ${invId}</div>
-              <div style="color:var(--muted);font-size:0.9rem"><strong>طريقة الدفع:</strong> ${payMethod}</div>
-            </div>
-            <div style="margin-top:6px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px">
-              <div style="color:var(--muted);font-size:0.9rem"><strong>تاريخ الطلب:</strong> ${date}</div>
-              <div style="color:var(--muted);font-size:0.9rem"><strong>الإجمالي:</strong> ${formatCurrency(total,currency)}</div>
-            </div>
-            <div style="margin-top:8px"><strong>ملاحظات:</strong> ${order.notes && order.notes.length ? order.notes.join(' | ') : '-'}</div>
-            <div style="margin-top:8px"><strong>عدد القطع:</strong> ${(order.items||[]).reduce((s,i)=>s+(i.qty||1),0)}</div>
-            <div style="margin-top:12px;text-align:center"><svg id="bc-l-${order.id}"></svg><div id="qr-l-${order.id}"></div></div>
-            <div class="shipping-label" style="margin-top:12px">مساحة خاصة لشركة التوصيل: ضع هنا ملصق الشركة أو ختمها</div>
-          `;
-          setTimeout(()=>{ try{ createBarcode(order.id, document.getElementById(`bc-l-${order.id}`)); createQRCode(qrPayload, document.getElementById(`qr-l-${order.id}`)); }catch(e){} },50);
-          return doc;
-        }
-
-        function buildPackingSlip(order, store){
-          const doc = document.createElement('article'); doc.className='doc packing';
-          doc.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:800">Packing Slip</div><div style="font-weight:700">${order.id}</div></div>
-            <div style="margin-top:8px"><strong>العميل:</strong> ${order.customer||'-'} • ${order.phone||'-'}</div>
-            <table class="items" style="margin-top:12px"><thead><tr><th></th><th>المنتج</th><th>SKU</th><th>الكمية</th></tr></thead><tbody>
-            ${ (order.items||[]).map((it,idx)=>{
-              return `<tr><td><span class="check" data-idx="${idx}"></span></td><td>${it.name||''}</td><td>${it.sku||''}</td><td>${it.qty||1}</td></tr>`
-            }).join('') }
-            </tbody></table>
-            <div style="margin-top:12px"><strong>ملاحظات:</strong> ${order.notes && order.notes.length ? order.notes.join(' | ') : '-'}</div>
-            <div style="margin-top:12px;display:flex;gap:18px"><div>تم التجهيز بواسطة: ________</div><div>تم الفحص بواسطة: ________</div></div>
-          `;
-          return doc;
-        }
-
-        async function init(){
-          const root = document.getElementById('print-root');
-          const store = await fetchStore();
-          if (!store) {
-            root.innerHTML = `<div class="doc">خطأ: فشل تحميل إعدادات المتجر.</div>`; return;
-          }
-          if (!ids || ids.length === 0){ root.innerHTML = `<div class="doc">لم يتم تحديد أي طلب للطباعة.</div>`; return; }
-          for (const id of ids){
-            const order = await fetchOrder(id);
-            if (!order){ const missing = document.createElement('div'); missing.className='doc'; missing.innerHTML = `<strong>الطلب ${id} غير موجود.</strong>`; root.appendChild(missing); continue; }
-            // choose builder
-            let node;
-            const mode = (qParam('type') || document.getElementById('print-mode')?.value || 'invoice');
-            if (mode === 'label') {
-              const invoice = await fetchInvoiceForOrder(id);
-              node = buildLabel(order, store, invoice);
-            } else if (mode === 'packing') node = buildPackingSlip(order, store);
-            else if (mode === 'kitchen') node = buildKitchenTicket(order, store);
-            else node = buildInvoice(order, store);
-            root.appendChild(node);
-          }
-
-          // Auto-print if requested
-          if (ids.length === 1 && document.getElementById('auto-print')?.checked) {
-            setTimeout(()=> window.print(), 400);
-          }
-        }
-
-        function buildKitchenTicket(order, store){
-          const doc = document.createElement('article'); doc.className='doc';
-          const time = order.lastUpdated ? new Date(order.lastUpdated).toLocaleTimeString('ar-SA', {hour:'2-digit', minute:'2-digit'}) : '-';
-          const totalQty = (order.items||[]).reduce((s,i) => s + (i.qty || 0), 0);
-          doc.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-              <div style="display:flex;align-items:center;gap:8px">
-                <img src="${store?.branding?.logo || '/images/branding/logo.png'}" alt="logo" style="height:36px;object-fit:contain" onerror="this.style.display='none'">
-                <div style="font-weight:800;font-size:1.05rem">${store?.name || 'متجرك'}</div>
-              </div>
-            </div>
-            <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
-              <div style="font-weight:900;font-size:1.25rem">${order.id}</div>
-              <div style="font-size:0.9rem;color:var(--muted)">${time}</div>
-            </div>
-            <div style="margin-top:4px;font-size:0.85rem;color:#f59e0b">${orderTypeText(order.orderType)}</div>
-            <hr style="margin:8px 0;border:none;border-top:1px dashed #ddd">
-            ${(order.items||[]).map(item => `
-              <div style="margin-bottom:8px">
-                <div style="font-weight:700;font-size:0.95rem">${item.emoji || ''} ${item.qty} × ${item.name}</div>
-                ${item.selectedOptions ? item.selectedOptions.map(og =>
-                  og.selected.map(s => `<div style="font-size:0.85rem;color:var(--muted);padding-right:14px">• ${s.label}</div>`).join('')
-                ).join('') : ''}
-                ${item.notes ? `<div style="font-size:0.85rem;color:#dc3545;padding-right:14px">⚠️ ${item.notes}</div>` : ''}
-              </div>
-            `).join('')}
-            <hr style="margin:8px 0;border:none;border-top:1px dashed #ddd">
-            <div style="display:flex;justify-content:space-between;font-size:0.9rem">
-              <div><strong>المجموع:</strong> ${totalQty} قطعة</div>
-              <div><strong>العميل:</strong> ${order.customer || '-'}</div>
-            </div>
-          `;
-          return doc;
-        }
-
-        function onModeChange(){ const m = document.getElementById('print-mode').value; const u = new URL(window.location.href); u.searchParams.set('type', m); window.location.replace(u.toString()); }
-
-        // init
-        (async ()=>{
-          // keep the toolbar's mode synced to query
-          const mode = qParam('type') || 'invoice'; document.getElementById('print-mode').value = mode;
-          await init();
-        })();
-      </script>
-    </body>
-    </html>
+  if (qParam('autoprint') === '1') {
+    setTimeout(function(){ window.print(); }, 500);
+  }
+})();
+</script>
+</body>
+</html>

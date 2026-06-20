@@ -7,19 +7,19 @@
 
 /* ===== CORE THEME CONFIGURATIONS (Scoped to data-theme) ===== */
 [data-theme="noorlabs-signature"] {
-  /* Redesigned Brand Palette */
-  --primary:         #6d28d9; /* Deep violet accent */
-  --primary-light:   #f3e8ff; /* Soft violet background */
-  --secondary:       #7c3aed; /* Vibrant hover violet */
-  --accent:          #6d28d9;
-  --gold:            #6d28d9;
+  /* Terracotta Brand Palette */
+  --primary:         #d35400; /* Terracotta accent - matching POS/Tables/Kitchen */
+  --primary-light:   #fff1e6; /* Soft terracotta background */
+  --secondary:       #e67e22; /* Vibrant orange hover */
+  --accent:          #d35400;
+  --gold:            #d35400;
   
   /* Layout Surfaces */
-  --bg:              #fafafa; /* Minimal light background */
-  --surface:         #ffffff; /* Card background */
-  --surface-strong:  #f8fafc; /* Subtle secondary background */
-  --surface-soft:    #f8fafc;
-  --border:          #e2e8f0; /* Crisp slate-light borders */
+  --bg:              #fafafa;
+  --surface:         #ffffff;
+  --surface-strong:  #fef9f4;
+  --surface-soft:    #fff5ed;
+  --border:          #e2e8f0;
   
   /* Semantic Colors */
   --success:         #059669; /* Rich green */
@@ -129,7 +129,7 @@ body[data-theme="noorlabs-signature"]::before {
 [data-theme="noorlabs-signature"] .top-search input[type="search"]:focus {
   border-color: var(--primary) !important;
   background: #ffffff !important;
-  box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.08) !important;
+  box-shadow: 0 0 0 3px rgba(211, 84, 0, 0.08) !important;
 }
 
 /* Header Action Buttons */
@@ -174,7 +174,7 @@ body[data-theme="noorlabs-signature"]::before {
 [data-theme="noorlabs-signature"] .hero {
   display: grid !important;
   grid-template-columns: 1.2fr 1fr !important;
-  background: var(--surface-strong) !important;
+  background: linear-gradient(135deg, #fef9f4 0%, #fdf0e6 100%) !important;
   min-height: 420px !important;
   padding: 32px 40px !important;
   border-radius: 16px !important;
@@ -207,9 +207,9 @@ body[data-theme="noorlabs-signature"]::before {
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  background: rgba(109, 40, 217, 0.06) !important;
+  background: rgba(211, 84, 0, 0.06) !important;
   color: var(--primary) !important;
-  border: 1px solid rgba(109, 40, 217, 0.12) !important;
+  border: 1px solid rgba(211, 84, 0, 0.12) !important;
   border-radius: 9999px !important;
   padding: 6px 14px !important;
   font-weight: 700 !important;
@@ -251,14 +251,14 @@ body[data-theme="noorlabs-signature"]::before {
   font-weight: 700 !important;
   font-size: 0.95rem !important;
   border: none !important;
-  box-shadow: 0 8px 20px -4px rgba(109, 40, 217, 0.2) !important;
+  box-shadow: 0 8px 20px -4px rgba(211, 84, 0, 0.3) !important;
   transition: all var(--transition) !important;
 }
 
 [data-theme="noorlabs-signature"] .hero-cta:hover {
   background: var(--secondary) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 12px 24px -4px rgba(109, 40, 217, 0.3) !important;
+  box-shadow: 0 12px 24px -4px rgba(211, 84, 0, 0.4) !important;
 }
 
 [data-theme="noorlabs-signature"] .hero-banner {
@@ -320,61 +320,80 @@ body[data-theme="noorlabs-signature"]::before {
 }
 
 [data-theme="noorlabs-signature"] .cat-card {
+  width: 120px !important;
+  background: var(--surface) !important;
+  border-radius: 14px !important;
+  border: 2px solid transparent !important;
+  overflow: hidden !important;
+  cursor: pointer !important;
   display: flex !important;
   flex-direction: column !important;
-  align-items: center !important;
-  gap: 8px !important;
-  cursor: pointer !important;
-  transition: transform var(--transition) !important;
-  width: 84px !important;
   flex-shrink: 0 !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+[data-theme="noorlabs-signature"] .cat-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: var(--shadow) !important;
+}
+
+[data-theme="noorlabs-signature"] .cat-card.active {
+  border-color: var(--primary) !important;
+  box-shadow: 0 4px 16px rgba(184,135,70,0.2) !important;
 }
 
 [data-theme="noorlabs-signature"] .cat-card .cat-icon {
-  width: 76px !important;
-  height: 76px !important;
-  border-radius: 50% !important;
-  background: #ffffff !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: var(--shadow-sm) !important;
-  transition: all var(--transition) !important;
+  width: 100% !important;
+  height: 85px !important;
+  background: #f3f4f6 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   overflow: hidden !important;
+  padding: 6px !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 [data-theme="noorlabs-signature"] .cat-card .cat-icon img {
   width: 100% !important;
   height: 100% !important;
-  object-fit: cover !important;
-  border-radius: 50% !important;
+  object-fit: contain !important;
+  display: block !important;
+}
+
+[data-theme="noorlabs-signature"] .cat-card .cat-icon-placeholder {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex;
+  align-items: center !important;
+  justify-content: center !important;
+  color: rgba(71,85,105,0.6) !important;
+  font-size: 1.6rem !important;
+  background: transparent !important;
   border: none !important;
+  border-radius: 0 !important;
 }
 
-[data-theme="noorlabs-signature"] .cat-card:hover .cat-icon {
-  border-color: var(--primary) !important;
-  transform: translateY(-3px) !important;
-  box-shadow: var(--shadow) !important;
-}
-
-[data-theme="noorlabs-signature"] .cat-card.active .cat-icon {
-  border-color: var(--primary) !important;
-  border-width: 2px !important;
-  box-shadow: 0 0 0 4px rgba(109, 40, 217, 0.12) !important;
+[data-theme="noorlabs-signature"] .cat-card.active .cat-icon-placeholder {
+  color: var(--primary) !important;
 }
 
 [data-theme="noorlabs-signature"] .cat-card .cat-name {
+  width: 100% !important;
+  text-align: center !important;
+  color: var(--text-strong) !important;
   font-size: 0.85rem !important;
-  font-weight: 600 !important;
-  color: var(--text-light) !important;
-  transition: color var(--transition) !important;
-  margin-top: 0 !important;
+  font-weight: 700 !important;
+  padding: 10px 8px !important;
+  line-height: 1.2 !important;
 }
 
 [data-theme="noorlabs-signature"] .cat-card.active .cat-name {
   color: var(--primary) !important;
-  font-weight: 700 !important;
+  font-weight: 800 !important;
 }
 
 /* ===== PREMIUM PRODUCT CARDS ===== */
@@ -399,7 +418,7 @@ body[data-theme="noorlabs-signature"]::before {
 
 [data-theme="noorlabs-signature"] .product-card:hover {
   transform: translateY(-5px) !important;
-  border-color: rgba(109, 40, 217, 0.18) !important;
+  border-color: rgba(211, 84, 0, 0.2) !important;
   box-shadow: var(--shadow-lg) !important;
 }
 
@@ -515,14 +534,14 @@ body[data-theme="noorlabs-signature"]::before {
   font-size: 0.9rem !important;
   font-weight: 700 !important;
   margin-top: 6px !important;
-  box-shadow: 0 4px 10px rgba(109, 40, 217, 0.1) !important;
+  box-shadow: 0 4px 12px rgba(211, 84, 0, 0.15) !important;
   transition: all var(--transition) !important;
 }
 
 [data-theme="noorlabs-signature"] .add-to-cart-btn:hover {
   background: var(--secondary) !important;
   transform: translateY(-2px) !important;
-  box-shadow: 0 6px 14px rgba(109, 40, 217, 0.2) !important;
+  box-shadow: 0 6px 16px rgba(211, 84, 0, 0.25) !important;
 }
 
 /* ===== SLEEK CART DRAWER ===== */
@@ -660,13 +679,13 @@ body[data-theme="noorlabs-signature"]::before {
   font-weight: 700 !important;
   background: var(--primary) !important;
   color: #ffffff !important;
-  box-shadow: 0 4px 12px rgba(109, 40, 217, 0.12) !important;
+  box-shadow: 0 4px 12px rgba(211, 84, 0, 0.12) !important;
   transition: all var(--transition) !important;
 }
 
 [data-theme="noorlabs-signature"] .checkout-btn:hover {
   background: var(--secondary) !important;
-  box-shadow: 0 6px 16px rgba(109, 40, 217, 0.2) !important;
+  box-shadow: 0 6px 16px rgba(211, 84, 0, 0.2) !important;
 }
 
 [data-theme="noorlabs-signature"] .cart-continue-btn {
@@ -750,7 +769,7 @@ body[data-theme="noorlabs-signature"]::before {
 [data-theme="noorlabs-signature"] .form-group textarea:focus {
   border-color: var(--primary) !important;
   background: #ffffff !important;
-  box-shadow: 0 0 0 3px rgba(109, 40, 217, 0.08) !important;
+  box-shadow: 0 0 0 3px rgba(211, 84, 0, 0.08) !important;
 }
 
 /* Force Static Labels above inputs */
@@ -799,13 +818,13 @@ body[data-theme="noorlabs-signature"]::before {
 }
 
 [data-theme="noorlabs-signature"] .payment-option:hover {
-  border-color: rgba(109, 40, 217, 0.25) !important;
+  border-color: rgba(211, 84, 0, 0.25) !important;
   background: #ffffff !important;
 }
 
 [data-theme="noorlabs-signature"] .payment-option.active {
   border-color: var(--primary) !important;
-  background: rgba(109, 40, 217, 0.02) !important;
+  background: rgba(211, 84, 0, 0.03) !important;
 }
 
 [data-theme="noorlabs-signature"] .payment-option input[type="radio"] {
@@ -924,13 +943,13 @@ body[data-theme="noorlabs-signature"]::before {
   font-size: 1rem !important;
   font-weight: 700 !important;
   transition: all var(--transition) !important;
-  box-shadow: 0 4px 12px rgba(109, 40, 217, 0.12) !important;
+  box-shadow: 0 4px 12px rgba(211, 84, 0, 0.12) !important;
 }
 
 [data-theme="noorlabs-signature"] .desktop-place-order:hover {
   background: var(--secondary) !important;
   transform: translateY(-1px) !important;
-  box-shadow: 0 6px 16px rgba(109, 40, 217, 0.2) !important;
+  box-shadow: 0 6px 16px rgba(211, 84, 0, 0.2) !important;
 }
 
 /* ===== CONFIRMATION PAGE ===== */

@@ -7,36 +7,36 @@
   {
     "id": "burgers",
     "name": "برجر",
-    "image": "/images/products/food-burger-cheese.jpg"
+    "image": "/images/categories/1781912224724-ChatGPT_Image_20____________2026___01_25_44___.png"
   },
   {
     "id": "pizzas",
     "name": "بيتزا",
-    "image": "/images/products/food-pizza-margherita.jpg"
+    "image": "/images/categories/1781912233738-ChatGPT_Image_20____________2026___01_26_54___.png"
   },
   {
     "id": "sandwiches",
     "name": "ساندويش",
-    "image": "/images/products/food-sandwich-shawarma.jpg"
+    "image": "/images/categories/1781912252097-ChatGPT_Image_20____________2026___01_28_37___.png"
   },
   {
     "id": "appetizers",
     "name": "مقبلات",
-    "image": "/images/products/food-app-fries.jpg"
+    "image": "/images/categories/1781912260156-ChatGPT_Image_20____________2026___01_30_58___.png"
   },
   {
     "id": "drinks",
     "name": "مشروبات",
-    "image": "/images/products/food-drink-cola.jpg"
+    "image": "/images/categories/1781912274118-ChatGPT_Image_20____________2026___01_31_20___.png"
   },
   {
     "id": "desserts",
     "name": "حلويات",
-    "image": "/images/products/food-dessert-cake.jpg"
+    "image": "/images/categories/1781912284076-ChatGPT_Image_20____________2026___01_33_42___.png"
   },
   {
     "id": "offers",
     "name": "عروض",
-    "image": "/images/products/food-combo-family.jpg"
+    "image": "/images/categories/1781912294612-ChatGPT_Image_20____________2026___01_34_34___.png"
   }
 ]

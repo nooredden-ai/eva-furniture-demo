@@ -11,6 +11,7 @@ let _storeLock = false; // prevent double actions
 let appliedCoupon = null; // track applied coupon
 let discountAmount = 0; // track discount amount
 let selectedOrderType = 'delivery';
+let selectedTable = sessionStorage.getItem('louloTable') || '';
 
 const DEFAULT_ZONES = [
   { id: 'zone_westbank', name: 'الضفة الغربية', price: 15, enabled: true, sortOrder: 1 },
@@ -292,6 +293,27 @@ function applyMobileFilters() {
 
 async function initStore() {
   window.checkoutEnabled = true;
+
+  // Read table param from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const tableParam = urlParams.get('table');
+  const typeParam = urlParams.get('type') || urlParams.get('orderType');
+  if (tableParam) {
+    selectedTable = tableParam.trim();
+    sessionStorage.setItem('louloTable', selectedTable);
+  }
+  if (typeParam === 'dinein' || selectedTable) {
+    selectedOrderType = 'dinein';
+  }
+
+  // Show table badge
+  const tableBadge = document.getElementById('table-badge');
+  const tableBadgeText = document.getElementById('table-badge-text');
+  if (selectedTable && tableBadge && tableBadgeText) {
+    tableBadge.style.display = 'inline-flex';
+    tableBadgeText.textContent = 'طاولة ' + selectedTable;
+  }
+
   const overlay = document.getElementById('storefront-disabled-overlay');
   try {
     const planResponse = await fetch('/api/store-plan');
@@ -439,7 +461,7 @@ function searchProducts(q) {
         ${badgeText ? `<div class="product-badge ${badgeClass}">${badgeText}</div>` : ''}
         <div class="product-art">
           <div class="product-img" style="background: ${p.bg || 'var(--bg)'};display:flex;align-items:center;justify-content:center">
-            ${p.image || (p.images && p.images[0]) ? `<img src="${p.image || p.images[0]}" alt="${p.name}" />` : (p.emoji && p.emoji.length <= 4 ? `<span class="product-emoji">${p.emoji}</span>` : `<i data-lucide="package" class="product-fallback-icon"></i>`) }
+            ${p.image || (p.images && p.images[0]) ? `<img src="${p.image || p.images[0]}" alt="${p.name}" />` : (p.emoji && p.emoji.length <= 4 ? `<span class="product-emoji">${p.emoji}</span>` : `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4"><path d="M16.5 9.4 7.55 4.24a1 1 0 0 0-1.1 0L2 6.5"/><path d="M21.16 8.2a1 1 0 0 0-.66-.94L12 4.25"/><path d="m6.25 14.25-1.13.65a1 1 0 0 0-.5.87v4.21"/><path d="m12 8.1 1.76-1"/><path d="M18.68 8.7a1 1 0 0 1 .48.86v4.21"/><path d="M12 22v-9"/><path d="M7.8 19.25 12 22l4.2-2.75"/><path d="M17.64 7.5 18.25 10"/><path d="M13.75 11.5 12 12.35"/><path d="M9.75 13.75 5 16.5"/><path d="M14.25 13.75 19 16.5"/></svg>`) }
             <div class="product-name-overlay">${p.name}</div>
           </div>
         </div>
@@ -447,7 +469,7 @@ function searchProducts(q) {
           <div class="product-name">${p.name}</div>
           <div class="product-cat">${getCategoryName(p.category)}</div>
           <div class="product-price">${p.price} <span class="currency">${getCurrency()}</span></div>
-          <button class="add-to-cart-btn btn-active-scale" onclick="addToCart(${p.id}, this)">أضف للسلة</button>
+          <button class="add-to-cart-btn btn-active-scale" onclick="addToCart(${p.id}, this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:6px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> ${p.options && p.options.length ? 'اختر الإضافات' : 'إضافة'}</button>
         </div>
       </div>
     `;
@@ -512,18 +534,18 @@ function renderFeatureHighlights(highlights) {
   const container = document.getElementById('feature-highlights');
   if (!container) return;
   const defaults = [
-    { icon: 'truck', title: 'توصيل سريع', text: 'خلال 24-48 ساعة لجميع مناطق المملكة' },
-    { icon: 'shield-check', title: 'دفع آمن', text: 'جميع وسائل الدفع الإلكتروني مقبولة' },
-    { icon: 'refresh-cw', title: 'إرجاع مجاني', text: 'سياسة إرجاع مرنة خلال 14 يوم' },
-    { icon: 'gem', title: 'منتجات أصلية', text: '100% منتجات أصلية مع ضمان الجودة' }
+    { icon: 'flame', title: 'تحضير سريع', text: 'وجبات طازجة خلال دقائق' },
+    { icon: 'truck', title: 'توصيل مباشر', text: 'نغطي جميع المناطق' },
+    { icon: 'badge-check', title: 'طلب سهل', text: 'اختر وأرسل في ثوانٍ' },
+    { icon: 'message-circle', title: 'QR للطاولات', text: 'اطلب من هاتفك مباشرة' }
   ];
   const cards = Array.isArray(highlights) && highlights.length ? highlights.filter(item => item && (item.title || item.text)) : [];
   const items = cards.length ? cards : defaults;
   container.innerHTML = items.map(item => `
-    <div style="padding:24px;display:flex;flex-direction:column;align-items:center">
-      <div style="margin-bottom:12px;color:var(--accent)"><i data-lucide="${item.icon || 'sparkles'}" style="width:40px;height:40px"></i></div>
-      <h3 style="font-weight:700;margin-bottom:6px">${item.title || ''}</h3>
-      <p style="opacity:0.75;font-size:0.9rem">${item.text || ''}</p>
+    <div style="padding:20px 12px;display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div style="width:48px;height:48px;border-radius:50%;background:rgba(211,84,0,0.1);display:flex;align-items:center;justify-content:center;color:var(--primary)"><i data-lucide="${item.icon || 'sparkles'}" style="width:24px;height:24px"></i></div>
+      <h3 style="font-weight:700;font-size:0.95rem;margin:0;color:var(--text-strong)">${item.title || ''}</h3>
+      <p style="color:var(--text-light);font-size:0.85rem;margin:0;line-height:1.4">${item.text || ''}</p>
     </div>
   `).join('');
   if (window.lucide) lucide.createIcons();
@@ -697,7 +719,7 @@ function renderCategories() {
 
   const categoryCards = categoriesToRender.map(c => {
     const imageContent = c.image
-      ? `<img src="${c.image}" alt="${c.name}" loading="lazy" />`
+      ? `<img src="${c.image}" alt="${c.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" /><div class="cat-icon-placeholder" style="display:none"><i data-lucide="image" style="width:24px;height:24px"></i></div>`
       : `<div class="cat-icon-placeholder"><i data-lucide="image" style="width:24px;height:24px"></i></div>`;
 
     return `
@@ -827,7 +849,7 @@ function renderProducts() {
         <div class="product-img" style="background: ${p.bg || 'var(--bg)'};display:flex;align-items:center;justify-content:center">
           ${p.image || (p.images && p.images[0]) 
             ? `<img src="${p.image || p.images[0]}" alt="${p.name}" />` 
-            : (p.emoji && p.emoji.length <= 4 ? `<span class="product-emoji">${p.emoji}</span>` : `<i data-lucide="package" class="product-fallback-icon"></i>`) }
+            : (p.emoji && p.emoji.length <= 4 ? `<span class="product-emoji">${p.emoji}</span>` : `<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.4"><path d="M16.5 9.4 7.55 4.24a1 1 0 0 0-1.1 0L2 6.5"/><path d="M21.16 8.2a1 1 0 0 0-.66-.94L12 4.25"/><path d="m6.25 14.25-1.13.65a1 1 0 0 0-.5.87v4.21"/><path d="m12 8.1 1.76-1"/><path d="M18.68 8.7a1 1 0 0 1 .48.86v4.21"/><path d="M12 22v-9"/><path d="M7.8 19.25 12 22l4.2-2.75"/><path d="M17.64 7.5 18.25 10"/><path d="M13.75 11.5 12 12.35"/><path d="M9.75 13.75 5 16.5"/><path d="M14.25 13.75 19 16.5"/></svg>`) }
           <div class="product-name-overlay">${p.name}</div>
         </div>
         ${p.badge ? (() => {
@@ -843,7 +865,7 @@ function renderProducts() {
         <div class="product-price">${p.price} <span class="currency">${getCurrency()}</span></div>
         ${(() => {
           const state = getProductState(p);
-          if (state === 'available') return `<button class="add-to-cart-btn btn-active-scale" onclick="addToCart(${p.id}, this)">أضف للسلة</button>`;
+          if (state === 'available') return `<button class="add-to-cart-btn btn-active-scale" onclick="addToCart(${p.id}, this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:6px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> ${p.options && p.options.length ? 'اختر الإضافات' : 'إضافة'}</button>`;
           if (state === 'temporary') return `<button class="add-to-cart-btn btn-unavailable" disabled>نفد مؤقتاً</button>`;
           return '';
         })()}
@@ -1102,10 +1124,10 @@ function renderCart() {
   if (cart.length === 0) {
     container.innerHTML = `
       <div class="cart-empty">
-        <i data-lucide="shopping-bag" class="cart-empty-icon"></i>
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="cart-empty-icon" style="color:var(--primary);opacity:0.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
         <h3>سلتك فارغة</h3>
-        <p>اكتشفي تشكيلتنا الفاخرة وابدئي التسوق</p>
-        <button class="cart-empty-cta" onclick="closeCart()">تسوقي الآن</button>
+        <p>تصفّح قائمتنا وابدأ الطلب الآن</p>
+        <button class="cart-empty-cta" onclick="closeCart()">تصفح القائمة</button>
       </div>
     `;
     if (window.lucide) lucide.createIcons();
@@ -1181,7 +1203,11 @@ function goToCheckout() {
   closeCart();
   renderCheckoutSummary();
   syncPaymentMethodVisibility();
-  setOrderType('delivery');
+  if (selectedTable) {
+    setOrderType('dinein');
+  } else {
+    setOrderType('delivery');
+  }
   showPage('checkout');
 }
 
@@ -1201,6 +1227,15 @@ function renderCheckoutSummary() {
   if (!container || !subtotalEl) return;
   
   const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+  // Show order type info in summary
+  const orderTypeInfo = $('summary-order-type');
+  if (orderTypeInfo) {
+    const typeIcons = { delivery: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-left:4px"><path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><polygon points="6 17 9 13 12 17 15 10 18 17"/></svg>', pickup: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-left:4px"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>', dinein: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-left:4px"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c6 0 1.1.9 2 2 2h3Zm0 0v7"/></svg>' };
+    const typeLabels = { delivery: 'توصيل', pickup: 'استلام من الفرع', dinein: 'داخل المطعم' };
+    const tableInfo = (selectedOrderType === 'dinein' && selectedTable) ? ` · <strong>طاولة ${selectedTable}</strong>` : '';
+    orderTypeInfo.innerHTML = typeIcons[selectedOrderType] + (typeLabels[selectedOrderType] || typeLabels.delivery) + tableInfo;
+  }
   
   container.innerHTML = cart.map(item => `
     <div class="summary-item">
@@ -1250,7 +1285,7 @@ function openQuickLinkModal(key) {
   const links = {
     about: {
       title: 'من نحن',
-      body: currentStore.aboutText ? `<div>${currentStore.aboutText}</div>` : `<p>${storeName} هو متجر إلكتروني متخصص في الأثاث والمفروشات المنزلية. نقدم قطعاً أنيقة وعالية الجودة لتجديد منزلك وتجعل كل غرفة مكاناً مريحاً وفاخراً.</p><p>اختر من تشكيلاتنا المختارة لتجربة تسوق سلسة مع خدمة عملاء احترافية وتوصيل آمن.</p>`
+      body: currentStore.aboutText ? `<div>${currentStore.aboutText}</div>` : `<p>${storeName} هو متجر إلكتروني متخصص في تقديم أشهى الوجبات والمأكولات الطازجة. نقدم أطباقاً عالية الجودة لتجربة طعام مميزة تجعل كل وجبة مكاناً للذة والتميز.</p><p>اختر من قائمتنا المتنوعة لتجربة طلب سلسة مع خدمة عملاء احترافية وتوصيل سريع.</p>`
     },
     contact: {
       title: 'تواصل معنا',
@@ -1287,14 +1322,27 @@ function onZoneChange() {
 function updateCheckoutTotal() {
   const zoneSelect = $('order-zone-select') || $('zone-select');
   const shippingEl = $('summary-shipping');
+  const shippingRow = shippingEl ? shippingEl.closest('.summary-row') : null;
   const totalEl = $('summary-total');
   const discountEl = $('summary-discount');
   const mobileTotal = $('mobile-summary-total');
   
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+  // For dinein and pickup, shipping is 0
+  if (selectedOrderType !== 'delivery') {
+    if (shippingEl) shippingEl.textContent = `0 ${getCurrency()}`;
+    if (shippingRow) shippingRow.style.display = 'flex';
+    const finalTotal = subtotal - discountAmount;
+    if (totalEl) totalEl.textContent = `${finalTotal} ${getCurrency()}`;
+    if (mobileTotal) mobileTotal.textContent = `${finalTotal} ${getCurrency()}`;
+    if (discountEl && discountAmount > 0) discountEl.textContent = `-${discountAmount} ${getCurrency()}`;
+    return;
+  }
   
   if (!zoneSelect || zoneSelect.value === "") {
     if (shippingEl) shippingEl.textContent = 'حدد المنطقة';
+    if (shippingRow) shippingRow.style.display = 'flex';
     const finalTotal = subtotal - discountAmount;
     if (totalEl) totalEl.textContent = `${finalTotal} ${getCurrency()}`;
     if (mobileTotal) mobileTotal.textContent = `${finalTotal} ${getCurrency()}`;
@@ -1306,6 +1354,7 @@ function updateCheckoutTotal() {
   const finalTotal = subtotal + shipping - discountAmount;
   
   if (shippingEl) shippingEl.textContent = `${shipping} ${getCurrency()}`;
+  if (shippingRow) shippingRow.style.display = 'flex';
   if (totalEl) totalEl.textContent = `${finalTotal} ${getCurrency()}`;
   if (mobileTotal) mobileTotal.textContent = `${finalTotal} ${getCurrency()}`;
   if (discountEl && discountAmount > 0) discountEl.textContent = `-${discountAmount} ${getCurrency()}`;
@@ -1438,6 +1487,7 @@ function placeOrder() {
     zone: zoneEl.value,
     zoneName: zoneEl.options[zoneEl.selectedIndex]?.textContent || '',
     orderType: selectedOrderType || 'delivery',
+    tableNumber: selectedTable || '',
     items: cart.map(i => ({
       productId: i.id,
       name: i.name,
@@ -1476,6 +1526,8 @@ function placeOrder() {
         const confirmTotal = $('order-confirm-total');
         const confirmZone = $('order-confirm-zone');
         const confirmAddress = $('order-confirm-address');
+        const confirmOrderType = $('order-confirm-type');
+        const confirmTable = $('order-confirm-table');
         if (confirmSubtotal) confirmSubtotal.textContent = `${res.data.subtotal || 0} ${getCurrency()}`;
         if (confirmShipping) confirmShipping.textContent = `${res.data.shipping || 0} ${getCurrency()}`;
         if (confirmDiscount && confirmDiscountRow) {
@@ -1489,6 +1541,13 @@ function placeOrder() {
         if (confirmTotal) confirmTotal.textContent = `${res.data.total || 0} ${getCurrency()}`;
         if (confirmZone) confirmZone.textContent = res.data.zoneName || '';
         if (confirmAddress) confirmAddress.textContent = res.data.address || '';
+        // Show order type and table on confirmation
+        const typeIcons = { delivery: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-left:4px"><path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><polygon points="6 17 9 13 12 17 15 10 18 17"/></svg>', pickup: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-left:4px"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>', dinein: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-left:4px"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c6 0 1.1.9 2 2 2h3Zm0 0v7"/></svg>' };
+        const typeLabels = { delivery: 'توصيل', pickup: 'استلام من الفرع', dinein: 'داخل المطعم' };
+        if (confirmOrderType) confirmOrderType.innerHTML = typeIcons[res.data.orderType] + ' ' + (typeLabels[res.data.orderType] || typeLabels.delivery);
+        if (confirmTable) {
+          confirmTable.innerHTML = (res.data.orderType === 'dinein' && res.data.tableNumber) ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-left:4px"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c6 0 1.1.9 2 2 2h3Zm0 0v7"/></svg> طاولة ' + res.data.tableNumber : '-';
+        }
       }
       showPage('confirmation');
     } else {

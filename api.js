@@ -448,10 +448,11 @@ const API = {
   uploadImage: async (file, type = 'product') => {
     try {
       const form = new FormData();
-      form.append('image', file);
       form.append('type', type);
+      form.append('image', file);
       const res = await fetch('/api/upload', {
         method: 'POST',
+        headers: getAuthHeaders(),
         body: form
       });
       if (!res.ok) throw new Error('Upload Failed');

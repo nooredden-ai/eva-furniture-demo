@@ -6,7 +6,7 @@
     "description": "مرحباً بك في FoodExpress، مطعم الوجبات السريعة المفضل لك. نقدم أشهى البرغر والبيتزا والساندويشات والمشروبات والحلويات الطازجة مع خدمة توصيل سريعة إلى باب منزلك.\n\nنحن نؤمن بأن كل وجبة يجب أن تكون تجربة ممتعة. اختر من قائمتنا المتنوعة واستمتع بأفضل المذاقات.",
     "seoDescription": "FoodExpress مطعم وجبات سريعة يقدم البرغر والبيتزا والساندويشات والمقبلات والمشروبات والحلويات مع خدمة توصيل سريعة. اطلب الآن واستمتع بطعام طازج.",
     "logo": "",
-    "logoImage": "/images/branding/LOGO.jpg",
+    "logoImage": "/images/branding/LOGO.svg",
     "bannerImage": "/images/branding/COVER.jpg",
     "heroTitle": "طعام طازج<br/><em>ينتظرك</em>",
     "heroHighlight": "",
@@ -25,8 +25,8 @@
     "active": true,
     "createdAt": "2026-06-17",
     "branding": {
-      "logo": "/images/branding/LOGO.jpg",
-      "favicon": "/images/branding/LOGO.jpg",
+      "logo": "/images/branding/LOGO.svg",
+      "favicon": "/images/branding/favicon.svg",
       "heroBanners": [
         "/images/branding/COVER.jpg"
       ],
@@ -34,7 +34,7 @@
     },
     "promoOffer": {
       "active": true,
-      "title": "عرض الافتتاح 🔥",
+      "title": "عرض الافتتاح",
       "message": "اطلب الآن واستمتع بتشكيلتنا المتنوعة من الوجبات السريعة الطازجة",
       "value": "عروض حصرية",
       "type": "modal",
@@ -72,25 +72,32 @@
     },
     "shippingZones": [
       {
-        "id": "zone_westbank",
-        "name": "الضفة الغربية",
+        "id": "zone_nablus",
+        "name": "نابلس",
         "price": 15,
         "enabled": true,
         "sortOrder": 1
+      },
+      {
+        "id": "zone_ramallah",
+        "name": "رام الله",
+        "price": 20,
+        "enabled": true,
+        "sortOrder": 2
       },
       {
         "id": "zone_jerusalem",
         "name": "القدس",
         "price": 25,
         "enabled": true,
-        "sortOrder": 2
+        "sortOrder": 3
       },
       {
         "id": "zone_arab48",
         "name": "الداخل 48",
         "price": 35,
         "enabled": true,
-        "sortOrder": 3
+        "sortOrder": 4
       }
     ]
   }

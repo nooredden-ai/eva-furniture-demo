@@ -9,5 +9,20 @@
     "total": 10000,
     "note": "",
     "createdAt": "2026-06-10T11:46:04.114Z"
+  },
+  {
+    "id": 2,
+    "productId": 1,
+    "productName": "برغر كلاسيك",
+    "quantity": 1,
+    "listedPrice": 28,
+    "salePrice": 2,
+    "total": 2,
+    "customerName": "نورالدين سماعنه",
+    "customerPhone": "0599999",
+    "customerAddress": "",
+    "note": "",
+    "saleStatus": "completed",
+    "createdAt": "2026-06-20T01:12:44.169Z"
   }
 ]

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EVA Furniture | إيفا للمفروشات</title>
+  <title>FoodExpress | وجبات سريعة طازجة</title>
   <meta name="description" content="FoodExpress - مطعم وجبات سريعة يقدم البرغر والبيتزا والساندويشات والمشروبات والحلويات مع خدمة توصيل سريعة." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -19,14 +19,18 @@
 <!-- ===== HEADER ===== -->
 <header class="header">
   <div class="header-inner">
-    <div class="logo" style="display:flex;align-items:center;gap:6px">
-      <i data-lucide="home" style="width:24px;height:24px;color:var(--primary)"></i>
+    <div class="logo" style="display:flex;align-items:center;gap:10px">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c6 0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
       <div>
-        <span id="store-name">EVA Furniture</span>
-        <span>إيفا للمفروشات</span>
+        <span id="store-name">FoodExpress</span>
+        <span style="display:block;font-size:0.8rem;font-weight:500;color:var(--text-light);margin-top:-2px">وجبات سريعة طازجة</span>
       </div>
     </div>
     <div class="header-actions">
+      <div id="table-badge" style="display:none;align-items:center;gap:6px;background:rgba(211,84,0,0.1);border:1px solid rgba(211,84,0,0.3);border-radius:8px;padding:4px 12px;font-size:.82rem;font-weight:700;color:var(--primary);margin-left:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>
+        <span id="table-badge-text"></span>
+      </div>
       <div class="top-search" style="display:flex;align-items:center;margin-left:12px">
         <input type="search" id="top-search-input" placeholder="ابحث عن منتج، مثال: مرطب" aria-label="بحث عن منتجات" />
         <button id="top-search-clear" aria-label="مسح البحث" style="display:none">✕</button>
@@ -49,10 +53,10 @@
   </div>
   <div class="cart-items" id="cart-items-container">
     <div class="cart-empty">
-      <i data-lucide="shopping-bag" class="cart-empty-icon"></i>
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="cart-empty-icon" style="color:var(--primary);opacity:0.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
       <h3>سلتك فارغة</h3>
-      <p>اكتشف قائمتنا الشهية وابدأ الطلب</p>
-      <button class="cart-empty-cta" onclick="closeCart()">تسوقي الآن</button>
+      <p>تصفّح قائمتنا وابدأ الطلب الآن</p>
+      <button class="cart-empty-cta" onclick="closeCart()">تصفح القائمة</button>
     </div>
   </div>
   <div class="cart-footer">
@@ -62,10 +66,10 @@
     </div>
     <div class="cart-action-buttons">
       <button class="checkout-btn" id="checkout-btn" onclick="goToCheckout()" disabled>
-        <i data-lucide="check-circle" style="width:18px;height:18px"></i> متابعة الدفع
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> متابعة الطلب
       </button>
       <button class="cart-continue-btn" onclick="closeCart()">
-        <i data-lucide="arrow-left" style="width:16px;height:16px;margin-left:4px"></i> متابعة التسوق
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;vertical-align:middle"><path d="M12 19V5"/><polyline points="5 12 12 5 19 12"/></svg> متابعة التسوق
       </button>
     </div>
   </div>
@@ -84,11 +88,13 @@
     </div>
     <div class="hero-banner" id="hero-banner" aria-hidden="true"></div>
     <div class="hero-content">
-      <div class="hero-badge" style="display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;">
-        ✓ جودة عالية ✓ تصاميم عصرية ✓ توصيل آمن ✓ خدمة عملاء مميزة
+      <div class="hero-badge" style="display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> جودة عالية
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> وجبات طازجة
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> توصيل سريع
       </div>
-      <h1>أثاث عصري<br/><em>يليق بمنزلك</em></h1>
-      <p>اكتشف تشكيلتنا المميزة من غرف الجلوس وغرف النوم والطاولات والكراسي والمفروشات المنزلية المصممة لتمنح منزلك الراحة والأناقة.</p>
+      <h1>وجبات طازجة<br/><em>تنتظرك</em></h1>
+      <p>اكتشف قائمتنا الشهية من البرغر والبيتزا والساندويشات والمقبلات والحلويات الطازجة المحضرة بعناية لتجربة مذاق لا تُنسى.</p>
       <div class="hero-actions" style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:16px">
         <a href="#products" class="hero-cta" style="cursor:pointer;display:inline-flex;align-items:center;gap:10px"
            onclick="document.getElementById('products').scrollIntoView({behavior:'smooth'});return false;">
@@ -143,7 +149,7 @@
 
   <!-- CATEGORIES -->
   <section class="section" id="categories" style="padding-bottom:16px">
-    <h2 class="section-title"><i data-lucide="folder-heart" style="width:24px;height:24px;color:var(--primary);vertical-align:middle;margin-left:8px"></i>تسوق حسب الفئة</h2>
+    <h2 class="section-title"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-left:8px"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>تسوق حسب الفئة</h2>
     <p class="section-subtitle">اختر وجبتك المفضلة من قائمتنا الشهية</p>
     <div class="categories-scroll" id="categories-container"></div>
     <div class="subcategories-scroll" id="subcategories-container"></div>
@@ -151,15 +157,15 @@
   </section>
 
   <!-- FEATURES -->
-  <section class="features-section" style="background:linear-gradient(135deg,#1A1A2E,#2D1B69);padding:50px 20px;margin-top:20px">
-    <div style="max-width:1200px;margin:0 auto">
-      <div id="feature-highlights" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:32px;text-align:center;color:#fff"></div>
+  <section class="features-section" style="padding:40px 20px;margin-top:20px;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+    <div style="max-width:1100px;margin:0 auto">
+      <div id="feature-highlights" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:24px;text-align:center;color:var(--text)"></div>
     </div>
   </section>
 
   <!-- PRODUCTS -->
   <section class="section" id="products">
-    <h2 class="section-title"><i data-lucide="sparkles" style="width:24px;height:24px;color:var(--primary);vertical-align:middle;margin-left:8px"></i>منتجاتنا المميزة</h2>
+    <h2 class="section-title"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-left:8px"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>منتجاتنا المميزة</h2>
     <p class="section-subtitle">تصفّح قائمة طعامنا المختارة بعناية لتجربة مذاق لا تُنسى</p>
     <div class="filters-bar" id="filters-bar">
       <div class="filters-row" id="filters-row">
@@ -203,8 +209,8 @@
     <div class="footer-inner">
       <div class="footer-grid">
         <div class="footer-col">
-          <h4 data-footer-name style="display:flex;align-items:center;gap:6px"><i data-lucide="gem" style="width:18px;height:18px"></i> EVA Furniture</h4>
-          <p data-footer-desc>إيفا للمفروشات تقدم أثاثاً منزلياً فاخراً بتصاميم عصرية وجودة عالية.</p>
+          <h4 data-footer-name style="display:flex;align-items:center;gap:6px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c6 0 1.1.9 2 2 2h3Zm0 0v7"/></svg> FoodExpress</h4>
+          <p data-footer-desc>FoodExpress مطعم وجبات سريعة يقدم أشهى البرغر والبيتزا والساندويشات الطازجة مع خدمة توصيل سريعة.</p>
         </div>
         <div class="footer-col">
           <h4>روابط سريعة</h4>
@@ -215,13 +221,13 @@
         </div>
         <div class="footer-col">
           <h4>تواصلي معنا</h4>
-          <p data-footer-phone style="display:flex;align-items:center;gap:6px"><i data-lucide="phone" style="width:16px;height:16px"></i> 920-000-0000</p>
-          <p data-footer-email style="display:flex;align-items:center;gap:6px"><i data-lucide="mail" style="width:16px;height:16px"></i> hello@store.com</p>
-          <p data-footer-address style="display:flex;align-items:center;gap:6px"><i data-lucide="map-pin" style="width:16px;height:16px"></i> الرياض، المملكة العربية السعودية</p>
+          <p data-footer-phone style="display:flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg> 0599775099</p>
+          <p data-footer-email style="display:flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 7L2 7"/></svg> info@foodexpress.ps</p>
+          <p data-footer-address style="display:flex;align-items:center;gap:6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> نابلس، فلسطين</p>
         </div>
       </div>
       <div class="footer-bottom">
-        <p data-footer-copy>© 2026 متجرك · جميع الحقوق محفوظة <i data-lucide="heart" style="width:14px;height:14px;display:inline-block;vertical-align:middle;color:var(--secondary);fill:var(--secondary)"></i></p>
+        <p data-footer-copy>© 2026 FoodExpress · جميع الحقوق محفوظة <i data-lucide="heart" style="width:14px;height:14px;display:inline-block;vertical-align:middle;color:var(--secondary);fill:var(--secondary)"></i></p>
       </div>
     </div>
   </footer>
@@ -232,40 +238,40 @@
   <div class="checkout-page">
     <div class="checkout-grid">
       <div class="checkout-panel">
-        <button class="back-link" onclick="showPage('home')"><i data-lucide="arrow-right" style="width:16px;height:16px"></i> العودة إلى المتجر</button>
+        <button class="back-link" onclick="showPage('home')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-left:4px"><polyline points="9 18 15 12 9 6"/></svg> العودة إلى المتجر</button>
       <div class="checkout-header">
         <div>
           <h1>إتمام الطلب</h1>
-          <p class="checkout-intro">أضف بياناتك الآن لتأكيد الطلب وسنقوم بتوصيل مشترياتك بأسرع وقت.</p>
+          <p class="checkout-intro">أضف بياناتك الآن لتأكيد الطلب وسنقوم بتجهيزه فوراً.</p>
         </div>
-        <div class="checkout-badge">✔️ الدفع الآمن</div>
+        <div class="checkout-badge"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> الدفع الآمن</div>
       </div>
 
       <div class="checkout-progress">
-        <div class="progress-step completed"><i data-lucide="shopping-cart" style="width:16px"></i> السلة</div>
-        <div class="progress-separator"><i data-lucide="chevron-left" style="width:14px"></i></div>
-        <div class="progress-step active"><i data-lucide="user" style="width:16px"></i> المعلومات</div>
-        <div class="progress-separator"><i data-lucide="chevron-left" style="width:14px"></i></div>
-        <div class="progress-step"><i data-lucide="credit-card" style="width:16px"></i> الدفع</div>
-        <div class="progress-separator"><i data-lucide="chevron-left" style="width:14px"></i></div>
-        <div class="progress-step"><i data-lucide="check-circle" style="width:16px"></i> التأكيد</div>
+        <div class="progress-step completed"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> السلة</div>
+        <div class="progress-separator"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div>
+        <div class="progress-step active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> المعلومات</div>
+        <div class="progress-separator"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div>
+        <div class="progress-step"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg> الدفع</div>
+        <div class="progress-separator"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></div>
+        <div class="progress-step"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> التأكيد</div>
       </div>
 
       <div class="form-section">
         <h3>نوع الطلب</h3>
         <div class="order-type-selector">
           <div class="order-type-card active" data-type="delivery" onclick="setOrderType('delivery')">
-            <div class="type-icon">🚚</div>
+            <div class="type-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><polygon points="6 17 9 13 12 17 15 10 18 17"/></svg></div>
             <div class="type-label">توصيل</div>
             <div class="type-desc">توصيل إلى العنوان</div>
           </div>
           <div class="order-type-card" data-type="pickup" onclick="setOrderType('pickup')">
-            <div class="type-icon">🏃</div>
+            <div class="type-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div>
             <div class="type-label">استلام من الفرع</div>
             <div class="type-desc">استلام من موقع الفرع</div>
           </div>
           <div class="order-type-card" data-type="dinein" onclick="setOrderType('dinein')">
-            <div class="type-icon">🍽️</div>
+            <div class="type-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c6 0 1.1.9 2 2 2h3Zm0 0v7"/></svg></div>
             <div class="type-label">داخل المطعم</div>
             <div class="type-desc">تناول الطعام في المكان</div>
           </div>
@@ -403,6 +409,10 @@
         <div class="summary-badge" id="summary-count">0 منتج</div>
       </div>
       <div id="order-summary-items" class="summary-items"></div>
+      <div class="summary-row summary-order-type-row" id="summary-order-type-row" style="display:flex">
+        <span>نوع الطلب</span>
+        <span id="summary-order-type"></span>
+      </div>
       <div class="summary-divider"></div>
       <div class="summary-row">
         <span>المجموع الفرعي</span>
@@ -447,14 +457,16 @@
 <!-- ==================== PAGE: CONFIRMATION ==================== -->
 <main id="page-confirmation" class="page">
   <div class="confirmation-page">
-    <div class="confirm-icon" style="background:none;box-shadow:none;display:flex;justify-content:center;align-items:center;color:var(--success)"><i data-lucide="check-circle" style="width:80px;height:80px"></i></div>
-    <h1 style="display:flex;align-items:center;justify-content:center;gap:10px">تم تأكيد طلبك! <i data-lucide="party-popper" style="width:28px;height:28px;color:var(--accent)"></i></h1>
+    <div class="confirm-icon" style="background:none;box-shadow:none;display:flex;justify-content:center;align-items:center;color:var(--success)"><svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <h1 style="display:flex;align-items:center;justify-content:center;gap:10px">تم تأكيد طلبك! <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary)"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 8 6.5 8 6.5"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5C17 4 16 6.5 16 6.5"/><path d="M4 22h16"/><path d="M12 6V2"/><path d="M10 14c0 1.1.9 2 2 2s2-.9 2-2c0-1.5-2-4-2-4s-2 2.5-2 4"/></svg></h1>
     <p class="subtitle">شكراً لتسوقك من <span data-store-name>متجرنا</span><br/>سيتم التواصل معك قريباً لتأكيد موعد التوصيل</p>
     <div class="order-number-box">
       <p class="label">رقم طلبك</p>
       <p class="number" id="order-number-display">ORD-000000</p>
     </div>
     <div class="confirmation-summary" style="background:var(--bg);border-radius:var(--radius);padding:20px;margin-bottom:32px;font-size:0.95rem;color:var(--text-light);line-height:1.8;text-align:right">
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px"><strong>نوع الطلب</strong><span id="order-confirm-type">-</span></div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:10px"><strong>الطاولة</strong><span id="order-confirm-table">-</span></div>
       <div style="display:flex;justify-content:space-between;margin-bottom:10px"><strong>المجموع الفرعي</strong><span id="order-confirm-subtotal">0 ₪</span></div>
       <div style="display:flex;justify-content:space-between;margin-bottom:10px"><strong>رسوم التوصيل</strong><span id="order-confirm-shipping">0 ₪</span></div>
       <div id="confirm-discount-row" style="display:flex;justify-content:space-between;margin-bottom:10px;display:none"><strong>الخصم</strong><span id="order-confirm-discount" style="color:#22c55e;font-weight:700">0 ₪</span></div>
@@ -463,9 +475,9 @@
       <div style="display:flex;justify-content:space-between;font-size:1.05rem;font-weight:800;border-top:1px dashed rgba(0,0,0,0.12);padding-top:12px;color:var(--text-strong)"><span>الإجمالي</span><span id="order-confirm-total">0 ₪</span></div>
     </div>
     <div style="background:var(--bg);border-radius:var(--radius);padding:20px;margin-bottom:32px;font-size:0.9rem;color:var(--text-light);line-height:2;text-align:right">
-      <p style="display:flex;align-items:center;gap:8px"><i data-lucide="package" style="width:16px;height:16px"></i> سيتم تجهيز طلبك خلال يوم عمل واحد</p>
-      <p style="display:flex;align-items:center;gap:8px"><i data-lucide="truck" style="width:16px;height:16px"></i> التوصيل خلال 24-48 ساعة</p>
-      <p style="display:flex;align-items:center;gap:8px"><i data-lucide="phone" style="width:16px;height:16px"></i> سنتواصل معك على رقم الجوال المُدخل</p>
+      <p style="display:flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M16.5 9.4 7.55 4.24a1 1 0 0 0-1.1 0L2 6.5"/><path d="M21.16 8.2a1 1 0 0 0-.66-.94L12 4.25"/><path d="m6.25 14.25-1.13.65a1 1 0 0 0-.5.87v4.21"/><path d="m12 8.1 1.76-1"/><path d="M18.68 8.7a1 1 0 0 1 .48.86v4.21"/><path d="M12 22v-9"/><path d="M7.8 19.25 12 22l4.2-2.75"/><path d="M17.64 7.5 18.25 10"/><path d="M13.75 11.5 12 12.35"/><path d="M9.75 13.75 5 16.5"/><path d="M14.25 13.75 19 16.5"/></svg> سيتم تجهيز طلبك فوراً</p>
+      <p style="display:flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/><polygon points="6 17 9 13 12 17 15 10 18 17"/></svg> خدمة توصيل سريعة لتوصيل طلبك</p>
+      <p style="display:flex;align-items:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><rect x="3" y="2" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="8" x2="21" y2="8"/><line x1="12" y1="16" x2="12" y2="22"/></svg> سنتواصل معك على رقم الجوال المُدخل</p>
     </div>
     <button class="back-home-btn" onclick="showPage('home')" style="display:inline-flex;align-items:center;gap:8px">
       <i data-lucide="shopping-bag" style="width:18px;height:18px"></i> مواصلة التسوق
@@ -475,7 +487,7 @@
 
 <!-- ===== WhatsApp Float ===== -->
 <a href="https://wa.me/971506011007" class="whatsapp-float" title="تواصل معنا على واتساب" aria-label="واتساب">
-  <i data-lucide="message-circle" style="width:28px;height:28px"></i>
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1Z"/><path d="M14 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1Z"/><path d="M9.5 13.5c.5 1 1.5 1.5 2.5 1.5s2-.5 2.5-1.5"/></svg>
 </a>
 
 <!-- ===== Storefront Disabled Overlay ===== -->

@@ -1,0 +1,843 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>شاشة المطبخ</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="auth.js"></script>
+<script src="api.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0c0f1a;
+  --surface:#161b2e;
+  --surface2:#1e2745;
+  --surface3:#2a3558;
+  --text:#edf2f7;
+  --text2:#94a3b8;
+  --text3:#64748b;
+  --primary:#d35400;
+  --primary-hover:#e67e22;
+  --pending:#f59e0b;
+  --pending-bg:rgba(245,158,11,.08);
+  --confirmed:#3b82f6;
+  --confirmed-bg:rgba(59,130,246,.08);
+  --processing:#8b5cf6;
+  --processing-bg:rgba(139,92,246,.08);
+  --shipped:#10b981;
+  --shipped-bg:rgba(16,185,129,.08);
+  --delivery:#f59e0b;
+  --pickup:#06b6d4;
+  --dinein:#f97316;
+  --danger:#ef4444;
+  --danger-bg:rgba(239,68,68,.1);
+  --border:#1e293b;
+  --radius:14px;
+  --radius-sm:10px;
+  --shadow:0 4px 20px rgba(0,0,0,.3);
+  --header-h:68px
+}
+html,body{height:100%;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);font-size:15px;overflow:hidden}
+button{cursor:pointer;font-family:inherit;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit}
+svg{display:inline-block;vertical-align:middle;flex-shrink:0}
+/* Header */
+.header{
+  height:var(--header-h);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 24px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+  gap:12px
+}
+.header-right{display:flex;align-items:center;gap:14px;min-width:0}
+.header-logo{display:flex;align-items:center;gap:10px;min-width:0}
+.header-logo svg{color:var(--primary);flex-shrink:0}
+.header-title{font-size:1.15rem;font-weight:800;color:var(--text);white-space:nowrap}
+.header-title span{color:var(--primary)}
+.header-sub{font-size:.8rem;color:var(--text2);margin-top:-2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.header-center{display:flex;align-items:center;gap:16px;font-size:.82rem;color:var(--text2)}
+.header-center strong{color:var(--text)}
+.header-left{display:flex;align-items:center;gap:8px;flex-shrink:0}
+/* Header buttons */
+.btn-hdr{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 14px;border-radius:var(--radius-sm);
+  font-size:.8rem;font-weight:700;
+  background:var(--surface2);color:var(--text2);
+  transition:all .15s;
+  white-space:nowrap;min-height:40px
+}
+.btn-hdr:hover{background:var(--surface3);color:var(--text)}
+.btn-hdr.primary{background:var(--primary);color:#fff}
+.btn-hdr.primary:hover{background:var(--primary-hover)}
+.btn-hdr.active{background:var(--primary);color:#fff}
+.btn-hdr.active:hover{background:var(--primary-hover)}
+.btn-hdr.muted{opacity:.5}
+.btn-hdr svg{width:16px;height:16px}
+/* Fetch error */
+.fetch-error{
+  display:none;align-items:center;justify-content:center;gap:8px;
+  padding:10px 20px;background:#7f1d1d;color:#fca5a5;
+  font-size:.85rem;font-weight:600;border-bottom:1px solid #991b1b;flex-shrink:0
+}
+.fetch-error svg{width:18px;height:18px;color:#fca5a5}
+/* Sound activate overlay */
+.sound-overlay{
+  display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:var(--surface);color:var(--text);padding:24px 32px;
+  border-radius:var(--radius);box-shadow:0 8px 40px rgba(0,0,0,.5);
+  z-index:999;text-align:center;font-size:.95rem;border:1px solid var(--primary);
+  cursor:pointer;display:flex;align-items:center;gap:10px;font-weight:700
+}
+.sound-overlay svg{color:var(--primary);width:22px;height:22px}
+/* Auto print toast */
+.autoprint-toast{
+  display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--surface);color:var(--text);padding:14px 24px;
+  border-radius:var(--radius-sm);box-shadow:0 6px 30px rgba(0,0,0,.5);
+  z-index:999;font-size:.85rem;font-weight:700;border:1px solid var(--primary);
+  max-width:400px;text-align:center
+}
+/* Columns */
+.columns-wrap{
+  height:calc(100vh - var(--header-h));
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:0;
+  overflow:hidden
+}
+.column{
+  display:flex;flex-direction:column;overflow:hidden;
+  border-left:1px solid var(--border)
+}
+.column:last-child{border-left:none}
+.col-header{
+  padding:16px 14px 12px;text-align:center;
+  border-bottom:1px solid var(--border);flex-shrink:0;
+  background:var(--surface);display:flex;flex-direction:column;align-items:center;gap:4px
+}
+.col-header .col-title{display:flex;align-items:center;gap:6px;font-size:.95rem;font-weight:800}
+.col-header .col-title svg{width:18px;height:18px}
+.col-header .col-count{
+  display:inline-flex;align-items:center;justify-content:center;min-width:24px;
+  font-size:.72rem;font-weight:700;padding:2px 10px;border-radius:20px;
+  background:var(--surface2);color:var(--text2)
+}
+.col-pending .col-header{border-bottom:3px solid var(--pending)}
+.col-pending .col-title svg{color:var(--pending)}
+.col-pending .col-count{background:var(--pending-bg);color:var(--pending)}
+.col-confirmed .col-header{border-bottom:3px solid var(--confirmed)}
+.col-confirmed .col-title svg{color:var(--confirmed)}
+.col-confirmed .col-count{background:var(--confirmed-bg);color:var(--confirmed)}
+.col-processing .col-header{border-bottom:3px solid var(--processing)}
+.col-processing .col-title svg{color:var(--processing)}
+.col-processing .col-count{background:var(--processing-bg);color:var(--processing)}
+.col-shipped .col-header{border-bottom:3px solid var(--shipped)}
+.col-shipped .col-title svg{color:var(--shipped)}
+.col-shipped .col-count{background:var(--shipped-bg);color:var(--shipped)}
+.cards{
+  flex:1;overflow-y:auto;padding:12px 10px;
+  display:flex;flex-direction:column;gap:12px
+}
+.cards::-webkit-scrollbar{width:5px}
+.cards::-webkit-scrollbar-track{background:transparent}
+.cards::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}
+/* Card */
+.card{
+  background:var(--surface);
+  border-radius:var(--radius);
+  padding:16px;
+  box-shadow:var(--shadow);
+  transition:all .2s;
+  border:1px solid transparent;
+  display:flex;flex-direction:column;gap:10px
+}
+.card:hover{border-color:var(--surface3)}
+.card-header{display:flex;justify-content:space-between;align-items:center}
+.card-order-id{font-weight:900;font-size:1.2rem;color:var(--primary)}
+.card-time{font-size:.78rem;color:var(--text3);direction:ltr;unicode-bidi:plaintext;display:flex;align-items:center;gap:4px}
+.card-time svg{width:13px;height:13px;color:var(--text3)}
+.card-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.card-type{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:.78rem;font-weight:700;padding:4px 12px;
+  border-radius:20px
+}
+.card-type svg{width:14px;height:14px}
+.type-delivery{background:rgba(245,158,11,.12);color:var(--delivery)}
+.type-pickup{background:rgba(6,182,212,.12);color:var(--pickup)}
+.type-dinein{background:rgba(249,115,22,.12);color:var(--dinein)}
+.card-table{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:.85rem;font-weight:800;color:var(--dinein);
+  background:rgba(249,115,22,.1);padding:4px 12px;border-radius:8px
+}
+.card-table svg{width:14px;height:14px}
+.card-customer{
+  font-size:.82rem;color:var(--text2);
+  display:flex;align-items:center;gap:5px
+}
+.card-customer svg{width:14px;height:14px;color:var(--text3)}
+.card-items{display:flex;flex-direction:column;gap:5px}
+.item-row{
+  display:flex;align-items:flex-start;gap:6px;
+  font-size:.88rem;line-height:1.5
+}
+.item-qty{font-weight:800;color:var(--primary);min-width:24px;text-align:center;flex-shrink:0}
+.item-name{font-weight:600;color:var(--text)}
+.item-options{
+  font-size:.78rem;color:var(--text2);padding-right:30px;margin-top:1px;
+  display:flex;align-items:center;gap:4px
+}
+.item-options svg{width:12px;height:12px;color:var(--text3)}
+.item-note{
+  font-size:.78rem;color:var(--danger);padding-right:30px;margin-top:1px;
+  display:flex;align-items:center;gap:4px
+}
+.item-note svg{width:12px;height:12px;color:var(--danger)}
+.card-notes{
+  padding:10px 12px;
+  background:var(--danger-bg);
+  border-radius:var(--radius-sm);
+  font-size:.82rem;color:#fca5a5;
+  border-right:3px solid var(--danger);
+  display:flex;align-items:flex-start;gap:6px
+}
+.card-notes svg{width:16px;height:16px;color:var(--danger);flex-shrink:0;margin-top:1px}
+/* Card actions */
+.card-actions{
+  display:flex;gap:8px;flex-wrap:wrap;
+  padding-top:10px;border-top:1px solid var(--border)
+}
+.btn-action{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  flex:1;min-width:80px;min-height:44px;
+  padding:10px 12px;border-radius:var(--radius-sm);
+  font-size:.8rem;font-weight:700;
+  transition:all .15s;text-align:center;white-space:nowrap
+}
+.btn-action svg{width:17px;height:17px}
+.btn-action:disabled{opacity:.5;cursor:not-allowed}
+.btn-confirm{background:var(--confirmed);color:#fff}
+.btn-confirm:hover:not(:disabled){background:#2563eb}
+.btn-process{background:var(--processing);color:#fff}
+.btn-process:hover:not(:disabled){background:#7c3aed}
+.btn-ready{background:var(--shipped);color:#fff}
+.btn-ready:hover:not(:disabled){background:#059669}
+.btn-deliver{background:var(--primary);color:#fff}
+.btn-deliver:hover:not(:disabled){background:var(--primary-hover)}
+.btn-print{
+  background:var(--surface2);color:var(--text2);
+  border:1px solid var(--border);flex:0 1 auto;min-width:auto;padding:10px 14px
+}
+.btn-print:hover:not(:disabled){background:var(--surface3);color:var(--text);border-color:var(--surface3)}
+/* Empty column */
+.empty-col{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 10px;color:var(--text3);font-size:.85rem;
+  text-align:center;gap:6px
+}
+/* New order glow */
+@keyframes glow-pending{
+  0%{box-shadow:0 0 0 0 rgba(245,158,11,.5);border-color:var(--pending)}
+  50%{box-shadow:0 0 24px 6px rgba(245,158,11,.25)}
+  100%{box-shadow:none;border-color:transparent}
+}
+.card.new-glow{animation:glow-pending 3s ease-out forwards}
+/* Access denied */
+.access-denied{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100vh;gap:16px;text-align:center;padding:24px
+}
+.access-denied svg{width:48px;height:48px;color:var(--danger)}
+.access-denied h1{font-size:1.8rem;color:var(--danger)}
+.access-denied p{color:var(--text2);font-size:.95rem;max-width:400px;line-height:1.6}
+.access-denied a{color:var(--primary);text-decoration:none;font-weight:700;margin-top:8px}
+.access-denied a:hover{color:var(--primary-hover)}
+/* Responsive */
+@media(max-width:1100px){
+  .columns-wrap{grid-template-columns:repeat(2,1fr)}
+  .column:nth-child(2){border-left:none}
+}
+@media(max-width:768px){
+  .header{padding:0 14px;flex-wrap:wrap;height:auto;min-height:var(--header-h);gap:8px}
+  .header-center{order:3;width:100%;justify-content:center}
+  .columns-wrap{grid-template-columns:1fr}
+  .column{border-left:none}
+  .card{padding:14px}
+}
+</style>
+</head>
+<body>
+
+<div id="app-root" style="display:none;height:100%;flex-direction:column">
+  <header class="header">
+    <div class="header-right">
+      <div class="header-logo">
+        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12c0-2.5 1.5-5 4-6.5"/><path d="M18 12c0-2.5-1.5-5-4-6.5"/><path d="M4 12c0-4.5 3-8 8-8s8 3.5 8 8"/><path d="M2 14h20"/><path d="M12 14v4"/><path d="M8 18h8"/><path d="M10 22h4"/></svg>
+        <div>
+          <div class="header-title">شاشة <span>المطبخ</span></div>
+          <div class="header-sub">متابعة الطلبات وتجهيزها</div>
+        </div>
+      </div>
+    </div>
+    <div class="header-center">
+      <span>الطلبات النشطة: <strong id="total-count">0</strong></span>
+      <span>آخر تحديث: <strong id="last-update">-</strong></span>
+    </div>
+    <div class="header-left">
+      <button class="btn-hdr" onclick="window.open('/admin.html','_blank')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        لوحة التحكم
+      </button>
+      <button class="btn-hdr" id="btn-refresh" onclick="forceRefresh()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        تحديث
+      </button>
+      <button class="btn-hdr" id="btn-autoprint" onclick="toggleAutoPrint()" title="طباعة تذكرة المطبخ تلقائياً عند وصول طلب جديد">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        <span id="autoprint-label">طباعة تلقائية</span>
+      </button>
+      <button class="btn-hdr" id="btn-sound" onclick="toggleSound()" title="تشغيل/إيقاف الصوت">
+        <svg id="sound-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+        <span id="sound-label">الصوت</span>
+      </button>
+    </div>
+  </header>
+
+  <div id="sound-activate-note" class="sound-overlay" onclick="initAudio()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+    اضغط لتفعيل التنبيه الصوتي
+  </div>
+
+  <div class="fetch-error" id="fetch-error">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span id="fetch-error-msg"></span>
+  </div>
+
+  <div class="autoprint-toast" id="autoprint-toast"></div>
+
+  <div class="columns-wrap" id="columns-wrap">
+    <div class="column col-pending">
+      <div class="col-header">
+        <div class="col-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          طلبات جديدة
+        </div>
+        <span class="col-count" id="count-pending">0</span>
+      </div>
+      <div class="cards" id="cards-pending"></div>
+    </div>
+    <div class="column col-confirmed">
+      <div class="col-header">
+        <div class="col-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          تم التأكيد
+        </div>
+        <span class="col-count" id="count-confirmed">0</span>
+      </div>
+      <div class="cards" id="cards-confirmed"></div>
+    </div>
+    <div class="column col-processing">
+      <div class="col-header">
+        <div class="col-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12c0-2.5 1.5-5 4-6.5"/><path d="M18 12c0-2.5-1.5-5-4-6.5"/><path d="M4 12c0-4.5 3-8 8-8s8 3.5 8 8"/><path d="M2 14h20"/><path d="M12 14v4"/><path d="M8 18h8"/><path d="M10 22h4"/></svg>
+          جاري التجهيز
+        </div>
+        <span class="col-count" id="count-processing">0</span>
+      </div>
+      <div class="cards" id="cards-processing"></div>
+    </div>
+    <div class="column col-shipped">
+      <div class="col-header">
+        <div class="col-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          جاهز
+        </div>
+        <span class="col-count" id="count-shipped">0</span>
+      </div>
+      <div class="cards" id="cards-shipped"></div>
+    </div>
+  </div>
+</div>
+
+<div id="access-denied" class="access-denied" style="display:none">
+  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+  <h1>وصول مرفوض</h1>
+  <p id="denied-msg">ليس لديك صلاحية الوصول إلى شاشة المطبخ.<br>تأكد من تسجيل الدخول بحساب مناسب.</p>
+  <a href="/login.html">تسجيل الدخول</a>
+</div>
+
+<script>
+(function(){
+  const ALLOWED_ROLES = ['super_admin','store_owner','store_manager','manager','employee'];
+  const KITCHEN_STATUSES = ['pending','confirmed','processing','shipped'];
+
+  const STATUS_LABELS = {
+    pending: 'طلبات جديدة',
+    confirmed: 'تم التأكيد',
+    processing: 'جاري التجهيز',
+    shipped: 'جاهز'
+  };
+
+  const STATUS_TRANSITIONS = {
+    pending: 'confirmed',
+    confirmed: 'processing',
+    processing: 'shipped',
+    shipped: 'delivered'
+  };
+
+  const TRANSITION_BUTTONS = {
+    pending: { label: 'تأكيد', cls: 'btn-confirm' },
+    confirmed: { label: 'بدء التجهيز', cls: 'btn-process' },
+    processing: { label: 'جاهز', cls: 'btn-ready' },
+    shipped: { label: 'تم', cls: 'btn-deliver' }
+  };
+
+  let ordersData = [];
+  let refreshTimer = null;
+  let isRefreshing = false;
+  let lastFetchFailed = false;
+  let seenOrderIds = new Set();
+  let audioCtx = null;
+  let soundEnabled = localStorage.getItem('kitchenSoundEnabled') !== 'false';
+  let audioInitialized = false;
+  let autoPrintEnabled = localStorage.getItem('kitchenAutoPrintEnabled') === 'true';
+
+  function $(id) { return document.getElementById(id); }
+
+  function timeAgo(dateStr) {
+    if (!dateStr) return '-';
+    const now = Date.now();
+    const then = new Date(dateStr).getTime();
+    if (isNaN(then)) return '-';
+    const diff = Math.max(0, now - then);
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'الآن';
+    if (mins < 60) return mins + ' د';
+    const hrs = Math.floor(mins / 60);
+    const remain = mins % 60;
+    return hrs + ' س ' + remain + ' د';
+  }
+
+  function formatTime(dateStr) {
+    if (!dateStr) return '-';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '-';
+    return d.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function getOrderTypeHtml(type) {
+    var t;
+    if (type === 'delivery') {
+      t = { svg: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>', label: 'توصيل', cls: 'type-delivery' };
+    } else if (type === 'pickup') {
+      t = { svg: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>', label: 'استلام', cls: 'type-pickup' };
+    } else {
+      t = { svg: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>', label: 'داخلي', cls: 'type-dinein' };
+    }
+    return '<span class="card-type ' + t.cls + '">' + t.svg + ' ' + t.label + '</span>';
+  }
+
+  function renderItemsHtml(items) {
+    if (!items || !items.length) return '<div class="item-row" style="color:var(--text3);font-size:.85rem">لا توجد منتجات</div>';
+    return items.map(function(item){
+      var html = '<div class="item-row"><span class="item-qty">' + (item.qty || 1) + '×</span><span class="item-name">' + (item.name || 'منتج') + '</span></div>';
+      if (item.selectedOptions && item.selectedOptions.length) {
+        item.selectedOptions.forEach(function(og){
+          if (og.selected && og.selected.length) {
+            og.selected.forEach(function(s){
+              html += '<div class="item-options"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg> ' + (s.label || '') + '</div>';
+            });
+          }
+        });
+      }
+      if (item.notes) {
+        html += '<div class="item-note"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ' + item.notes + '</div>';
+      }
+      return html;
+    }).join('');
+  }
+
+  function buildOrderCard(order, canUpdate) {
+    var status = order.status;
+    var nextStatus = STATUS_TRANSITIONS[status];
+    var timeStr = timeAgo(order.lastUpdated || order.date);
+    var timeFull = formatTime(order.lastUpdated || order.date);
+    var topNote = order.notes && order.notes.length ? order.notes.filter(Boolean).join(' | ') : '';
+    var tableHtml = order.tableNumber
+      ? '<div class="card-table"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 3v18"/></svg> طاولة ' + order.tableNumber + '</div>'
+      : '';
+
+    var actionsHtml = '';
+
+    if (canUpdate && nextStatus && status !== 'shipped') {
+      var btn = TRANSITION_BUTTONS[status];
+      if (btn) {
+        actionsHtml += '<button class="btn-action ' + btn.cls + '" onclick="handleStatusTransition(\'' + order.id + '\',\'' + nextStatus + '\',this)">' + btn.label + '</button>';
+      }
+    }
+
+    if (status === 'shipped' && canUpdate) {
+      actionsHtml += '<button class="btn-action btn-deliver" onclick="handleStatusTransition(\'' + order.id + '\',\'delivered\',this)">تم التوصيل</button>';
+    }
+
+    var printUrl = '/print-order.html?id=' + order.id + '&type=kitchen';
+    actionsHtml += '<button class="btn-action btn-print" onclick="window.open(\'' + printUrl + '\',\'_blank\')"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> طباعة</button>';
+
+    return '<div class="card" data-order-id="' + order.id + '" data-status="' + status + '">' +
+      '<div class="card-header">' +
+        '<span class="card-order-id">#' + (order.orderNumber || order.id) + '</span>' +
+        '<span class="card-time" title="' + timeFull + '"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ' + timeStr + '</span>' +
+      '</div>' +
+      '<div class="card-meta">' + getOrderTypeHtml(order.orderType) + '</div>' +
+      tableHtml +
+      '<div class="card-customer"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> ' + (order.customer || 'زائر') + '</div>' +
+      '<div class="card-items">' + renderItemsHtml(order.items) + '</div>' +
+      (topNote ? '<div class="card-notes"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> ' + topNote + '</div>' : '') +
+      '<div class="card-actions">' + actionsHtml + '</div>' +
+    '</div>';
+  }
+
+  function renderColumns() {
+    var grouped = { pending: [], confirmed: [], processing: [], shipped: [] };
+    ordersData.forEach(function(o){
+      if (KITCHEN_STATUSES.indexOf(o.status) !== -1) {
+        if (grouped[o.status]) grouped[o.status].push(o);
+      }
+    });
+
+    var canUpdate = typeof Auth !== 'undefined' && Auth.can && Auth.can('update_orders');
+    var total = 0;
+
+    KITCHEN_STATUSES.forEach(function(st){
+      var list = grouped[st] || [];
+      total += list.length;
+      var container = $('cards-' + st);
+      var countEl = $('count-' + st);
+      if (countEl) countEl.textContent = list.length;
+      if (container) {
+        if (list.length === 0) {
+          container.innerHTML = '<div class="empty-col">لا توجد طلبات في هذه المرحلة</div>';
+        } else {
+          container.innerHTML = list.map(function(o){ return buildOrderCard(o, canUpdate); }).join('');
+        }
+      }
+    });
+
+    $('total-count').textContent = total;
+    $('last-update').textContent = new Date().toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  async function fetchAndRender() {
+    if (isRefreshing) return;
+    isRefreshing = true;
+    try {
+      var token = sessionStorage.getItem('louloToken');
+      var headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+
+      var resp = await fetch('/api/orders', { headers: headers });
+      if (resp.status === 401) {
+        if (typeof Auth !== 'undefined' && Auth.logout) Auth.logout();
+        window.location.href = '/login.html?expired=1';
+        return;
+      }
+      if (!resp.ok) {
+        lastFetchFailed = ordersData.length === 0;
+        if (lastFetchFailed) { showFetchError('تعذر تحميل الطلبات. جاري إعادة المحاولة...'); }
+        return;
+      }
+      var data = await resp.json();
+      ordersData = Array.isArray(data) ? data : (data && data.data ? data.data : []);
+      lastFetchFailed = false;
+      clearFetchError();
+      renderColumns();
+      var currentIds = new Set(ordersData.filter(function(o){ return KITCHEN_STATUSES.indexOf(o.status) !== -1; }).map(function(o){ return String(o.id); }));
+      if (seenOrderIds.size > 0) {
+        var newIds = [];
+        currentIds.forEach(function(id){
+          if (!seenOrderIds.has(id)) newIds.push(id);
+        });
+        if (newIds.length > 0) {
+          if (soundEnabled) { playBeep(); }
+          newIds.forEach(function(id){
+            var card = Array.from(document.querySelectorAll('.card')).find(function(c){ return c.dataset.orderId === id; });
+            if (card) card.classList.add('new-glow');
+          });
+          if (autoPrintEnabled) { autoPrintNewOrders(newIds); }
+        }
+      }
+      seenOrderIds = currentIds;
+    } catch (e) {
+      console.error('[Kitchen] Refresh error:', e);
+      lastFetchFailed = ordersData.length === 0;
+      if (lastFetchFailed) { showFetchError('تعذر الاتصال بالخادم. تحقق من اتصال الشبكة.'); }
+    } finally {
+      isRefreshing = false;
+    }
+  }
+
+  function getPrintedIds(){
+    try{return JSON.parse(localStorage.getItem('kitchenAutoPrintedOrderIds')||'[]');}catch(e){return[];}
+  }
+  function addPrintedId(id){
+    var ids=getPrintedIds();
+    if(ids.indexOf(id)===-1) ids.push(id);
+    localStorage.setItem('kitchenAutoPrintedOrderIds',JSON.stringify(ids));
+  }
+
+  function autoPrintNewOrders(newIds){
+    var printed=getPrintedIds();
+    newIds.forEach(function(id){
+      if(printed.indexOf(id)!==-1) return;
+      var order=ordersData.find(function(o){return String(o.id)===String(id)});
+      if(!order||order.status!=='pending') return;
+      var url='/print-order.html?id='+encodeURIComponent(id)+'&type=kitchen&autoprint=1';
+      var win=window.open(url,'_blank');
+      if(!win||win===null||typeof win==='undefined'){
+        showAutoPrintToast('المتصفح منع فتح نافذة الطباعة. اسمح بالنوافذ المنبثقة لهذا الموقع.');
+      }else{
+        showAutoPrintToast('تم إرسال تذكرة المطبخ للطباعة (#'+(order.orderNumber||order.id)+')');
+        addPrintedId(id);
+      }
+    });
+  }
+
+  function showFetchError(msg) {
+    var el = $('fetch-error');
+    var msgEl = $('fetch-error-msg');
+    if (el) el.style.display = 'flex';
+    if (msgEl) msgEl.textContent = msg;
+  }
+
+  function clearFetchError() {
+    var el = $('fetch-error');
+    if (el) el.style.display = 'none';
+  }
+
+  function getBtnLabel(status) {
+    var btn = TRANSITION_BUTTONS[status];
+    return btn ? btn.label : (status === 'delivered' ? 'تم' : 'تحديث');
+  }
+
+  async function handleStatusTransition(orderId, newStatus, btnEl) {
+    if (btnEl) {
+      btnEl.disabled = true;
+      btnEl.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin .8s linear infinite"><style>@keyframes spin{to{transform:rotate(360deg)}}</style><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg> جاري...';
+    }
+
+    var previousLabel = getBtnLabel(newStatus === 'delivered' ? 'shipped' : newStatus === 'shipped' ? 'processing' : newStatus === 'processing' ? 'confirmed' : 'pending');
+
+    try {
+      var token = sessionStorage.getItem('louloToken');
+      var headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+
+      var resp = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/status', {
+        method: 'PUT',
+        headers: headers,
+        body: JSON.stringify({ status: newStatus })
+      });
+      var res = resp.ok ? await resp.json() : null;
+
+      if (res && (res.success || res.order)) {
+        var updatedOrder = res.order || (res.data && res.data.order) || res.data || res;
+        if (updatedOrder && updatedOrder.id) {
+          var idx = ordersData.findIndex(function(o){ return String(o.id) === String(orderId); });
+          if (idx !== -1) ordersData[idx] = updatedOrder;
+        }
+        renderColumns();
+      } else {
+        var msg = res && res.message ? res.message : 'فشل!';
+        if (btnEl) {
+          btnEl.textContent = msg;
+          setTimeout(function(){
+            if (btnEl) { btnEl.textContent = previousLabel; btnEl.disabled = false; }
+          }, 2500);
+        }
+      }
+    } catch (e) {
+      console.error('[Kitchen] Status error:', e);
+      if (btnEl) {
+        btnEl.textContent = 'خطأ';
+        setTimeout(function(){
+          if (btnEl) { btnEl.textContent = previousLabel; btnEl.disabled = false; }
+        }, 2500);
+      }
+    }
+  }
+
+  function forceRefresh() {
+    var btn = $('btn-refresh');
+    if (btn) btn.disabled = true;
+    fetchAndRender().finally(function(){
+      if (btn) btn.disabled = false;
+    });
+  }
+
+  function initAudio() {
+    if (audioInitialized) return;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      audioInitialized = true;
+      var note = $('sound-activate-note');
+      if (note) note.style.display = 'none';
+    } catch (e) {
+      console.warn('[Kitchen] Audio not available');
+    }
+  }
+
+  function playBeep() {
+    if (!audioCtx) return;
+    try {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      osc.start(audioCtx.currentTime);
+      osc.stop(audioCtx.currentTime + 0.3);
+    } catch (e) { /* ignore */ }
+  }
+
+  function showAutoPrintToast(msg){
+    var el=$('autoprint-toast');
+    if(!el) return;
+    el.textContent=msg;
+    el.style.display='block';
+    clearTimeout(el._t);
+    el._t=setTimeout(function(){el.style.display='none'},4000);
+  }
+
+  function toggleAutoPrint(){
+    autoPrintEnabled=!autoPrintEnabled;
+    localStorage.setItem('kitchenAutoPrintEnabled',String(autoPrintEnabled));
+    var btn=$('btn-autoprint');
+    var lbl=$('autoprint-label');
+    if(btn&&lbl){
+      if(autoPrintEnabled){btn.classList.add('active');lbl.textContent='طباعة تلقائية مفعلة';}
+      else{btn.classList.remove('active');lbl.textContent='طباعة تلقائية';}
+    }
+    if(autoPrintEnabled) showAutoPrintToast('تم تفعيل الطباعة التلقائية');
+  }
+
+  function toggleSound() {
+    soundEnabled = !soundEnabled;
+    localStorage.setItem('kitchenSoundEnabled', String(soundEnabled));
+    var btn = $('btn-sound');
+    var lbl = $('sound-label');
+    var icon = $('sound-icon');
+    if (btn && lbl && icon) {
+      if (soundEnabled) {
+        btn.classList.remove('muted');
+        lbl.textContent = 'الصوت مفعل';
+        icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>';
+      } else {
+        btn.classList.add('muted');
+        lbl.textContent = 'الصوت متوقف';
+        icon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>';
+      }
+    }
+    if (soundEnabled && !audioInitialized) {
+      var note = $('sound-activate-note');
+      if (note) note.style.display = 'flex';
+    }
+  }
+
+  function init() {
+    var root = $('app-root');
+    var denied = $('access-denied');
+
+    try {
+      if (typeof Auth === 'undefined' || !Auth.getSession) {
+        if (root) root.style.display = 'none';
+        if (denied) {
+          denied.style.display = 'flex';
+          $('denied-msg').textContent = 'لم يتم تحميل نظام المصادقة. تأكد من تحميل auth.js.';
+        }
+        return;
+      }
+
+      var session = Auth.getSession();
+      if (!session) {
+        window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+        return;
+      }
+
+      if (!ALLOWED_ROLES.includes(session.role)) {
+        if (root) root.style.display = 'none';
+        if (denied) {
+          denied.style.display = 'flex';
+          $('denied-msg').innerHTML = 'دورك الحالي: <strong>' + (Auth.getRoleLabel ? Auth.getRoleLabel(session.role) : session.role) + '</strong><br>شاشة المطبخ غير متاحة لهذا الدور.';
+        }
+        return;
+      }
+
+      if (root) root.style.display = 'flex';
+      if (denied) denied.style.display = 'none';
+
+      var soundBtn = $('btn-sound');
+      var soundLbl = $('sound-label');
+      var soundIcon = $('sound-icon');
+      if (soundBtn && soundLbl && soundIcon) {
+        if (soundEnabled) {
+          soundBtn.classList.remove('muted');
+          soundLbl.textContent = 'الصوت مفعل';
+          soundIcon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>';
+        } else {
+          soundBtn.classList.add('muted');
+          soundLbl.textContent = 'الصوت متوقف';
+          soundIcon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>';
+        }
+      }
+
+      if (soundEnabled && !audioInitialized) {
+        var note = $('sound-activate-note');
+        if (note) note.style.display = 'flex';
+      }
+
+      var autoBtn=$('btn-autoprint');
+      var autoLbl=$('autoprint-label');
+      if(autoBtn&&autoLbl){
+        if(autoPrintEnabled){autoBtn.classList.add('active');autoLbl.textContent='طباعة تلقائية مفعلة';}
+        else{autoBtn.classList.remove('active');autoLbl.textContent='طباعة تلقائية';}
+      }
+
+      fetchAndRender();
+
+      if (refreshTimer) clearInterval(refreshTimer);
+      refreshTimer = setInterval(fetchAndRender, 15000);
+    } catch (e) {
+      console.error('[Kitchen] Init error:', e);
+      if (root) root.style.display = 'none';
+      if (denied) {
+        denied.style.display = 'flex';
+        $('denied-msg').textContent = 'حدث خطأ أثناء تهيئة شاشة المطبخ.';
+      }
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(init, 100);
+  }
+
+  window.handleStatusTransition = handleStatusTransition;
+  window.forceRefresh = forceRefresh;
+  window.toggleSound = toggleSound;
+  window.initAudio = initAudio;
+  window.toggleAutoPrint = toggleAutoPrint;
+})();
+</script>
+</body>
+</html>

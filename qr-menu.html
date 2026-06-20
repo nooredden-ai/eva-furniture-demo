@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>توليد روابط QR للطاولات</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="auth.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f172a;--surface:#1e293b;--surface2:#334155;--text:#f1f5f9;--text2:#94a3b8;--accent:#0ea5a4;--border:#334155;--radius:12px}
+html,body{height:100%;font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text)}
+body{display:flex;flex-direction:column}
+.header{
+  padding:16px 24px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between
+}
+.header h1{font-size:1.15rem;display:flex;align-items:center;gap:8px}
+.content{flex:1;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{
+  background:var(--surface);
+  border-radius:var(--radius);
+  padding:32px;
+  width:100%;
+  max-width:500px;
+  box-shadow:0 4px 24px rgba(0,0,0,.3)
+}
+.card h2{font-size:1.1rem;margin-bottom:6px;color:var(--text)}
+.card p{font-size:.85rem;color:var(--text2);margin-bottom:20px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:.85rem;font-weight:600;margin-bottom:6px;color:var(--text)}
+.form-group input{
+  width:100%;
+  padding:12px 14px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--bg);
+  color:var(--text);
+  font-size:1rem;
+  font-family:inherit;
+  transition:border-color .2s
+}
+.form-group input:focus{outline:none;border-color:var(--accent)}
+.form-group .hint{font-size:.78rem;color:var(--text2);margin-top:4px}
+.btn{
+  width:100%;
+  padding:12px;
+  border-radius:8px;
+  border:none;
+  background:var(--accent);
+  color:#fff;
+  font-size:.95rem;
+  font-weight:700;
+  cursor:pointer;
+  font-family:inherit;
+  transition:opacity .15s
+}
+.btn:hover{opacity:.9}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.result{margin-top:20px;display:none}
+.result.show{display:block}
+.result-link{
+  display:flex;
+  gap:8px;
+  margin-bottom:16px
+}
+.result-link input{
+  flex:1;
+  padding:10px 12px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--bg);
+  color:var(--text);
+  font-size:.82rem;
+  font-family:inherit;
+  direction:ltr;
+  text-align:left
+}
+.result-link button{
+  padding:10px 16px;
+  border-radius:8px;
+  border:none;
+  background:var(--surface2);
+  color:var(--text);
+  font-weight:600;
+  cursor:pointer;
+  font-family:inherit;
+  transition:background .15s
+}
+.result-link button:hover{background:var(--accent);color:#fff}
+.qr-area{text-align:center;padding:16px;background:var(--bg);border-radius:8px;border:1px solid var(--border)}
+.qr-area img{max-width:240px;height:auto}
+.qr-area .qr-hint{font-size:.82rem;color:var(--text2);margin-top:8px}
+.btn-copy-link{display:inline-flex;align-items:center;gap:6px}
+.back-link{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 16px;border-radius:8px;
+  background:var(--surface2);color:var(--text2);
+  text-decoration:none;font-size:.85rem;font-weight:600;
+  transition:background .15s
+}
+.back-link:hover{background:var(--accent);color:#fff}
+.access-denied{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100vh;gap:16px;text-align:center;padding:24px
+}
+.access-denied h1{font-size:2rem;color:#ef4444}
+.access-denied p{color:var(--text2);font-size:1rem}
+.access-denied a{color:var(--accent);text-decoration:none;font-weight:700}
+</style>
+</head>
+<body>
+
+<div id="app-root" style="display:none;flex-direction:column;height:100%">
+  <header class="header">
+    <h1>📱 توليد روابط QR للطاولات</h1>
+    <a href="/admin.html" class="back-link">← العودة للإدارة</a>
+  </header>
+  <div class="content">
+    <div class="card">
+      <h2>رابط منيو الطاولة</h2>
+      <p>أدخل رقم الطاولة لتوليد رابط QR يفتح المنيو مع ربط الطلب بالطاولة.</p>
+
+      <!-- Demo-friendly instructions for restaurant owner -->
+      <div style="background:rgba(14,165,233,.1);border-radius:8px;padding:12px 16px;margin-bottom:20px;font-size:.82rem;color:var(--text);line-height:1.8">
+        <strong style="color:#0ea5e4">كيف يعمل؟</strong><br>
+        1. أدخل رقم الطاولة (مثلاً: T01 أو 5)<br>
+        2. انسخ الرابط أو اطبع رمز QR<br>
+        3. ضع QR على الطاولة — الزبون يمسحه ويفتح المنيو<br>
+        4. عندما يطلب الزبون، يظهر رقم الطاولة في لوحة الإدارة والمطبخ
+      </div>
+      <div class="form-group">
+        <label for="table-input">رقم الطاولة</label>
+        <input type="text" id="table-input" placeholder="مثال: T01 أو 5 أو A3" dir="auto">
+        <div class="hint">يمكنك استخدام أي تنسيق: أرقام، حروف، أو مزيج.</div>
+      </div>
+      <button class="btn" id="generate-btn" onclick="generateLink()">🔗 توليد الرابط</button>
+
+      <div class="result" id="result-area">
+        <div class="result-link">
+          <input type="text" id="generated-link" readonly onclick="this.select()">
+          <button onclick="copyLink()" id="copy-btn">📋 نسخ</button>
+        </div>
+        <div class="qr-area" id="qr-area">
+          <img id="qr-image" alt="QR Code" style="display:none">
+          <div class="qr-hint">اضغط "توليد الرابط" أعلاه</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="access-denied" class="access-denied" style="display:none">
+  <h1>🚫 وصول مرفوض</h1>
+  <p>ليس لديك صلاحية الوصول إلى هذه الصفحة.</p>
+  <a href="/login.html">تسجيل الدخول</a>
+</div>
+
+<script>
+(function(){
+  const ALLOWED_ROLES = ['super_admin','store_owner','store_manager','manager'];
+
+  function $(id) { return document.getElementById(id); }
+
+  function generateLink() {
+    const input = $('table-input');
+    const table = input ? input.value.trim() : '';
+    if (!table) {
+      showError('الرجاء إدخال رقم الطاولة');
+      return;
+    }
+
+    const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '') + '/';
+    const link = baseUrl + '?type=dinein&table=' + encodeURIComponent(table);
+
+    const linkInput = $('generated-link');
+    if (linkInput) {
+      linkInput.value = link;
+    }
+
+    // Generate QR using Google Charts API (free, no library)
+    const qrImg = $('qr-image');
+    if (qrImg) {
+      qrImg.style.display = 'inline';
+      const qrUrl = 'https://chart.googleapis.com/chart?chs=240x240&cht=qr&chl=' + encodeURIComponent(link) + '&choe=UTF-8';
+      qrImg.src = qrUrl;
+      qrImg.style.display = '';
+      qrImg.onerror = function() {
+        this.style.display = 'none';
+        const hint = this.nextElementSibling;
+        if (hint) hint.textContent = '⚠️ تعذر تحميل رمز QR — الرابط النصي أعلاه جاهز للنسخ';
+      };
+      qrImg.onload = function() {
+        const hint = this.nextElementSibling;
+        if (hint) hint.textContent = '📱 امسح الرمز لفتح المنيو';
+      };
+    }
+
+    $('result-area').classList.add('show');
+  }
+
+  function copyLink() {
+    const input = $('generated-link');
+    if (!input) return;
+    input.select();
+    input.setSelectionRange(0, 99999);
+    try {
+      navigator.clipboard.writeText(input.value).then(() => {
+        const btn = $('copy-btn');
+        if (btn) { btn.textContent = '✅ تم النسخ'; setTimeout(() => { btn.textContent = '📋 نسخ'; }, 2000); }
+      }).catch(() => {
+        document.execCommand('copy');
+        const btn = $('copy-btn');
+        if (btn) { btn.textContent = '✅ تم النسخ'; setTimeout(() => { btn.textContent = '📋 نسخ'; }, 2000); }
+      });
+    } catch(e) {
+      document.execCommand('copy');
+    }
+  }
+
+  function showError(msg) {
+    const btn = $('generate-btn');
+    if (btn) { btn.textContent = msg; btn.disabled = true; setTimeout(() => { btn.textContent = '🔗 توليد الرابط'; btn.disabled = false; }, 2000); }
+  }
+
+  function init() {
+    const root = $('app-root');
+    const denied = $('access-denied');
+
+    try {
+      if (typeof Auth === 'undefined' || !Auth.getSession) {
+        if (root) root.style.display = 'none';
+        if (denied) { denied.style.display = 'flex'; denied.querySelector('p').textContent = 'لم يتم تحميل نظام المصادقة.'; }
+        return;
+      }
+
+      const session = Auth.getSession();
+      if (!session) {
+        window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+        return;
+      }
+
+      if (!ALLOWED_ROLES.includes(session.role)) {
+        if (root) root.style.display = 'none';
+        if (denied) { denied.style.display = 'flex'; }
+        return;
+      }
+
+      if (root) root.style.display = 'flex';
+      if (denied) denied.style.display = 'none';
+
+      // Allow enter key
+      $('table-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') generateLink();
+      });
+    } catch (e) {
+      console.error('[QR Menu] Init error:', e);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+  if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    setTimeout(init, 100);
+  }
+
+  window.generateLink = generateLink;
+  window.copyLink = copyLink;
+})();
+</script>
+</body>
+</html>
