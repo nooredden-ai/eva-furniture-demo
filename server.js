@@ -1319,8 +1319,16 @@ app.post('/api/orders', simpleRateLimit, (req, res) => {
 
     const products = readJSON('products.json');
     for (const item of items) {
+      const product = products.find(p => String(p.id) === String(item.productId));
+      if (product) {
+        if (product.active === false) {
+          return res.status(400).json({ success: false, message: `الصنف "${product.name}" غير متاح حالياً` });
+        }
+        if (product.temporarilyUnavailable === true) {
+          return res.status(400).json({ success: false, message: `الصنف "${product.name}" غير متاح مؤقتاً` });
+        }
+      }
       if (item.selectedOptions) {
-        const product = products.find(p => String(p.id) === String(item.productId));
         if (!product) {
           return res.status(400).json({ success: false, message: `المنتج "${item.name}" غير موجود` });
         }
@@ -1607,6 +1615,15 @@ app.post('/api/direct-sale', requirePerm('update_orders'), (req, res) => {
     }
 
     const product = products[productIdx];
+
+    // Check product availability
+    if (product.active === false) {
+      return res.status(400).json({ success: false, message: `الصنف "${product.name}" غير متاح حالياً` });
+    }
+    if (product.temporarilyUnavailable === true) {
+      return res.status(400).json({ success: false, message: `الصنف "${product.name}" غير متاح مؤقتاً` });
+    }
+
     const currentStock = Number(product.stock) || 0;
 
     // Check stock availability
