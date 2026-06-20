@@ -443,8 +443,8 @@ async function renderAccountingPage() {
       if (data.recentSales && data.recentSales.length > 0) {
         recentSalesBody.innerHTML = data.recentSales.map(s => {
           const typeBadge = s.type === 'online' ?
-            `<span class="badge-online">متجر إلكتروني</span>` :
-            `<span class="badge-direct">بيع مباشر</span>`;
+            `<span class="badge-online">طلب أونلاين</span>` :
+            `<span class="badge-direct">نقطة بيع</span>`;
           
           let statusText = s.status;
           if (s.status === 'completed') statusText = 'مكتمل';
@@ -2628,7 +2628,7 @@ function statusText(s, orderType) {
     pending: 'قيد الانتظار',
     confirmed: 'تم التأكيد',
     processing: 'جاري التجهيز',
-    shipped: type !== 'delivery' ? 'جاهز' : 'تم الشحن',
+    shipped: type !== 'delivery' ? 'جاهز' : 'تم التوصيل',
     delivered: type !== 'delivery' ? 'تم' : 'تم التوصيل',
     cancelled: 'ملغي'
   };
@@ -2677,7 +2677,7 @@ async function renderMerchantDashboard() {
     const hour = new Date().getHours();
     const greeting = hour < 12 ? 'صباح الخير' : 'مساء الخير';
     safeSet('dash-greeting-text', greeting);
-    safeSet('dash-store-name', store.name || 'متجرك');
+    safeSet('dash-store-name', store.name || 'المطعم');
     const planBadge = $a('dash-plan-badge');
     if (planBadge) planBadge.textContent = window.storePlan?.name || 'الخطة الأساسية';
     const dateEl = $a('dash-current-date');
@@ -2826,7 +2826,7 @@ async function renderMerchantDashboard() {
       const cc = {}; products.forEach(p=>{const cn=categories.find(c=>c.id===p.category)?.name||p.category||'غير مصنف';cc[cn]=(cc[cn]||0)+1;});
       const tc = Object.entries(cc).sort((a,b)=>b[1]-a[1]).slice(0,5); const mx = tc.length?tc[0][1]:1;
       const b = catE.querySelector('.dash-analytics-card-body');
-      if (b) b.innerHTML = tc.length ? tc.map(([n,c])=>`<div class="dash-analytics-row"><span class="dash-analytics-row-name">${n}</span><span class="dash-analytics-row-value">${c}</span></div><div class="dash-analytics-bar"><div class="dash-analytics-bar-fill" style="width:${(c/mx*100).toFixed(0)}%"></div></div>`).join('') : '<div class="dash-analytics-empty">لا توجد تصنيفات</div>';
+      if (b) b.innerHTML = tc.length ? tc.map(([n,c])=>`<div class="dash-analytics-row"><span class="dash-analytics-row-name">${n}</span><span class="dash-analytics-row-value">${c}</span></div><div class="dash-analytics-bar"><div class="dash-analytics-bar-fill" style="width:${(c/mx*100).toFixed(0)}%"></div></div>`).join('') : '<div class="dash-analytics-empty">لا توجد أقسام</div>';
     }
     // Sales This Week
     const wE = $a('dash-analytics-weekly-sales');
@@ -3237,7 +3237,7 @@ function renderCategoriesPage() {
               <button class="topbar-btn btn-outline btn-sm" onclick="openEditCategory('${node.id}')"><i data-lucide="edit" style="width:14px;height:14px"></i></button>
               <button class="topbar-btn btn-danger btn-sm" onclick="deleteCategory('${node.id}')"><i data-lucide="trash-2" style="width:14px;height:14px"></i></button>
             </div>
-            ` : `<span style="font-size:0.75rem;color:var(--admin-text2);background:var(--admin-surface2);padding:4px 10px;border-radius:20px">تصنيف افتراضي</span>`}
+            ` : `<span style="font-size:0.75rem;color:var(--admin-text2);background:var(--admin-surface2);padding:4px 10px;border-radius:20px">قسم افتراضي</span>`}
           </div>
         </div>
         ${hasChildren ? node.children.map(child => renderNode(child, depth + 1)).join('') : ''}
@@ -3253,7 +3253,7 @@ function populateCategoryParentSelect(selectedParentId, excludeId) {
   if (!select) return;
   API.getCategories().then(cats => {
     const filtered = cats.filter(c => c.id !== 'all' && c.id !== excludeId);
-    const rootLabel = 'بدون — تصنيف رئيسي';
+    const rootLabel = 'بدون — قسم رئيسي';
     let html = `<option value="">${rootLabel}</option>`;
     filtered.forEach(c => {
       const isChildOfExcluded = wouldCreateCategoryLoop(cats, excludeId, c.id);
@@ -3270,7 +3270,7 @@ function populateCategoryParentSelect(selectedParentId, excludeId) {
 function openAddCategory() {
   editingCategory = null;
   categoryImageMarkedForRemoval = false;
-  $a('category-modal-title').innerHTML = '<i data-lucide="plus-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة تصنيف جديد';
+  $a('category-modal-title').innerHTML = '<i data-lucide="plus-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة قسم جديد';
   $a('cm-name').value = '';
   clearCategoryImagePreview();
   populateCategoryParentSelect(null, null);
@@ -3284,7 +3284,7 @@ function openEditCategory(catId) {
     if (!cat) return;
     editingCategory = catId;
     categoryImageMarkedForRemoval = false;
-    $a('category-modal-title').innerHTML = '<i data-lucide="edit" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> تعديل التصنيف';
+    $a('category-modal-title').innerHTML = '<i data-lucide="edit" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> تعديل القسم';
     $a('cm-name').value  = cat.name;
     populateCategoryParentSelect(cat.parentId || '', catId);
     if (cat.image) {
@@ -3314,7 +3314,7 @@ function saveCategory(btnElement) {
 
 async function processSaveCategory() {
   const name  = $a('cm-name').value.trim();
-  if (!name) { showAdminToast('اسم التصنيف مطلوب', 'error'); return; }
+  if (!name) { showAdminToast('اسم القسم مطلوب', 'error'); return; }
 
   const parentId = $a('cm-parentId') ? $a('cm-parentId').value.trim() : '';
   const data = { name };
@@ -3323,7 +3323,7 @@ async function processSaveCategory() {
   if (editingCategory) {
     const cats = await API.getCategories(true);
     if (wouldCreateCategoryLoop(cats, editingCategory, parentId)) {
-      showAdminToast('لا يمكن جعل هذا التصنيف أباً لنفسه أو فرعاً من تصنيف فرعي تابع له', 'error');
+      showAdminToast('لا يمكن جعل هذا القسم أباً لنفسه أو فرعاً من قسم فرعي تابع له', 'error');
       return;
     }
   }
@@ -3367,7 +3367,7 @@ async function processSaveCategory() {
         closeModal('category-modal');
         appState.categories = null;
         renderCategoriesPage();
-        showAdminToast('تم حفظ التصنيف');
+        showAdminToast('تم حفظ القسم');
       });
     } else {
       return API.addCategory(data).then(res => {
@@ -3375,7 +3375,7 @@ async function processSaveCategory() {
         closeModal('category-modal');
         appState.categories = null;
         renderCategoriesPage();
-        showAdminToast('تم حفظ التصنيف');
+        showAdminToast('تم حفظ القسم');
       });
     }
   });
@@ -3437,19 +3437,19 @@ function deleteCategory(catId) {
               if (res && res.success === false) { showAdminToast(res.message || 'فشل الحذف', 'error'); return; }
               appState.categories = null;
               renderCategoriesPage();
-              showAdminToast('تم حذف التصنيف');
+              showAdminToast('تم حذف القسم');
             });
           });
         }
       );
     } else {
-      showConfirmModal('تأكيد الحذف', 'هل أنت متأكد من حذف هذا التصنيف؟', () => {
+      showConfirmModal('تأكيد الحذف', 'هل أنت متأكد من حذف هذا القسم؟', () => {
         withLock('delete-category-' + catId, () => {
           return API.deleteCategory(catId).then(res => {
             if (res && res.success === false) { showAdminToast(res.message || 'فشل الحذف', 'error'); return; }
             appState.categories = null;
             renderCategoriesPage();
-            showAdminToast('تم حذف التصنيف');
+            showAdminToast('تم حذف القسم');
           });
         });
       });
@@ -3729,7 +3729,7 @@ async function openOrderDetails(orderId) {
       pending: 'قيد الانتظار',
       confirmed: 'تم التأكيد',
       processing: 'جاري التجهيز',
-      shipped: 'تم الشحن',
+      shipped: 'تم التوصيل',
       delivered: 'تم التوصيل',
       cancelled: 'ملغي'
     };
@@ -3911,9 +3911,9 @@ function renderOrderTimeline() {
     pending: 'تم إنشاء الطلب',
     confirmed: 'تم التأكيد',
     processing: 'جاري التجهيز',
-    shipped: 'تم الشحن',
-    delivered: 'تم التوصيل',
-    cancelled: 'ملغي'
+shipped: 'تم التوصيل',
+      delivered: 'تم التوصيل',
+      cancelled: 'ملغي'
   };
 
   const statusColors = {
@@ -3987,7 +3987,7 @@ function renderOrderStatusWorkflow(order) {
     pending: 'قيد الانتظار',
     confirmed: 'تم التأكيد',
     processing: 'جاري التجهيز',
-    shipped: isPickup ? 'جاهز' : 'تم الشحن',
+    shipped: isPickup ? 'جاهز' : 'تم التوصيل',
     delivered: isPickup ? 'تم' : 'تم التوصيل',
     cancelled: 'ملغي'
   };
@@ -4007,7 +4007,7 @@ function renderOrderStatusWorkflow(order) {
     `;
   } else if (currentStatus === 'processing') {
     html = `
-      <button class="topbar-btn btn-primary btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px;" onclick="handleWorkflowStatusTransition('shipped')">${isPickup ? 'جاهز' : 'تم الشحن'}</button>
+      <button class="topbar-btn btn-primary btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px;" onclick="handleWorkflowStatusTransition('shipped')">${isPickup ? 'جاهز' : 'تم التوصيل'}</button>
       <button class="topbar-btn btn-danger btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px; margin-top: 4px;" onclick="handleWorkflowStatusTransition('cancelled')">إلغاء وإعادة التوفر</button>
     `;
   } else if (currentStatus === 'shipped') {
@@ -4051,7 +4051,7 @@ async function handleWorkflowStatusTransition(nextStatus) {
     } else if (nextStatus === 'processing') {
       toastMsg = 'تم بدء تجهيز الطلب.';
     } else if (nextStatus === 'shipped') {
-      toastMsg = currentViewOrder.orderType && currentViewOrder.orderType !== 'delivery' ? 'الطلب جاهز.' : 'تم شحن الطلب.';
+      toastMsg = currentViewOrder.orderType && currentViewOrder.orderType !== 'delivery' ? 'الطلب جاهز.' : 'تم توصيل الطلب.';
     } else if (nextStatus === 'delivered') {
       toastMsg = currentViewOrder.orderType && currentViewOrder.orderType !== 'delivery' ? 'تم إنهاء الطلب.' : 'تم تسليم الطلب.';
     }
@@ -5264,7 +5264,7 @@ async function renderCouponsTable() {
   try {
     const coupons = await API.getCoupons();
     if (!coupons || coupons.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--admin-text2);">لا توجد كوبونات.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--admin-text2);">لا توجد عروض أو خصومات.</td></tr>';
       return;
     }
     
@@ -5293,7 +5293,7 @@ async function renderCouponsTable() {
 
 function openAddCoupon() {
   editingCoupon = null;
-  $a('coupon-modal-title').innerHTML = '<i data-lucide="plus-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة كوبون جديد';
+  $a('coupon-modal-title').innerHTML = '<i data-lucide="plus-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة عرض / خصم جديد';
   $a('com-code').value = '';
   $a('com-discount').value = '';
   $a('com-active').checked = true;
@@ -5308,7 +5308,7 @@ async function openEditCoupon(code) {
   if (!coupon) return;
   editingCoupon = coupon;
   
-  $a('coupon-modal-title').innerHTML = '<i data-lucide="edit-2" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> تعديل الكوبون';
+  $a('coupon-modal-title').innerHTML = '<i data-lucide="edit-2" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> تعديل العرض / الخصم';
   $a('com-code').value = coupon.code;
   $a('com-code').disabled = true; // Code shouldn't be edited normally
   $a('com-discount').value = coupon.discountPercent;
@@ -5343,11 +5343,11 @@ async function saveCoupon(btn) {
     }
     
     if (res && res.success !== false) {
-      showAdminToast('تم حفظ الكوبون بنجاح');
+      showAdminToast('تم حفظ العرض بنجاح');
       closeModal('coupon-modal');
       renderCouponsTable();
     } else {
-      showAdminToast(res?.message || 'فشل حفظ الكوبون', 'error');
+      showAdminToast(res?.message || 'فشل حفظ العرض', 'error');
     }
   } catch (err) {
     showAdminToast('حدث خطأ غير متوقع', 'error');
@@ -5359,7 +5359,7 @@ async function saveCoupon(btn) {
 }
 
 async function deleteCoupon(code) {
-  if (!confirm('هل أنت متأكد من حذف هذا الكوبون؟')) return;
+  if (!confirm('هل أنت متأكد من حذف هذا العرض؟')) return;
   const res = await API.deleteCoupon(code);
   if (res && res.success !== false) {
     showAdminToast('تم الحذف بنجاح');
@@ -5472,7 +5472,7 @@ groupName: "أقسام المنيو (Menu Sections)",
     ]
   },
   {
-    groupName: "كوبونات الخصم (Coupons)",
+    groupName: "العروض والخصومات (Coupons)",
     permissions: [
       { key: "view_coupons", label: "عرض العروض والخصومات" },
       { key: "manage_coupons", label: "إدارة العروض والخصومات (إضافة، تعديل، حذف)" }
@@ -6270,7 +6270,7 @@ async function saveStockReceipt(btn) {
       });
 
       if (response.success) {
-        showAdminToast(`✓ تم تسجيل التوريد: ${response.productName} - ${response.receipt.quantity} وحدة`);
+        showAdminToast(`✓ تم تسجيل المشتريات: ${response.productName} - ${response.receipt.quantity} وحدة`);
 
         // Close modal and reset form
         closeModal('stock-receipt-modal');
@@ -6299,11 +6299,11 @@ async function saveStockReceipt(btn) {
 
         renderStockReceiptsLog();
       } else {
-        showAdminToast(response.message || 'فشل تسجيل التوريد', 'error');
+        showAdminToast(response.message || 'فشل تسجيل المشتريات', 'error');
       }
     } catch (error) {
       console.error('Error saving stock receipt:', error);
-      showAdminToast('حدث خطأ أثناء حفظ التوريد', 'error');
+      showAdminToast('حدث خطأ أثناء حفظ المشتريات', 'error');
     } finally {
       btn.innerHTML = originalText;
       btn.disabled = false;
@@ -6337,7 +6337,7 @@ function renderStockReceiptsLog() {
   if (!stockReceiptsLog || stockReceiptsLog.length === 0) {
     logContainer.innerHTML = `
       <div style="padding:24px;text-align:center;color:var(--admin-text2);font-size:13px;">
-        لا توجد توريدات بعد
+        لا توجد مشتريات بعد
       </div>
     `;
     return;
@@ -6749,7 +6749,7 @@ async function viewInvoice(id) {
           <div style="text-align:left;min-width:200px;">
             <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.9rem;color:var(--admin-subtext);"><span>المجموع الفرعي</span><span>${Number(subtotal).toFixed(2)} ${currency}</span></div>
             ${discount > 0 ? `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.9rem;color:var(--admin-subtext);"><span>الخصم</span><span style="color:var(--admin-success)">-${Number(discount).toFixed(2)} ${currency}</span></div>` : ''}
-            <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.9rem;color:var(--admin-subtext);"><span>الشحن</span><span>${Number(shipping).toFixed(2)} ${currency}</span></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:0.9rem;color:var(--admin-subtext);"><span>التوصيل</span><span>${Number(shipping).toFixed(2)} ${currency}</span></div>
             <div style="display:flex;justify-content:space-between;padding:8px 0 4px;border-top:2px solid var(--admin-border);margin-top:4px;font-size:1.1rem;color:var(--admin-text);font-weight:700;"><span>الإجمالي</span><span style="color:var(--admin-primary);font-size:1.3rem;">${Number(total).toFixed(2)} ${currency}</span></div>
           </div>
         </div>
@@ -6880,7 +6880,7 @@ function printInvoice() {
         <table class="invoice-print-totals-table">
           <tr><td class="label">المجموع الفرعي</td><td class="value">${Number(subtotal).toFixed(2)} ${currency}</td></tr>
           <tr><td class="label">الخصم</td><td class="value">${Number(discount).toFixed(2)} ${currency}</td></tr>
-          <tr><td class="label">الشحن</td><td class="value">${Number(shipping).toFixed(2)} ${currency}</td></tr>
+          <tr><td class="label">التوصيل</td><td class="value">${Number(shipping).toFixed(2)} ${currency}</td></tr>
           <tr class="grand-total"><td class="label">الإجمالي</td><td class="value">${Number(total).toFixed(2)} ${currency}</td></tr>
         </table>
       </div>
