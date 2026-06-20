@@ -1379,6 +1379,21 @@ app.post('/api/orders', simpleRateLimit, (req, res) => {
       }
     }
 
+    // POS Dine-in Table Validation
+    if (req.body.source === 'pos' && validatedOrderType === 'dinein') {
+      if (!tableNumber) {
+        return res.status(400).json({ success: false, message: 'الطاولة غير صالحة أو غير متاحة.' });
+      }
+      const tables = readTables();
+      const table = tables.find(t => String(t.id) === String(tableNumber) || String(t.code) === String(tableNumber));
+      if (!table) {
+        return res.status(400).json({ success: false, message: 'الطاولة غير صالحة أو غير متاحة.' });
+      }
+      if (table.active !== true) {
+        return res.status(400).json({ success: false, message: 'الطاولة غير صالحة أو غير متاحة.' });
+      }
+    }
+
     // Sanitize notes on all items
     for (const item of items) {
       if (item.notes) {

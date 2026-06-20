@@ -118,7 +118,7 @@ input,select,textarea{font-family:inherit}
 .type-btn:hover{background:var(--clr-surface3);color:var(--clr-text)}
 .type-btn.active{background:var(--clr-primary);color:#fff}
 /* TABLE INPUT */
-.table-input{width:100%;padding:10px 14px;border-radius:var(--radius-sm);border:1px solid var(--clr-border);background:var(--clr-surface2);color:var(--clr-text);font-size:.9rem;text-align:center;min-height:44px}
+.table-input{width:100%;padding:10px 14px;border-radius:var(--radius-sm);border:1px solid var(--clr-border);background:var(--clr-surface2);color:var(--clr-text);font-size:.9rem;text-align:center;min-height:44px;cursor:pointer}
 .table-input:focus{outline:none;border-color:var(--clr-primary)}
 /* PAYMENT */
 .pay-group{display:flex;gap:6px}
@@ -213,7 +213,7 @@ input,select,textarea{font-family:inherit}
           <button class="type-btn" data-type="pickup" onclick="setOrderType('pickup')">استلام</button>
           <button class="type-btn" data-type="delivery" onclick="setOrderType('delivery')">توصيل</button>
         </div>
-        <input class="table-input" id="table-input" type="text" placeholder="رقم الطاولة * (مثال: T01)" required style="display:block">
+        <select class="table-input" id="table-input" required style="display:block"><option value="">-- اختر طاولة --</option></select>
         <div class="pay-group" id="pay-group">
           <button class="pay-btn active" data-pay="cash" onclick="setPayment('cash')">نقدي</button>
           <button class="pay-btn" data-pay="card" onclick="setPayment('card')">بطاقة</button>
@@ -268,6 +268,7 @@ input,select,textarea{font-family:inherit}
   let paymentMethod = 'cash';
   let lastOrderId = null;
   let lastOrderNumber = null;
+  let tables = [];
   const DELIVERY_FEE = 0;
   let pendingProduct = null;
 
@@ -300,6 +301,32 @@ input,select,textarea{font-family:inherit}
       const d=await r.json();
       categories=Array.isArray(d)?d:(d&&d.data?d.data:[]);
     }catch(e){console.error('[POS] Categories fetch error:',e)}
+  }
+
+  async function fetchTables(){
+    try{
+      const token=sessionStorage.getItem('louloToken');
+      const h={'Content-Type':'application/json'};
+      if(token) h['Authorization']='Bearer '+token;
+      const r=await fetch('/api/tables',{headers:h});
+      if(!r.ok) return;
+      const d=await r.json();
+      const allTables=Array.isArray(d)?d:(d&&d.data?d.data:[]);
+      tables=allTables.filter(t=>t.active===true);
+      renderTableOptions();
+    }catch(e){console.error('[POS] Tables fetch error:',e)}
+  }
+
+  function renderTableOptions(){
+    const sel=$('table-input');
+    if(!sel) return;
+    let html='<option value="">-- اختر طاولة --</option>';
+    tables.forEach(t=>{
+      const val=t.id||t.code||'';
+      const label=val+' — '+(t.name||'');
+      html+='<option value="'+val+'">'+label+'</option>';
+    });
+    sel.innerHTML=html;
   }
 
   function renderCategories(){
@@ -512,11 +539,9 @@ input,select,textarea{font-family:inherit}
     if(type==='dinein'){
       $('table-input').style.display='block';
       $('table-input').required=true;
-      $('table-input').placeholder='رقم الطاولة * (مثال: T01)';
     }else{
       $('table-input').style.display='none';
       $('table-input').required=false;
-      $('table-input').placeholder='رقم الطاولة (مثال: T01)';
       $('table-input').value='';
       var badge=$('pos-table-badge');
       if(badge) badge.style.display='none';
@@ -645,7 +670,7 @@ input,select,textarea{font-family:inherit}
       if(denied) denied.style.display='none';
       updateClock();
       setInterval(updateClock,1000);
-      await Promise.all([fetchProducts(),fetchCategories()]);
+      await Promise.all([fetchProducts(),fetchCategories(),fetchTables()]);
       renderCategories();
       renderProducts();
       updateTotals();
@@ -655,13 +680,19 @@ input,select,textarea{font-family:inherit}
       const tableParam=urlParams.get('table');
       const typeParam=urlParams.get('type');
       if(tableParam){
-        $('table-input').value=tableParam;
-        if(typeParam==='dinein') setOrderType('dinein');
-        var badge=$('pos-table-badge');
-        var badgeText=$('pos-table-badge-text');
-        if(badge&&badgeText){
-          badgeText.textContent='طاولة '+tableParam;
-          badge.style.display='inline-flex';
+        const sel=$('table-input');
+        const match=tables.find(t=>String(t.id)===String(tableParam)||String(t.code)===String(tableParam));
+        if(match){
+          sel.value=tableParam;
+          if(typeParam==='dinein') setOrderType('dinein');
+          var badge=$('pos-table-badge');
+          var badgeText=$('pos-table-badge-text');
+          if(badge&&badgeText){
+            badgeText.textContent='طاولة '+tableParam;
+            badge.style.display='inline-flex';
+          }
+        }else{
+          alert('الطاولة غير متاحة أو غير موجودة');
         }
       }
     }catch(e){
