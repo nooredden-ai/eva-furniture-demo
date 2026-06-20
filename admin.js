@@ -161,16 +161,16 @@ function navigateTo(page) {
 function refreshPage(page) {
   const titles = {
     dashboard:  isSimplifiedMode ? 'الرئيسية' : 'لوحة المعلومات',
-    products:   'المنتجات',
-    categories: 'التصنيفات',
+    products:   'الأصناف',
+    categories: 'أقسام المنيو',
     orders:     'الطلبات',
-    'direct-sale': 'بيع مباشر',
+    'direct-sale': 'نقطة البيع',
     invoices:    'الفواتير',
     users:      'المستخدمين',
     accounting: 'المالية',
-    coupons:    'الكوبونات',
-    settings:   'المتجر',
-    'store-plan': 'إدارة خطة المتجر',
+    coupons:    'العروض والخصومات',
+    settings:   'المطعم',
+    'store-plan': 'إدارة خطة المطعم',
     'module-disabled': 'ميزة غير مفعلة',
     'access-denied': 'وصول مرفوض'
   };
@@ -223,8 +223,8 @@ function toggleAdvancedTools() {
 
 const accountingFixtures = {
   customers: {
-    title: 'العملاء',
-    subtitle: 'قائمة العملاء وأرصدة الحسابات',
+    title: 'الزبائن',
+    subtitle: 'قائمة الزبائن وأرصدة الحسابات',
     headers: ['الاسم', 'الهاتف', 'العنوان'],
     rows: [
       ['محمد أحمد', '0590000000', 'نابلس'],
@@ -279,7 +279,7 @@ accountingFixtures.bank = {
 accountingFixtures.invoices = {
   title: 'الفواتير',
   subtitle: 'استعراض حالة الفواتير الحالية',
-  headers: ['رقم', 'العميل', 'إجمالي', 'حالة'],
+  headers: ['رقم', 'الزبون', 'إجمالي', 'حالة'],
   rows: [
     ['INV-001', 'شركة النور', '3,200 ₪', 'مدفوعة'],
     ['INV-002', 'محمد أحمد', '450 ₪', 'مستحقة'],
@@ -293,7 +293,7 @@ accountingFixtures.reports = {
   headers: ['اسم التقرير', 'وصف مختصر'],
   rows: [
     ['تقرير المبيعات الشهري', 'موجز إجمالي المبيعات لهذا الشهر'],
-    ['تقرير العملاء الدائنين', 'عملاء لديهم أرصدة مستحقة'],
+    ['تقرير الزبائن الدائنين', 'زبائن لديهم أرصدة مستحقة'],
     ['تقرير المصروفات', 'تفاصيل المصروفات الشهرية']
   ]
 };
@@ -301,7 +301,7 @@ accountingFixtures.reports = {
 // Map legacy terminology replacements
 const accountingTerms = {
   'قيود يومية': 'الحركات المالية',
-  'الذمم المدينة': 'مستحقات العملاء',
+  'الذمم المدينة': 'مستحقات الزبائن',
   'الدائنون': 'مستحقات الموردين'
 };
 
@@ -429,11 +429,11 @@ async function renderAccountingPage() {
         lowStockList.innerHTML = data.lowStock.map(p => `
           <div class="low-stock-item">
             <span>${escapeHtml(p.name)}</span>
-            <strong>المخزون: ${p.stock}</strong>
+            <strong>التوفر: ${p.stock}</strong>
           </div>
         `).join('');
       } else {
-        lowStockList.innerHTML = `<div style="text-align:center;color:var(--admin-text2);padding:10px;">كل المنتجات بمخزون جيد.</div>`;
+        lowStockList.innerHTML = `<div style="text-align:center;color:var(--admin-text2);padding:10px;">جميع الأصناف متوفرة.</div>`;
       }
     }
 
@@ -522,11 +522,11 @@ async function loadCustomersSection() {
   if (tbody) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:20px;">جاري التحميل...</td></tr>';
   try {
     const res = await fetchWithStability('/api/accounting/customer-summaries?includeNotes=true');
-    if (!res.success) { showAdminToast(res.message || 'فشل تحميل العملاء', 'error'); renderCustomersSection([]); return; }
+    if (!res.success) { showAdminToast(res.message || 'فشل تحميل الزبائن', 'error'); renderCustomersSection([]); return; }
     renderCustomersSection(res.data || []);
   } catch (err) {
     console.error('Error loading customers:', err);
-    showAdminToast('فشل تحميل العملاء', 'error');
+    showAdminToast('فشل تحميل الزبائن', 'error');
     renderCustomersSection([]);
   }
 }
@@ -693,7 +693,7 @@ async function openCustomerProfile(name, phone) {
     if (!tbody) return;
 
     if (!entries || !entries.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;">لا توجد حركات مالية لهذا العميل</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:20px;">لا توجد حركات مالية لهذا الزبون</td></tr>';
     } else {
       tbody.innerHTML = entries.map(e => {
         const dateStr = e.date ? new Date(e.date).toLocaleDateString('ar-EG') : '—';
@@ -719,7 +719,7 @@ async function openCustomerProfile(name, phone) {
     if (window.lucide) lucide.createIcons();
   } catch (err) {
     console.error('Error loading customer profile:', err);
-    showAdminToast('فشل تحميل ملف العميل', 'error');
+    showAdminToast('فشل تحميل ملف الزبون', 'error');
   }
 }
 
@@ -858,7 +858,7 @@ async function saveCrmCustomer(btn) {
   const phone = $a('crm-customer-phone').value.trim();
   const tag = $a('crm-customer-tag').value;
 
-  if (!name) { showAdminToast('الرجاء إدخال اسم العميل', 'error'); return; }
+  if (!name) { showAdminToast('الرجاء إدخال اسم الزبون', 'error'); return; }
 
   const key = getCustomerKeyStr(name, phone);
   const originalHtml = btn.innerHTML;
@@ -884,14 +884,14 @@ async function saveCrmCustomer(btn) {
 
     if (res.success) {
       closeModal('crm-customer-modal');
-      showAdminToast('تم إضافة العميل بنجاح', 'success');
+      showAdminToast('تم إضافة الزبون بنجاح', 'success');
       loadCustomersSection();
     } else {
-      showAdminToast(res.message || 'فشل حفظ العميل', 'error');
+      showAdminToast(res.message || 'فشل حفظ الزبون', 'error');
     }
   } catch (err) {
     console.error('Error saving CRM customer:', err);
-    showAdminToast('فشل حفظ العميل', 'error');
+    showAdminToast('فشل حفظ الزبون', 'error');
   } finally {
     btn.innerHTML = originalHtml;
     btn.classList.remove('btn-loading');
@@ -1085,8 +1085,8 @@ async function renderBusinessAlerts() {
     if (!container) return;
 
     const alerts = [
-      { label: 'عدد المنتجات منخفضة المخزون', value: lowStockCount },
-      { label: 'عدد المنتجات النافدة', value: outOfStockCount },
+      { label: 'عدد الأصناف منخفضة التوفر', value: lowStockCount },
+      { label: 'عدد الأصناف غير المتوفرة', value: outOfStockCount },
       { label: 'الطلبات قيد المعالجة', value: processingOrdersCount }
     ];
 
@@ -1226,11 +1226,11 @@ function renderLowStockProducts(products) {
   const container = $a('low-stock-products-list');
   if (!container) return;
   if (!products.length) {
-    container.innerHTML = '<div class="quick-empty">لا توجد منتجات منخفضة المخزون حالياً</div>';
+    container.innerHTML = '<div class="quick-empty">لا توجد أصناف منخفضة التوفر حالياً</div>';
     return;
   }
   container.innerHTML = products.map(product => {
-    const name = escapeHtml(product.name || product.title || 'منتج غير معروف');
+    const name = escapeHtml(product.name || product.title || 'صنف غير معروف');
     const stock = Number(product.stock || 0).toLocaleString('ar-SA');
     return `<div class="quick-list-item"><span>${name}</span><strong>${stock}</strong></div>`;
   }).join('');
@@ -1305,10 +1305,10 @@ async function loadAccountingCustomers() {
   } catch (error) {
     console.error('Error loading accounting customers:', error);
     if (body) {
-      body.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--admin-danger);padding:20px;">فشل تحميل قائمة العملاء: ${escapeHtml(error.message)}</td></tr>`;
+      body.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--admin-danger);padding:20px;">فشل تحميل قائمة الزبائن: ${escapeHtml(error.message)}</td></tr>`;
     }
     if (empty) empty.style.display = 'none';
-    showAdminToast('خطأ أثناء تحميل العملاء', 'error');
+    showAdminToast('خطأ أثناء تحميل الزبائن', 'error');
   }
 }
 
@@ -1324,7 +1324,7 @@ function renderAccountingCustomersTable(customers) {
       const h4 = empty.querySelector('h4');
       const p = empty.querySelector('p');
       if (h4) h4.textContent = 'لا يوجد عملاء بعد';
-      if (p) p.textContent = 'أضف أول عميل للبدء.';
+      if (p) p.textContent = 'أضف أول زبون للبدء.';
       empty.style.display = 'flex';
     }
     return;
@@ -1358,7 +1358,7 @@ function filterAccountingCustomers() {
 }
 
 function openAddAccountingCustomer() {
-  $a('accounting-customer-modal-title').innerHTML = '<i data-lucide="user-plus" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة عميل جديد';
+  $a('accounting-customer-modal-title').innerHTML = '<i data-lucide="user-plus" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة زبون جديد';
   $a('acm-id').value = '';
   $a('acm-name').value = '';
   $a('acm-phone').value = '';
@@ -1372,11 +1372,11 @@ function openAddAccountingCustomer() {
 function openEditAccountingCustomer(id) {
   const customer = accountingCustomers.find(c => String(c.id) === String(id));
   if (!customer) {
-    showAdminToast('لم يتم العثور على بيانات العميل', 'error');
+    showAdminToast('لم يتم العثور على بيانات الزبون', 'error');
     return;
   }
   
-  $a('accounting-customer-modal-title').innerHTML = '<i data-lucide="edit" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> تعديل بيانات العميل';
+  $a('accounting-customer-modal-title').innerHTML = '<i data-lucide="edit" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> تعديل بيانات الزبون';
   $a('acm-id').value = customer.id;
   $a('acm-name').value = customer.name || '';
   $a('acm-phone').value = customer.phone || '';
@@ -1395,7 +1395,7 @@ async function saveAccountingCustomer(btnElement) {
   const address = $a('acm-address').value.trim();
   
   if (!name) {
-    showAdminToast('الرجاء إدخال اسم العميل', 'error');
+    showAdminToast('الرجاء إدخال اسم الزبون', 'error');
     return;
   }
   
@@ -1420,11 +1420,11 @@ async function saveAccountingCustomer(btnElement) {
     });
     
     closeModal('accounting-customer-modal');
-    showAdminToast(id ? 'تم تعديل بيانات العميل بنجاح' : 'تم إضافة العميل بنجاح');
+    showAdminToast(id ? 'تم تعديل بيانات الزبون بنجاح' : 'تم إضافة الزبون بنجاح');
     await loadAccountingCustomers();
   } catch (error) {
     console.error('Error saving customer:', error);
-    showAdminToast(error.message || 'حدث خطأ أثناء حفظ بيانات العميل', 'error');
+    showAdminToast(error.message || 'حدث خطأ أثناء حفظ بيانات الزبون', 'error');
   } finally {
     btnElement.classList.remove('btn-loading');
     btnElement.innerHTML = originalHtml;
@@ -1785,8 +1785,8 @@ async function showAccountingTable(type) {
   if (acctActions) acctActions.style.display = 'none';
 
   if (type === 'customers') {
-    if (title) title.textContent = 'العملاء';
-    if (subtitle) subtitle.textContent = 'قائمة العملاء وأرصدة الحسابات';
+    if (title) title.textContent = 'الزبائن';
+    if (subtitle) subtitle.textContent = 'قائمة الزبائن وأرصدة الحسابات';
     if (headers) {
       headers.innerHTML = '<th>الاسم</th><th>الهاتف</th><th>البريد الإلكتروني</th><th>العنوان</th><th style="width:120px;text-align:center">إجراءات</th>';
     }
@@ -1794,7 +1794,7 @@ async function showAccountingTable(type) {
     
     // Clear table body first & show loading
     if (body) {
-      body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;">جاري تحميل العملاء...</td></tr>`;
+      body.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;">جاري تحميل الزبائن...</td></tr>`;
     }
     if (empty) empty.style.display = 'none';
     
@@ -1947,7 +1947,7 @@ function getPaymentMethodText(method) {
 
 function getLinkedToText(linkedTo, linkedId) {
   if (linkedTo === 'none' || !linkedTo) return '—';
-  const labels = { invoice: 'فاتورة', order: 'طلب', direct_sale: 'بيع مباشر' };
+  const labels = { invoice: 'فاتورة', order: 'طلب', direct_sale: 'نقطة بيع' };
   return (labels[linkedTo] || linkedTo) + (linkedId ? ' #' + linkedId : '');
 }
 
@@ -2150,7 +2150,7 @@ function printReceiptById(id) {
   if (!win) { showAdminToast('الرجاء السماح للنوافذ المنبثقة', 'error'); return; }
   win.document.write('<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>سند قبض - ' + r.voucherNumber + '</title><style>@page{size:A4;margin:12mm}*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;color:#222;font-size:13px;line-height:1.5;direction:rtl;background:#fff}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}.store{text-align:right}.store-logo{max-height:70px;margin-bottom:10px;display:block}.store-name{font-size:22px;font-weight:700;color:#111}.store-info{font-size:12px;color:#555;line-height:1.6}.meta{text-align:left}.doc-title{font-size:20px;font-weight:700;color:#111;margin-bottom:6px}.doc-info{font-size:12px;color:#555}.divider{height:1px;background:#ddd;margin:16px 0}.section-title{font-size:14px;font-weight:700;color:#333;margin-bottom:8px}.info-table{width:100%;border-collapse:collapse;font-size:13px}.info-table td{padding:3px 0;border:none}.info-table td.lbl{width:120px;font-weight:600;color:#555}.signature-area{margin-top:50px;display:flex;justify-content:space-between}.signature-box{text-align:center}.signature-line{width:200px;height:1px;background:#333;margin:40px auto 6px}.signature-label{font-size:12px;color:#555}.footer{text-align:center;margin-top:40px;padding-top:16px;border-top:1px solid #ddd}.footer-text{font-size:16px;font-weight:600;color:#333;margin-bottom:4px}.footer-sub{font-size:11px;color:#888}</style></head><body>');
   win.document.write('<div class="header"><div class="store"><div class="store-name">' + escapeHtml(window.storeName || '') + '</div></div><div class="meta"><div class="doc-title">سند قبض</div><div class="doc-info">الرقم: ' + (r.voucherNumber || r.id) + '</div><div class="doc-info">التاريخ: ' + new Date(r.date || r.createdAt).toLocaleString('ar-EG') + '</div></div></div>');
-  win.document.write('<div class="divider"></div><div class="section-title">بيانات العميل</div><table class="info-table"><tr><td class="lbl">الاسم</td><td>' + escapeHtml(r.customerName || '—') + '</td></tr><tr><td class="lbl">الهاتف</td><td>' + escapeHtml(r.customerPhone || '—') + '</td></tr></table>');
+  win.document.write('<div class="divider"></div><div class="section-title">بيانات الزبون</div><table class="info-table"><tr><td class="lbl">الاسم</td><td>' + escapeHtml(r.customerName || '—') + '</td></tr><tr><td class="lbl">الهاتف</td><td>' + escapeHtml(r.customerPhone || '—') + '</td></tr></table>');
   win.document.write('<div class="divider"></div><div class="section-title">تفاصيل السند</div><table class="info-table"><tr><td class="lbl">المبلغ</td><td style="font-weight:700;font-size:15px">' + Number(r.amount).toFixed(2) + ' ₪</td></tr><tr><td class="lbl">طريقة الدفع</td><td>' + (methodLabels[r.paymentMethod] || r.paymentMethod) + '</td></tr>' + (r.referenceNumber ? '<tr><td class="lbl">رقم المرجع</td><td>' + escapeHtml(r.referenceNumber) + '</td></tr>' : '') + (r.linkedTo === 'invoice' && r.linkedId ? '<tr><td class="lbl">مرتبط بفاتورة</td><td>' + escapeHtml(r.linkedId) + '</td></tr>' : '') + (r.chequeNumber ? '<tr><td class="lbl">رقم الشيك</td><td>' + escapeHtml(r.chequeNumber) + '</td></tr>' : '') + (r.bankName ? '<tr><td class="lbl">البنك</td><td>' + escapeHtml(r.bankName) + '</td></tr>' : '') + (r.dueDate ? '<tr><td class="lbl">تاريخ الاستحقاق</td><td>' + new Date(r.dueDate).toLocaleDateString('ar-EG') + '</td></tr>' : '') + (r.paymentMethod === 'cheque' && r.chequeStatus ? '<tr><td class="lbl">حالة الشيك</td><td>' + chequeStatusLabel(r.chequeStatus) + '</td></tr>' : '') + (r.notes ? '<tr><td class="lbl">ملاحظات</td><td>' + escapeHtml(r.notes) + '</td></tr>' : '') + '</table>');
   win.document.write('<div class="signature-area"><div class="signature-box"><div class="signature-line"></div><div class="signature-label">التوقيع</div></div><div class="signature-box"><div class="signature-line"></div><div class="signature-label">ختم الشركة</div></div></div>');
   win.document.write('<div class="footer"><div class="footer-text">شكراً لتعاملكم معنا</div><div class="footer-sub">FoodExpress</div></div>');
@@ -2195,7 +2195,7 @@ function printExpenseById(id) {
   const e = _expensesCache.find(x => x.id === id);
   if (!e) { showAdminToast('سند الصرف غير موجود', 'error'); return; }
   const methodLabels = { cash: 'نقداً', cheque: 'شيك', bank_transfer: 'تحويل بنكي', visa: 'بطاقة ائتمان' };
-  const catLabels = { rent: 'إيجار', salaries: 'رواتب', marketing: 'تسويق', shipping: 'شحن', inventory_purchase: 'مشتريات مخزون', maintenance: 'صيانة', utilities: 'فواتير خدمات', other: 'أخرى' };
+  const catLabels = { rent: 'إيجار', salaries: 'رواتب', marketing: 'تسويق', shipping: 'توصيل', inventory_purchase: 'مشتريات', maintenance: 'صيانة', utilities: 'فواتير خدمات', other: 'أخرى' };
   const win = window.open('', '_blank');
   if (!win) { showAdminToast('الرجاء السماح للنوافذ المنبثقة', 'error'); return; }
   win.document.write('<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><title>سند صرف - ' + e.voucherNumber + '</title><style>@page{size:A4;margin:12mm}*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Segoe UI",Tahoma,Arial,sans-serif;color:#222;font-size:13px;line-height:1.5;direction:rtl;background:#fff}.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px}.store{text-align:right}.store-logo{max-height:70px;margin-bottom:10px;display:block}.store-name{font-size:22px;font-weight:700;color:#111}.store-info{font-size:12px;color:#555;line-height:1.6}.meta{text-align:left}.doc-title{font-size:20px;font-weight:700;color:#111;margin-bottom:6px}.doc-info{font-size:12px;color:#555}.divider{height:1px;background:#ddd;margin:16px 0}.section-title{font-size:14px;font-weight:700;color:#333;margin-bottom:8px}.info-table{width:100%;border-collapse:collapse;font-size:13px}.info-table td{padding:3px 0;border:none}.info-table td.lbl{width:120px;font-weight:600;color:#555}.signature-area{margin-top:50px;display:flex;justify-content:center}.signature-box{text-align:center}.signature-line{width:200px;height:1px;background:#333;margin:40px auto 6px}.signature-label{font-size:12px;color:#555}.footer{text-align:center;margin-top:40px;padding-top:16px;border-top:1px solid #ddd}.footer-text{font-size:16px;font-weight:600;color:#333;margin-bottom:4px}.footer-sub{font-size:11px;color:#888}</style></head><body>');
@@ -2230,7 +2230,7 @@ async function downloadExpensePdfById(btn, id) {
 async function downloadStatementPdf() {
   const name = _profileCustomerName;
   const phone = _profileCustomerPhone;
-  if (!name) { showAdminToast('لا يوجد عميل', 'error'); return; }
+  if (!name) { showAdminToast('لا يوجد زبون', 'error'); return; }
   try {
     const res = await API.downloadStatementPdf(name, phone);
     if (!res.success) { showAdminToast(res.message || 'فشل تحميل PDF', 'error'); return; }
@@ -2390,7 +2390,7 @@ function renderExpensesSection() {
   }
   if (emptyState) emptyState.style.display = 'none';
 
-  const catLabels = { rent: 'إيجار', salaries: 'رواتب', marketing: 'تسويق', shipping: 'شحن', inventory_purchase: 'مشتريات مخزون', maintenance: 'صيانة', utilities: 'فواتير خدمات', other: 'أخرى' };
+  const catLabels = { rent: 'إيجار', salaries: 'رواتب', marketing: 'تسويق', shipping: 'توصيل', inventory_purchase: 'مشتريات', maintenance: 'صيانة', utilities: 'فواتير خدمات', other: 'أخرى' };
 
   tbody.innerHTML = _expensesCache.slice().reverse().map(function(e) {
     return '<tr>' +
@@ -2609,7 +2609,7 @@ async function renderDashboard() {
     <tr>
       <td><strong>${o.id}</strong></td>
       <td>${o.customer}</td>
-      <td>${o.items.length} منتج</td>
+      <td>${o.items.length} صنف</td>
       <td><strong>${o.total.toLocaleString('ar-SA')} ${currency}</strong></td>
       <td><span class="status-badge status-${o.status}">${statusText(o.status, o.orderType)}</span></td>
       <td>${o.date}</td>
@@ -2688,7 +2688,7 @@ async function renderMerchantDashboard() {
       let text = '', icon = 'info';
       if (todayOrders.length > 0) { text = `تم استلام ${todayOrders.length} طلب${todayOrders.length>1?'ات':''} جديد${todayOrders.length>1?'ة':''} اليوم`; icon = 'shopping-cart'; }
       else if (pendingOrdersCount > 0) { text = `يوجد ${pendingOrdersCount} طلب${pendingOrdersCount>1?'ات':''} بانتظار المعالجة`; icon = 'alert-circle'; }
-      else { const ls = products.filter(p => p.active!==false && p.stock!==undefined && Number(p.stock)<=3 && p.stock!==''); if(ls.length>0) { text=`يوجد ${ls.length} منتج${ls.length>1?'ات':''} تحتاج إعادة تخزين`; icon='alert-triangle'; } else { text='كل شيء على ما يرام — متجرك يعمل بكفاءة'; icon='check-circle'; } }
+      else { const ls = products.filter(p => p.active!==false && p.stock!==undefined && Number(p.stock)<=3 && p.stock!==''); if(ls.length>0) { text=`يوجد ${ls.length} صنف${ls.length>1?'':''} يحتاج إعادة تخزين`; icon='alert-triangle'; } else { text='كل شيء على ما يرام — مطعمك يعمل بكفاءة'; icon='check-circle'; } }
       insightEl.innerHTML = `<i data-lucide="${icon}" style="width:16px;height:16px"></i> ${text}`;
     }
 
@@ -2724,7 +2724,7 @@ async function renderMerchantDashboard() {
     if (attentionArea && attentionList) {
       if (pendingOrdersCount>0) aItems.push({ sev:'critical', icon:'shopping-cart', text:`${pendingOrdersCount} طلب بانتظار التأكيد`, page:'orders', action:'معالجة' });
       const ls = products.filter(p=>p.active!==false && p.stock!==undefined && Number(p.stock)<=3 && p.stock!=='');
-      ls.slice(0,3).forEach(p=>aItems.push({ sev:'warning', icon:'alert-triangle', text:`مخزون منخفض: ${p.name} (${p.stock})`, page:'products', action:'تزويد' }));
+      ls.slice(0,3).forEach(p=>aItems.push({ sev:'warning', icon:'alert-triangle', text:`توفر منخفض: ${p.name} (${p.stock})`, page:'products', action:'تزويد' }));
     }
 
     // ===== Fetch invoices for timeline + attention =====
@@ -2783,17 +2783,17 @@ async function renderMerchantDashboard() {
       const fm = d => d ? new Date(d).toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit'}) : '';
       const ti = [];
       orders.slice(0,10).forEach(o => ti.push({
-        dot:'order', title:`طلب جديد #${o.id||o.orderNumber||''}`, sub:o.customer||'عميل',
+        dot:'order', title:`طلب جديد #${o.id||o.orderNumber||''}`, sub:o.customer||'زبون',
         tm:fm(o.date||o.createdAt), sd:o.date||o.createdAt,
         r:`<span class="dash-timeline-status status-badge status-${o.status}">${statusText(o.status, o.orderType)}</span><span class="dash-timeline-total">${Number(o.total||0).toLocaleString('ar-SA')} ${sym}</span>`,
         pg:'orders' }));
       invoices.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5).forEach(inv => ti.push({
-        dot:'invoice', title:`فاتورة #${inv.id}`, sub:inv.customer?.name||'عميل',
+        dot:'invoice', title:`فاتورة #${inv.id}`, sub:inv.customer?.name||'زبون',
         tm:fm(inv.createdAt), sd:inv.createdAt,
         r:`<span class="dash-timeline-total">${Number(inv.total||0).toLocaleString('ar-SA')} ${sym}</span>`,
         pg:'invoices' }));
       (stockReceiptsLog||[]).slice(0,5).forEach(r => ti.push({
-        dot:'stock', title:r.productName||'منتج', sub:`تم إضافة ${r.qty||0} إلى المخزون`,
+        dot:'stock', title:r.productName||'صنف', sub:`تم إضافة ${r.qty||0} إلى التوفر`,
         tm:fm(r.date), sd:r.date, r:'', pg:'stock-receiving' }));
       const top = ti.sort((a,b)=>new Date(b.sd)-new Date(a.sd)).slice(0,10);
       if (top.length===0) timelineEl.innerHTML='<div class="dash-empty">لا توجد نشاطات حتى الآن</div>';
@@ -2815,7 +2815,7 @@ async function renderMerchantDashboard() {
     // Top Products
     const topP = $a('dash-analytics-top-products');
     if (topP) {
-      const pc = {}; orders.forEach(o=>(o.items||[]).forEach(it=>{const n=it.name||'منتج';pc[n]=(pc[n]||0)+(it.qty||1);}));
+      const pc = {}; orders.forEach(o=>(o.items||[]).forEach(it=>{const n=it.name||'صنف';pc[n]=(pc[n]||0)+(it.qty||1);}));
       const tp = Object.entries(pc).sort((a,b)=>b[1]-a[1]).slice(0,5); const mx = tp.length?tp[0][1]:1;
       const b = topP.querySelector('.dash-analytics-card-body');
       if (b) b.innerHTML = tp.length ? tp.map(([n,c])=>`<div class="dash-analytics-row"><span class="dash-analytics-row-name">${n}</span><span class="dash-analytics-row-value">${c}</span></div><div class="dash-analytics-bar"><div class="dash-analytics-bar-fill" style="width:${(c/mx*100).toFixed(0)}%"></div></div>`).join('') : '<div class="dash-analytics-empty">لا توجد مبيعات بعد</div>';
@@ -2854,7 +2854,7 @@ async function renderMerchantDashboard() {
       const li = products.filter(p=>p.active!==false && p.stock!==undefined && Number(p.stock)<=5 && p.stock!=='').sort((a,b)=>Number(a.stock)-Number(b.stock)).slice(0,5);
       const mx = Math.max(...li.map(p=>Number(p.stock)),1);
       const b = lE.querySelector('.dash-analytics-card-body');
-      if (b) b.innerHTML = li.length ? li.map(p=>`<div class="dash-analytics-row"><span class="dash-analytics-row-name">${p.name||'منتج'}</span><span class="dash-analytics-row-value" style="color:${Number(p.stock)<=3?'#dc2626':'#d97706'}">${p.stock}</span></div><div class="dash-analytics-bar"><div class="dash-analytics-bar-fill" style="width:${(Number(p.stock)/mx*100).toFixed(0)}%;background:${Number(p.stock)<=3?'#dc2626':'#d97706'}"></div></div>`).join('') : '<div class="dash-analytics-empty">جميع المنتجات متوفرة بمخزون كافٍ</div>';
+      if (b) b.innerHTML = li.length ? li.map(p=>`<div class="dash-analytics-row"><span class="dash-analytics-row-name">${p.name||'صنف'}</span><span class="dash-analytics-row-value" style="color:${Number(p.stock)<=3?'#dc2626':'#d97706'}">${p.stock}</span></div><div class="dash-analytics-bar"><div class="dash-analytics-bar-fill" style="width:${(Number(p.stock)/mx*100).toFixed(0)}%;background:${Number(p.stock)<=3?'#dc2626':'#d97706'}"></div></div>`).join('') : '<div class="dash-analytics-empty">جميع الأصناف متوفرة</div>';
     }
 
     // ===== SECTION 7: Notification Center =====
@@ -2863,7 +2863,7 @@ async function renderMerchantDashboard() {
       const ni = [];
       if (todayOrders.length>0) ni.push({icon:'shopping-cart', text:`${todayOrders.length} طلب${todayOrders.length>1?'ات':''} جديد${todayOrders.length>1?'ة':''}`});
       const lsc = products.filter(p=>p.active!==false && p.stock!==undefined && Number(p.stock)<=3 && p.stock!=='').length;
-      if (lsc>0) ni.push({icon:'alert-triangle', text:`${lsc} منتج منخفض المخزون`});
+      if (lsc>0) ni.push({icon:'alert-triangle', text:`${lsc} صنف منخفض التوفر`});
       const upc = invoices.filter(inv => {
       if (inv.status === 'cancelled') return false;
       const linked = (_receiptsCache || []).filter(r => r.linkedTo === 'invoice' && String(r.linkedId) === String(inv.id) && r.status !== 'cancelled');
@@ -2897,7 +2897,7 @@ async function renderProductsTable() {
 
   const tbody = $a('products-table-body');
   if (products.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state" style="margin:20px"><div class="empty-icon"><i data-lucide="package-x"></i></div><h3>لا توجد منتجات</h3><p>أضف منتجات جديدة للمتجر.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state" style="margin:20px"><div class="empty-icon"><i data-lucide="package-x"></i></div><h3>لا توجد أصناف</h3><p>أضف أصناف جديدة للمنيو.</p></div></td></tr>`;
     if (window.lucide) lucide.createIcons();
     return;
   }
@@ -2993,13 +2993,13 @@ function showConfirmModal(title, text, onConfirm) {
 }
 
 function deleteProduct(productId) {
-  showConfirmModal('تأكيد الحذف', 'هل أنت متأكد من حذف هذا المنتج؟ لا يمكن التراجع عن هذا الإجراء.', () => {
+  showConfirmModal('تأكيد الحذف', 'هل أنت متأكد من حذف هذا الصنف؟ لا يمكن التراجع عن هذا الإجراء.', () => {
     withLock('delete-product-' + productId, () => {
       return API.deleteProduct(productId).then(res => {
         if (res && res.success === false) { showAdminToast(res.message || 'فشل الحذف', 'error'); return; }
         appState.products = null; // force refresh
         renderProductsTable();
-        showAdminToast('تم حذف المنتج');
+        showAdminToast('تم حذف الصنف');
       });
     });
   });
@@ -3008,7 +3008,7 @@ function deleteProduct(productId) {
 // --- Product Modal ---
 function openAddProduct() {
   editingProduct = null;
-  $a('product-modal-title').innerHTML = '<i data-lucide="plus-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة منتج جديد';
+  $a('product-modal-title').innerHTML = '<i data-lucide="plus-circle" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> إضافة صنف جديد';
   ['pm-name','pm-price','pm-oldprice','pm-badge','pm-stock','pm-costPrice'].forEach(id => $a(id).value = '');
   $a('pm-stock').value   = '0';
   $a('pm-costPrice').value = '0';
@@ -3026,7 +3026,7 @@ function openEditProduct(productId) {
   API.getProduct(productId).then(p => {
     if (!p) return;
     editingProduct = { productId };
-    $a('product-modal-title').innerHTML = '<i data-lucide="edit" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> تعديل المنتج';
+    $a('product-modal-title').innerHTML = '<i data-lucide="edit" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> تعديل الصنف';
     populateProductCategories();
     $a('pm-category').value   = p.category;
     $a('pm-name').value       = p.name;
@@ -3097,7 +3097,7 @@ async function processSaveProduct() {
   const pmState = $a('pm-state').value;
   data.active = pmState !== 'hidden';
   data.temporarilyUnavailable = pmState === 'temporary';
-  if (!data.name || !data.price) { showAdminToast('الرجاء إدخال اسم المنتج والسعر', 'error'); return; }
+  if (!data.name || !data.price) { showAdminToast('الرجاء إدخال اسم الصنف والسعر', 'error'); return; }
 
   // ===== SAFE Image Upload (ADDITION ONLY) =====
   const fileInput = $a('productImageFile');
@@ -3137,7 +3137,7 @@ async function processSaveProduct() {
         closeModal('product-modal');
         appState.products = null;
         renderProductsTable();
-        showAdminToast('تم حفظ المنتج بنجاح');
+        showAdminToast('تم حفظ الصنف بنجاح');
       });
     } else {
       return API.addProduct(data).then(res => {
@@ -3145,7 +3145,7 @@ async function processSaveProduct() {
         closeModal('product-modal');
         appState.products = null;
         renderProductsTable();
-        showAdminToast('تم إضافة المنتج بنجاح');
+        showAdminToast('تم إضافة الصنف بنجاح');
       });
     }
   });
@@ -3209,7 +3209,7 @@ function renderCategoriesPage() {
     const container = $a('categories-container');
     if (!container) return;
     if (cats.length === 0) {
-      container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i data-lucide="folder"></i></div><h3>لا توجد تصنيفات</h3><p>أضف تصنيفات لترتيب منتجاتك.</p></div>`;
+      container.innerHTML = `<div class="empty-state"><div class="empty-icon"><i data-lucide="folder"></i></div><h3>لا توجد أقسام</h3><p>أضف أقسام لترتيب أصنافك.</p></div>`;
       if (window.lucide) lucide.createIcons();
       return;
     }
@@ -3430,7 +3430,7 @@ function deleteCategory(catId) {
     const children = cats.filter(c => String(c.parentId) === String(catId));
     if (children.length > 0) {
       showConfirmModal('تأكيد الحذف',
-        'هذا التصنيف يحتوي على تصنيفات فرعية. سيتم نقل التصنيفات الفرعية إلى المستوى الرئيسي قبل حذف التصنيف. هل تريد المتابعة؟',
+        'هذا القسم يحتوي على أقسام فرعية. سيتم نقل الأقسام الفرعية إلى المستوى الرئيسي قبل حذف القسم. هل تريد المتابعة؟',
         () => {
           withLock('delete-category-' + catId, () => {
             return API.deleteCategory(catId).then(res => {
@@ -3939,7 +3939,7 @@ function renderOrderTimeline() {
     status: 'تم الطلب بنجاح',
     date: order.date,
     time: '',
-    by: 'العميل',
+    by: 'الزبون',
     icon: 'shopping-cart',
     color: '#3b82f6'
   });
@@ -4003,17 +4003,17 @@ function renderOrderStatusWorkflow(order) {
   } else if (currentStatus === 'confirmed') {
     html = `
       <button class="topbar-btn btn-primary btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px;" onclick="handleWorkflowStatusTransition('processing')">بدء التجهيز</button>
-      <button class="topbar-btn btn-danger btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px; margin-top: 4px;" onclick="handleWorkflowStatusTransition('cancelled')">إلغاء وإرجاع المخزون</button>
+      <button class="topbar-btn btn-danger btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px; margin-top: 4px;" onclick="handleWorkflowStatusTransition('cancelled')">إلغاء وإعادة التوفر</button>
     `;
   } else if (currentStatus === 'processing') {
     html = `
       <button class="topbar-btn btn-primary btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px;" onclick="handleWorkflowStatusTransition('shipped')">${isPickup ? 'جاهز' : 'تم الشحن'}</button>
-      <button class="topbar-btn btn-danger btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px; margin-top: 4px;" onclick="handleWorkflowStatusTransition('cancelled')">إلغاء وإرجاع المخزون</button>
+      <button class="topbar-btn btn-danger btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px; margin-top: 4px;" onclick="handleWorkflowStatusTransition('cancelled')">إلغاء وإعادة التوفر</button>
     `;
   } else if (currentStatus === 'shipped') {
     html = `
       <button class="topbar-btn btn-primary btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px;" onclick="handleWorkflowStatusTransition('delivered')">${isPickup ? 'تم' : 'تم التوصيل'}</button>
-      <button class="topbar-btn btn-danger btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px; margin-top: 4px;" onclick="handleWorkflowStatusTransition('cancelled')">إلغاء وإرجاع المخزون</button>
+      <button class="topbar-btn btn-danger btn-sm btn-active-scale" style="width: 100%; justify-content: center; padding: 10px; margin-top: 4px;" onclick="handleWorkflowStatusTransition('cancelled')">إلغاء وإعادة التوفر</button>
     `;
   } else if (currentStatus === 'delivered') {
     html = `<div style="color:#22c55e; font-weight:700; font-size:0.95rem; padding: 10px; background: #22c55e11; border: 1px solid #22c55e33; border-radius: 6px; text-align: center;"><i data-lucide="check-circle" style="width:16px;height:16px;vertical-align:middle;margin-left:4px;color:#22c55e"></i> تم إغلاق الطلب بنجاح</div>`;
@@ -4047,7 +4047,7 @@ async function handleWorkflowStatusTransition(nextStatus) {
     let toastMsg = 'تم تحديث حالة الطلب بنجاح';
     
     if (nextStatus === 'confirmed') {
-      toastMsg = 'تم تأكيد الطلب وخصم المخزون.';
+      toastMsg = 'تم تأكيد الطلب وخصم التوفر.';
     } else if (nextStatus === 'processing') {
       toastMsg = 'تم بدء تجهيز الطلب.';
     } else if (nextStatus === 'shipped') {
@@ -4105,7 +4105,7 @@ async function submitOrderCancellation() {
     const updatedOrder = findOrderByIdentifier(freshOrders, currentViewOrder.id);
     if (updatedOrder) currentViewOrder = updatedOrder;
     
-    const toastMsg = currentViewOrder.stockDeducted ? 'تم إلغاء الطلب وإرجاع المخزون.' : 'تم إلغاء الطلب.';
+    const toastMsg = currentViewOrder.stockDeducted ? 'تم إلغاء الطلب وإعادة التوفر.' : 'تم إلغاء الطلب.';
     showAdminToast(toastMsg);
     
     openOrderDetails(currentViewOrder.id);
@@ -4490,7 +4490,7 @@ async function saveStoreSettings() {
     const logoInput = $a('st-logo');
     if (logoInput) updates.logo = (logoInput.value || '').trim() || '';
 
-    if (!updates.name) { showAdminToast('اسم المتجر مطلوب', 'error'); return; }
+    if (!updates.name) { showAdminToast('اسم المطعم مطلوب', 'error'); return; }
 
     // Retain existing non-form fields like logoImage and bannerImage
     const currentSettings = await API.getStoreSettings();
@@ -4516,7 +4516,7 @@ async function saveStoreSettings() {
       return;
     }
     appState.settings = null; // force refresh
-    showAdminToast('تم حفظ إعدادات المتجر بنجاح');
+    showAdminToast('تم حفظ إعدادات المطعم بنجاح');
     setSaveStatus('تم الحفظ في ' + new Date().toLocaleTimeString('ar'), 'success');
   });
 }
@@ -4887,7 +4887,7 @@ async function initAdmin() {
       if (logoEl) {
         const sidebarLogoIcon = store.logoImage ? `<img src="${store.logoImage}" style="width:24px;height:24px;object-fit:cover;border-radius:4px;vertical-align:middle">` : `<i data-lucide="gem" style="width:24px;height:24px;vertical-align:middle"></i>`;
         logoEl.innerHTML = `${sidebarLogoIcon} ${store.name}
-          <small>${store.subtitle || 'لوحة إدارة المتجر'}</small>`;
+          <small>${store.subtitle || 'لوحة إدارة المطعم'}</small>`;
       }
       const sidebarStoreNameEl = $a('sidebar-store-name');
       if (sidebarStoreNameEl) sidebarStoreNameEl.textContent = store.name;
@@ -5447,19 +5447,19 @@ setInterval(() => {
 // ===== RBAC Matrix UI Logic =====
 const PERMISSION_GROUPS = [
   {
-    groupName: "إدارة المنتجات (Products)",
-    permissions: [
-      { key: "view_products", label: "عرض المنتجات" },
-      { key: "add_products", label: "إضافة منتجات جديدة" },
-      { key: "edit_products", label: "تعديل المنتجات الحالية" },
-      { key: "delete_products", label: "حذف المنتجات" }
+groupName: "إدارة الأصناف (Menu Items)",
+      permissions: [
+        { key: "view_products", label: "عرض الأصناف" },
+        { key: "add_products", label: "إضافة أصناف جديدة" },
+        { key: "edit_products", label: "تعديل الأصناف الحالية" },
+        { key: "delete_products", label: "حذف الأصناف" }
     ]
   },
   {
-    groupName: "التصنيفات (Categories)",
-    permissions: [
-      { key: "view_categories", label: "عرض التصنيفات" },
-      { key: "manage_categories", label: "إدارة التصنيفات (إضافة، تعديل، حذف)" }
+groupName: "أقسام المنيو (Menu Sections)",
+      permissions: [
+        { key: "view_categories", label: "عرض أقسام المنيو" },
+        { key: "manage_categories", label: "إدارة أقسام المنيو (إضافة، تعديل، حذف)" }
     ]
   },
   {
@@ -5474,15 +5474,15 @@ const PERMISSION_GROUPS = [
   {
     groupName: "كوبونات الخصم (Coupons)",
     permissions: [
-      { key: "view_coupons", label: "عرض الكوبونات" },
-      { key: "manage_coupons", label: "إدارة الكوبونات (إضافة، تعديل، حذف)" }
+      { key: "view_coupons", label: "عرض العروض والخصومات" },
+      { key: "manage_coupons", label: "إدارة العروض والخصومات (إضافة، تعديل، حذف)" }
     ]
   },
   {
-    groupName: "العملاء (Customers)",
+    groupName: "الزبائن (Customers)",
     permissions: [
-      { key: "view_customers", label: "عرض معلومات العملاء" },
-      { key: "manage_customers", label: "إدارة تفاصيل وبيانات العملاء" }
+      { key: "view_customers", label: "عرض معلومات الزبائن" },
+      { key: "manage_customers", label: "إدارة تفاصيل وبيانات الزبائن" }
     ]
   },
   {
@@ -5496,15 +5496,15 @@ const PERMISSION_GROUPS = [
     ]
   },
   {
-    groupName: "إعدادات المتجر (Settings)",
+    groupName: "إعدادات المطعم (Settings)",
     permissions: [
       { key: "view_settings", label: "عرض صفحة الإعدادات" },
-      { key: "edit_store_info", label: "تعديل معلومات المتجر والتواصل" },
+      { key: "edit_store_info", label: "تعديل معلومات المطعم والتواصل" },
       { key: "edit_branding", label: "تعديل الهوية البصرية واللوغو والبنرات" },
-      { key: "edit_theme", label: "تغيير ثيم المتجر الحالي" },
-      { key: "edit_colors", label: "تعديل ألوان المتجر الافتراضية" },
+      { key: "edit_theme", label: "تغيير ثيم المطعم الحالي" },
+      { key: "edit_colors", label: "تعديل ألوان المطعم الافتراضية" },
       { key: "edit_payment_settings", label: "تعديل بوابات الدفع الإلكتروني" },
-      { key: "edit_shipping_settings", label: "تعديل خيارات الشحن والتوصيل" },
+      { key: "edit_shipping_settings", label: "تعديل خيارات التوصيل" },
       { key: "edit_legal_pages", label: "تعديل صفحات السياسات والشروط والمحتوى" }
     ]
   },
@@ -5762,7 +5762,7 @@ async function initDirectSale() {
     const select = $a('direct-sale-product');
     if (!select) return;
 
-    select.innerHTML = '<option value="">-- اختر منتج --</option>';
+    select.innerHTML = '<option value="">-- اختر صنف --</option>';
     
     if (Array.isArray(products)) {
       products.filter(p => p.active !== false).forEach(product => {
@@ -5795,7 +5795,7 @@ async function initDirectSale() {
     if (window.lucide) lucide.createIcons();
   } catch (error) {
     console.error('Error initializing direct sale:', error);
-    showAdminToast('فشل تحميل المنتجات', 'error');
+    showAdminToast('فشل تحميل الأصناف', 'error');
   }
 }
 
@@ -5832,7 +5832,7 @@ function openDsQuickCustomer() {
 async function saveDsQuickCustomer(btn) {
   const name = $a('ds-qc-name').value.trim();
   const phone = $a('ds-qc-phone').value.trim();
-  if (!name) { showAdminToast('الرجاء إدخال اسم العميل', 'error'); return; }
+  if (!name) { showAdminToast('الرجاء إدخال اسم الزبون', 'error'); return; }
   const key = getCustomerKeyStr(name, phone);
   const originalHtml = btn.innerHTML;
   btn.classList.add('btn-loading');
@@ -5844,23 +5844,23 @@ async function saveDsQuickCustomer(btn) {
       body: JSON.stringify({
         key, name, phone,
         notes: [],
-        tags: ['عميل مباشر'],
+        tags: ['زبون مباشر'],
         lastContactAt: null,
         lastContactNote: null
       })
     });
     if (res.success) {
       closeModal('ds-quick-customer-modal');
-      showAdminToast('تم إضافة العميل بنجاح', 'success');
+      showAdminToast('تم إضافة الزبون بنجاح', 'success');
       await initDirectSaleCustomerSelector();
       const select = $a('direct-sale-customer');
       if (select) select.value = key;
     } else {
-      showAdminToast(res.message || 'فشل حفظ العميل', 'error');
+      showAdminToast(res.message || 'فشل حفظ الزبون', 'error');
     }
   } catch (err) {
     console.error('Error saving quick customer:', err);
-    showAdminToast('فشل حفظ العميل', 'error');
+    showAdminToast('فشل حفظ الزبون', 'error');
   } finally {
     btn.innerHTML = originalHtml;
     btn.classList.remove('btn-loading');
@@ -6026,7 +6026,7 @@ function openDirectSaleDetails(saleId) {
       <div style="font-weight:600;margin-top:2px;">${sale.date} ${sale.timestamp}</div>
     </div>
     <div>
-      <span style="font-size:12px;color:var(--admin-text2);">اسم المنتج</span>
+      <span style="font-size:12px;color:var(--admin-text2);">اسم الصنف</span>
       <div style="font-weight:600;margin-top:2px;color:var(--admin-primary);">${escapeHtml(sale.productName)}</div>
     </div>
     <div>
@@ -6174,7 +6174,7 @@ async function submitDirectSaleCancellation() {
     });
 
     if (response.success) {
-      showAdminToast('✓ تم إلغاء عملية البيع بنجاح وإعادة المخزون');
+      showAdminToast('✓ تم إلغاء عملية البيع بنجاح وإعادة التوفر');
       closeModal('direct-sale-cancel-modal');
       
       const idx = directSaleLog.findIndex(s => String(s.id) === String(saleId));
@@ -6203,7 +6203,7 @@ async function initStockReceiving() {
     const select = $a('sr-product-select');
     if (!select) return;
 
-    select.innerHTML = '<option value="">-- اختر منتج --</option>';
+    select.innerHTML = '<option value="">-- اختر صنف --</option>';
     
     if (Array.isArray(products)) {
       products.filter(p => p.active !== false).forEach(product => {
@@ -6221,7 +6221,7 @@ async function initStockReceiving() {
     if (window.lucide) lucide.createIcons();
   } catch (error) {
     console.error('Error initializing stock receiving:', error);
-    showAdminToast('فشل تحميل المنتجات', 'error');
+    showAdminToast('فشل تحميل الأصناف', 'error');
   }
 }
 
@@ -6398,7 +6398,7 @@ async function initStorePlanPage() {
     }
   } catch (err) {
     console.error('Error loading store plan page settings:', err);
-    showAdminToast('فشل تحميل إعدادات خطة المتجر', 'error');
+    showAdminToast('فشل تحميل إعدادات خطة المطعم', 'error');
   }
 }
 
@@ -6438,12 +6438,12 @@ async function saveStorePlan(btn) {
     });
 
     if (res && res.success) {
-      showAdminToast('✓ تم حفظ خطة المتجر بنجاح');
+      showAdminToast('✓ تم حفظ خطة المطعم بنجاح');
       window.storePlan = res.plan;
       applyStorePlanVisibility();
       navigateTo('dashboard');
     } else {
-      showAdminToast(res?.message || 'فشل حفظ خطة المتجر', 'error');
+      showAdminToast(res?.message || 'فشل حفظ خطة المطعم', 'error');
     }
   } catch (err) {
     console.error('Error saving store plan:', err);
@@ -6643,8 +6643,8 @@ function renderInvoicesTable(invoices) {
   if (emptyState) emptyState.style.display = 'none';
   tbody.innerHTML = invoices.map(inv => {
     const dateStr = inv.createdAt ? new Date(inv.createdAt).toLocaleDateString('ar-EG') : '—';
-    const sourceText = inv.sourceType === 'order' ? 'طلب إلكتروني' : 'بيع مباشر';
-    const customerName = inv.customer?.name || 'عميل غير معروف';
+    const sourceText = inv.sourceType === 'order' ? 'طلب إلكتروني' : 'نقطة بيع';
+    const customerName = inv.customer?.name || 'زبون غير معروف';
     const totalStr = `${Number(inv.total).toFixed(2)} ${inv.snapshot?.currency || ''}`;
     
     const ps = computeInvoicePaymentStatus(inv, _receiptsCache);
@@ -6706,27 +6706,27 @@ async function viewInvoice(id) {
             <div class="invoice-badge-status ${status}" style="display:inline-block;padding:4px 10px;border-radius:20px;font-size:0.8rem;font-weight:600;margin-bottom:8px;background:${status === 'cancelled' ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'};color:${status === 'cancelled' ? 'var(--admin-danger)' : 'var(--admin-success)'};">${status === 'cancelled' ? 'ملغاة' : 'نشطة'}</div>
             <h1 class="invoice-id-title" style="margin:0;font-size:1.6rem;color:var(--admin-text);">${inv.id}</h1>
             <p class="invoice-meta-date" style="margin:8px 0 0;font-size:0.85rem;color:var(--admin-subtext);"><strong>تاريخ الفاتورة:</strong> ${new Date(createdAt).toLocaleString('ar-EG')}</p>
-            <p class="invoice-meta-source" style="margin:4px 0 0;font-size:0.85rem;color:var(--admin-subtext);"><strong>المصدر:</strong> ${sourceType === 'order' ? 'طلب إلكتروني' : 'بيع مباشر'} (#${sourceId})</p>
+            <p class="invoice-meta-source" style="margin:4px 0 0;font-size:0.85rem;color:var(--admin-subtext);"><strong>المصدر:</strong> ${sourceType === 'order' ? 'طلب إلكتروني' : 'نقطة بيع'} (#${sourceId})</p>
           </div>
         </div>
 
         <div class="invoice-divider" style="height:1px;background:var(--admin-border);margin:20px 0;"></div>
 
         <div class="invoice-client-section" style="margin-bottom:20px;">
-          <h3 class="invoice-section-title" style="margin:0 0 10px 0;font-size:1.05rem;color:var(--admin-text);font-weight:600;">بيانات العميل</h3>
+          <h3 class="invoice-section-title" style="margin:0 0 10px 0;font-size:1.05rem;color:var(--admin-text);font-weight:600;">بيانات الزبون</h3>
           <div class="invoice-client-card" style="padding:15px;background:var(--admin-bg);border:1px solid var(--admin-border);border-radius:8px;">
-            <p style="margin:0;font-size:0.9rem;color:var(--admin-text);"><strong>الاسم:</strong> ${customer?.name || 'عميل غير معروف'}</p>
+            <p style="margin:0;font-size:0.9rem;color:var(--admin-text);"><strong>الاسم:</strong> ${customer?.name || 'زبون غير معروف'}</p>
             <p style="margin:6px 0 0;font-size:0.9rem;color:var(--admin-text);"><strong>الهاتف:</strong> ${customer?.phone || '—'}</p>
             <p style="margin:6px 0 0;font-size:0.9rem;color:var(--admin-text);"><strong>العنوان:</strong> ${customer?.address || '—'}</p>
           </div>
         </div>
 
         <div class="invoice-items-section" style="margin-bottom:20px;">
-          <h3 class="invoice-section-title" style="margin:0 0 10px 0;font-size:1.05rem;color:var(--admin-text);font-weight:600;">تفاصيل المنتجات</h3>
+          <h3 class="invoice-section-title" style="margin:0 0 10px 0;font-size:1.05rem;color:var(--admin-text);font-weight:600;">تفاصيل الأصناف</h3>
           <table class="invoice-table-premium" style="width:100%;border-collapse:collapse;text-align:right;">
             <thead>
               <tr style="border-bottom:2px solid var(--admin-border);color:var(--admin-subtext);font-size:0.85rem;">
-                <th style="padding:10px 8px;">المنتج</th>
+                <th style="padding:10px 8px;">الصنف</th>
                 <th style="padding:10px 8px;text-align:center;">السعر</th>
                 <th style="padding:10px 8px;text-align:center;">الكمية</th>
                 <th style="padding:10px 8px;text-align:left;">المجموع</th>
@@ -6811,7 +6811,7 @@ function printInvoice() {
 
   const { snapshot, customer, items, total, status, createdAt, sourceType, sourceId, cancelledAt, cancelReason } = inv;
   const currency = snapshot?.currency || '';
-  const sourceLabel = sourceType === 'order' ? 'طلب إلكتروني' : 'بيع مباشر';
+  const sourceLabel = sourceType === 'order' ? 'طلب إلكتروني' : 'نقطة بيع';
   const statusLabel = status === 'cancelled' ? 'ملغاة' : 'نشطة';
   const subtotal = inv.subtotal ?? (items || []).reduce((sum, item) => sum + Number(item.total || (item.price * item.qty)), 0);
   const shipping = inv.shipping ?? 0;
@@ -6842,7 +6842,7 @@ function printInvoice() {
       <div class="invoice-print-divider"></div>
 
       <div class="invoice-print-customer">
-        <div class="invoice-print-section-title">بيانات العميل</div>
+        <div class="invoice-print-section-title">بيانات الزبون</div>
         <table class="invoice-print-customer-table">
           <tr><td class="label">الاسم</td><td>${customer?.name || '—'}</td></tr>
           <tr><td class="label">الهاتف</td><td>${customer?.phone || '—'}</td></tr>
@@ -6857,7 +6857,7 @@ function printInvoice() {
         <table class="invoice-print-items-table">
           <thead>
             <tr>
-              <th class="col-product">المنتج</th>
+              <th class="col-product">الصنف</th>
               <th class="col-price">سعر الوحدة</th>
               <th class="col-qty">الكمية</th>
               <th class="col-total">المجموع</th>
