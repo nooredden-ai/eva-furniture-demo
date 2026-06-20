@@ -134,6 +134,11 @@ body{display:flex;flex-direction:column}
         4. عندما يطلب الزبون، يظهر رقم الطاولة في لوحة الإدارة والمطبخ
       </div>
       <div class="form-group">
+        <label for="base-url-input">رابط النظام المستخدم في QR</label>
+        <input type="text" id="base-url-input" placeholder="http://localhost:3000" dir="ltr">
+        <div class="hint">غيّر القيمة إلى رابط النشر أو IP المحلي (مثل http://192.168.1.20:3000) للوصول من الهاتف.</div>
+      </div>
+      <div class="form-group">
         <label for="table-input">رقم الطاولة</label>
         <input type="text" id="table-input" placeholder="مثال: T01 أو 5 أو A3" dir="auto">
         <div class="hint">يمكنك استخدام أي تنسيق: أرقام، حروف، أو مزيج.</div>
@@ -174,29 +179,42 @@ body{display:flex;flex-direction:column}
       return;
     }
 
-    const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '') + '/';
-    const link = baseUrl + 'table-menu.html?table=' + encodeURIComponent(table);
+    const baseInput = $('base-url-input');
+    let baseUrl = baseInput ? baseInput.value.trim() : '';
+    if (!baseUrl) {
+      baseUrl = window.location.origin;
+    }
+    baseUrl = baseUrl.replace(/\/+$/, '');
+    const link = baseUrl + '/table-menu.html?table=' + encodeURIComponent(table);
 
     const linkInput = $('generated-link');
     if (linkInput) {
       linkInput.value = link;
     }
 
-    // Generate QR using Google Charts API (free, no library)
+    // Generate QR using qrserver.com API with quickchart.io fallback
     const qrImg = $('qr-image');
     if (qrImg) {
       qrImg.style.display = 'inline';
-      const qrUrl = 'https://chart.googleapis.com/chart?chs=240x240&cht=qr&chl=' + encodeURIComponent(link) + '&choe=UTF-8';
-      qrImg.src = qrUrl;
+      const firstQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent(link);
+      qrImg.src = firstQrUrl;
       qrImg.style.display = '';
       qrImg.onerror = function() {
-        this.style.display = 'none';
-        const hint = this.nextElementSibling;
-        if (hint) hint.textContent = '⚠️ تعذر تحميل رمز QR — الرابط النصي أعلاه جاهز للنسخ';
+        const fallbackUrl = 'https://quickchart.io/qr?size=240&text=' + encodeURIComponent(link);
+        this.src = fallbackUrl;
+        this.onerror = function() {
+          this.style.display = 'none';
+          const hint = this.nextElementSibling;
+          if (hint) hint.textContent = 'تعذر تحميل صورة QR. يمكنك نسخ الرابط أدناه.';
+        };
+        this.onload = function() {
+          const hint = this.nextElementSibling;
+          if (hint) hint.textContent = 'امسح الرمز لفتح المنيو من هاتفك';
+        };
       };
       qrImg.onload = function() {
         const hint = this.nextElementSibling;
-        if (hint) hint.textContent = '📱 امسح الرمز لفتح المنيو';
+        if (hint) hint.textContent = 'امسح الرمز لفتح المنيو من هاتفك';
       };
     }
 
@@ -253,10 +271,21 @@ body{display:flex;flex-direction:column}
       if (root) root.style.display = 'flex';
       if (denied) denied.style.display = 'none';
 
+      // Auto-fill base URL with current origin
+      const baseUrlInput = $('base-url-input');
+      if (baseUrlInput) {
+        baseUrlInput.value = window.location.origin;
+      }
+
       // Allow enter key
       $('table-input').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') generateLink();
       });
+      if (baseUrlInput) {
+        baseUrlInput.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') generateLink();
+        });
+      }
     } catch (e) {
       console.error('[QR Menu] Init error:', e);
     }
