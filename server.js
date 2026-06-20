@@ -1394,6 +1394,18 @@ app.post('/api/orders', simpleRateLimit, (req, res) => {
       }
     }
 
+    // Prevent duplicate open dine-in orders per table
+    if (validatedOrderType === 'dinein' && tableNumber) {
+      const allOrders = orderRepository.findAll();
+      const existingOpenOrder = allOrders.find(function(o) {
+        return String(o.tableNumber) === String(tableNumber) && ['pending', 'confirmed', 'processing', 'shipped'].includes(o.status);
+      });
+      if (existingOpenOrder) {
+        const orderId = existingOpenOrder.orderNumber || existingOpenOrder.id;
+        return res.status(400).json({ success: false, message: `يوجد طلب مفتوح بالفعل على هذه الطاولة (#${orderId}). يرجى إغلاق الطلب الحالي أو اختيار طاولة أخرى.` });
+      }
+    }
+
     // Sanitize notes on all items
     for (const item of items) {
       if (item.notes) {
