@@ -11,3 +11,6 @@ node_modules/
 
 # Backup image assets (not used by the system)
 /images/backup/
+
+# Large archive (staging artifact)
+/ArabicStoreDemo.zip
