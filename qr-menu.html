@@ -175,7 +175,7 @@ body{display:flex;flex-direction:column}
     }
 
     const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '') + '/';
-    const link = baseUrl + '?type=dinein&table=' + encodeURIComponent(table);
+    const link = baseUrl + 'table-menu.html?table=' + encodeURIComponent(table);
 
     const linkInput = $('generated-link');
     if (linkInput) {
