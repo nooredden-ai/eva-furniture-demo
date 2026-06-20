@@ -1,0 +1,74 @@
+[
+  {
+    "id": "T01",
+    "code": "T01",
+    "name": "طاولة 1",
+    "capacity": 2,
+    "active": true,
+    "createdAt": "2026-06-19T10:00:00.000Z",
+    "updatedAt": "2026-06-19T10:00:00.000Z"
+  },
+  {
+    "id": "T02",
+    "code": "T02",
+    "name": "طاولة 2",
+    "capacity": 4,
+    "active": true,
+    "createdAt": "2026-06-19T10:00:00.000Z",
+    "updatedAt": "2026-06-19T10:00:00.000Z"
+  },
+  {
+    "id": "T03",
+    "code": "T03",
+    "name": "طاولة 3",
+    "capacity": 4,
+    "active": true,
+    "createdAt": "2026-06-19T10:00:00.000Z",
+    "updatedAt": "2026-06-19T10:00:00.000Z"
+  },
+  {
+    "id": "T04",
+    "code": "T04",
+    "name": "طاولة 4",
+    "capacity": 6,
+    "active": true,
+    "createdAt": "2026-06-19T10:00:00.000Z",
+    "updatedAt": "2026-06-19T10:00:00.000Z"
+  },
+  {
+    "id": "T05",
+    "code": "T05",
+    "name": "طاولة 5",
+    "capacity": 2,
+    "active": true,
+    "createdAt": "2026-06-19T10:00:00.000Z",
+    "updatedAt": "2026-06-19T10:00:00.000Z"
+  },
+  {
+    "id": "T06",
+    "code": "T06",
+    "name": "طاولة 6",
+    "capacity": 4,
+    "active": true,
+    "createdAt": "2026-06-19T10:00:00.000Z",
+    "updatedAt": "2026-06-19T10:00:00.000Z"
+  },
+  {
+    "id": "T07",
+    "code": "T07",
+    "name": "طاولة 7",
+    "capacity": 6,
+    "active": true,
+    "createdAt": "2026-06-19T10:00:00.000Z",
+    "updatedAt": "2026-06-19T10:00:00.000Z"
+  },
+  {
+    "id": "T08",
+    "code": "T08",
+    "name": "طاولة 8",
+    "capacity": 8,
+    "active": true,
+    "createdAt": "2026-06-19T10:00:00.000Z",
+    "updatedAt": "2026-06-19T10:00:00.000Z"
+  }
+]
