@@ -1,2 +1,13 @@
 node_modules/
 .env
+
+# Backup files
+*.bak
+*.bak.*
+*.backup
+
+# Log files
+*.log
+
+# Backup image assets (not used by the system)
+/images/backup/
