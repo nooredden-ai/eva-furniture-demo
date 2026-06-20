@@ -150,6 +150,22 @@ img{max-width:100%;display:block}
 .cart-submit{width:100%;padding:14px;border-radius:var(--radius-sm);font-size:1.05rem;font-weight:800;background:var(--primary);color:#fff;min-height:52px;transition:background .15s}
 .cart-submit:active{background:var(--primary-hover)}
 .cart-submit:disabled{opacity:.45;pointer-events:none}
+/* LOADING STATE ON CART BUTTON */
+.cart-submit.loading{pointer-events:none;opacity:.7}
+/* SUCCESS SCREEN */
+.success-screen{display:none;position:fixed;inset:0;z-index:800;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:32px;text-align:center}
+.success-screen.show{display:flex}
+.success-icon{width:56px;height:56px;color:var(--primary);margin-bottom:16px}
+.success-title{font-size:1.6rem;font-weight:900;color:var(--text);margin-bottom:6px}
+.success-order{font-size:2rem;font-weight:900;color:var(--primary);margin-bottom:4px}
+.success-table{font-size:1rem;color:var(--text2);margin-bottom:2px}
+.success-hint{font-size:.88rem;color:var(--text3);margin-bottom:24px;line-height:1.6;max-width:320px}
+.success-actions{display:flex;flex-direction:column;gap:10px;width:100%;max-width:280px}
+.success-btn{width:100%;padding:14px;border-radius:var(--radius-sm);font-size:1rem;font-weight:800;min-height:52px;text-align:center}
+.success-btn.primary{background:var(--primary);color:#fff}
+.success-btn.primary:active{background:var(--primary-hover)}
+.success-btn.secondary{background:var(--surface2);color:var(--text)}
+.success-btn.secondary:active{background:var(--surface3)}
 /* NOTIFICATION TOAST */
 .toast{display:none;position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;padding:14px 24px;border-radius:var(--radius-sm);font-size:.9rem;font-weight:700;box-shadow:var(--shadow);max-width:90%;text-align:center;animation:toastIn .25s ease}
 .toast.show{display:block}
@@ -249,6 +265,19 @@ img{max-width:100%;display:block}
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+<!-- SUCCESS SCREEN -->
+<div class="success-screen" id="success-screen">
+  <svg class="success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+  <div class="success-title">تم إرسال طلبك للمطبخ</div>
+  <div class="success-order" id="success-order">#---</div>
+  <div class="success-table" id="success-table">طاولة T01</div>
+  <div class="success-hint">يمكنك متابعة الطلب من شاشة الطلبات داخل المطعم</div>
+  <div class="success-actions">
+    <button class="success-btn primary" onclick="window.startNewOrder()">طلب إضافي</button>
+    <button class="success-btn secondary" onclick="window.backToMenu()">العودة للمنيو</button>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -679,13 +708,131 @@ img{max-width:100%;display:block}
   }
   window.closeCart = closeCart;
 
-  // ---- SUBMIT (Phase 11C placeholder) ----
+  // ---- SUBMIT ----
+  let _submitting = false;
+
   function submitOrder(){
-    if(!cart.length) return;
-    const count = cart.reduce((s, i) => s + i.qty, 0);
-    showError('سيتم تفعيل إرسال الطلب في المرحلة التالية. الطلب يحتوي على '+count+' صنف'+(count>1?'اً':'')+' على طاولة '+tableNumber+'.');
+    if(_submitting) return;
+    if(!tableNumber){
+      showError('هذا الرابط غير صالح. يرجى مسح رمز QR الموجود على الطاولة.', 'toast-error');
+      return;
+    }
+    if(!cart.length){
+      showError('يرجى إضافة صنف واحد على الأقل قبل إرسال الطلب.', 'toast-error');
+      return;
+    }
+
+    // Verify no item is missing required options (should not happen, but safeguard)
+    for(let i = 0; i < cart.length; i++){
+      const item = cart[i];
+      const p = products.find(x => String(x.id) === String(item.id));
+      if(p && p.options && Array.isArray(p.options)){
+        for(const o of p.options){
+          if(o.required && (!item.selectedOptions || !item.selectedOptions.some(og =>
+            og.name === o.name && og.selected && og.selected.length > 0
+          ))){
+            showError('المنتج "'+item.name+'" يحتاج اختيار '+(o.nameEn||o.name||'مطلوب')+'. برجاء إعادة إضافته.', 'toast-error');
+            return;
+          }
+        }
+      }
+    }
+
+    _submitting = true;
+    const btn = $('cart-submit');
+    const originalText = btn.textContent;
+    btn.textContent = 'جاري إرسال الطلب للمطبخ...';
+    btn.classList.add('loading');
+    closeCart();
+
+    const items = cart.map(i => ({
+      productId: i.id,
+      name: i.name,
+      qty: i.qty,
+      price: Number(i.unitPrice),
+      selectedOptions: i.selectedOptions && i.selectedOptions.length ? i.selectedOptions : undefined,
+      notes: i.itemNotes || undefined
+    }));
+
+    const generalNotes = ($('cart-general-notes') ? $('cart-general-notes').value.trim() : '') || '';
+
+    const body = {
+      customer: 'طاولة ' + tableNumber,
+      phone: '0000000000',
+      items: items,
+      orderType: 'dinein',
+      tableNumber: tableNumber,
+      notes: generalNotes || undefined,
+      paymentMethod: 'cash',
+      source: 'qr-menu'
+    };
+
+    const headers = {'Content-Type': 'application/json'};
+    const token = sessionStorage.getItem('louloToken');
+    if(token) headers['Authorization'] = 'Bearer ' + token;
+
+    fetch('/api/orders', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(res => {
+      _submitting = false;
+      if(res && res.success && res.data){
+        const order = res.data;
+        const orderId = order.orderNumber || order.id;
+        showSuccess(orderId, tableNumber);
+        cart = [];
+        renderCart();
+        updateCartFab();
+        btn.textContent = originalText;
+        btn.classList.remove('loading');
+      } else {
+        btn.textContent = originalText;
+        btn.classList.remove('loading');
+        showError('تعذر إرسال الطلب. يرجى المحاولة مرة أخرى أو طلب المساعدة من الموظف.', 'toast-error');
+      }
+    })
+    .catch(err => {
+      _submitting = false;
+      btn.textContent = originalText;
+      btn.classList.remove('loading');
+      showError('تعذر إرسال الطلب. يرجى المحاولة مرة أخرى أو طلب المساعدة من الموظف.', 'toast-error');
+    });
   }
   window.submitOrder = submitOrder;
+
+  function showSuccess(orderId, table){
+    const scr = $('success-screen');
+    const orderEl = $('success-order');
+    const tableEl = $('success-table');
+    if(orderEl) orderEl.textContent = '#' + orderId;
+    if(tableEl) tableEl.textContent = 'طاولة ' + table;
+    if(scr) scr.classList.add('show');
+    closeCart();
+  }
+
+  function startNewOrder(){
+    const scr = $('success-screen');
+    if(scr) scr.classList.remove('show');
+    cart = [];
+    renderCart();
+    updateCartFab();
+    $('cart-general-notes').value = '';
+    openCart();
+  }
+  window.startNewOrder = startNewOrder;
+
+  function backToMenu(){
+    const scr = $('success-screen');
+    if(scr) scr.classList.remove('show');
+    cart = [];
+    renderCart();
+    updateCartFab();
+    $('cart-general-notes').value = '';
+  }
+  window.backToMenu = backToMenu;
 
   // ---- KEYBOARD ----
   document.addEventListener('keydown', function(e){
