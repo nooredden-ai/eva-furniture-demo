@@ -6,7 +6,8 @@
     "capacity": 2,
     "active": true,
     "createdAt": "2026-06-19T10:00:00.000Z",
-    "updatedAt": "2026-06-19T10:00:00.000Z"
+    "updatedAt": "2026-06-19T10:00:00.000Z",
+    "qrToken": "85e9bb3415b5aab0a8747c0feccbcd887d7e08701374a439"
   },
   {
     "id": "T02",
@@ -15,7 +16,8 @@
     "capacity": 4,
     "active": true,
     "createdAt": "2026-06-19T10:00:00.000Z",
-    "updatedAt": "2026-06-19T10:00:00.000Z"
+    "updatedAt": "2026-06-19T10:00:00.000Z",
+    "qrToken": "9d7af3559f52768617a2f1c4e85de0642b9f934f86c597b3"
   },
   {
     "id": "T03",
@@ -24,7 +26,8 @@
     "capacity": 4,
     "active": true,
     "createdAt": "2026-06-19T10:00:00.000Z",
-    "updatedAt": "2026-06-19T10:00:00.000Z"
+    "updatedAt": "2026-06-20T14:06:17.497Z",
+    "qrToken": "53db656a4b7f10219d85a8045bae7a62a66ec0a2078fecf3"
   },
   {
     "id": "T04",
@@ -33,7 +36,8 @@
     "capacity": 6,
     "active": true,
     "createdAt": "2026-06-19T10:00:00.000Z",
-    "updatedAt": "2026-06-19T10:00:00.000Z"
+    "updatedAt": "2026-06-19T10:00:00.000Z",
+    "qrToken": "fce883104793f997f9cc6aea2f34ff5aa6b80395182454f6"
   },
   {
     "id": "T05",
@@ -42,7 +46,8 @@
     "capacity": 2,
     "active": true,
     "createdAt": "2026-06-19T10:00:00.000Z",
-    "updatedAt": "2026-06-19T10:00:00.000Z"
+    "updatedAt": "2026-06-19T10:00:00.000Z",
+    "qrToken": "1ca8ba5bc5caa74ba8bc39b1ece9900854f4f5d701dbc610"
   },
   {
     "id": "T06",
@@ -51,7 +56,8 @@
     "capacity": 4,
     "active": true,
     "createdAt": "2026-06-19T10:00:00.000Z",
-    "updatedAt": "2026-06-19T10:00:00.000Z"
+    "updatedAt": "2026-06-19T10:00:00.000Z",
+    "qrToken": "9efbe487b05071b0835d98288e34f21b47781fd8df7f121d"
   },
   {
     "id": "T07",
@@ -60,7 +66,8 @@
     "capacity": 6,
     "active": true,
     "createdAt": "2026-06-19T10:00:00.000Z",
-    "updatedAt": "2026-06-19T10:00:00.000Z"
+    "updatedAt": "2026-06-19T10:00:00.000Z",
+    "qrToken": "b557a9e28b33d9862a5a21a8839f295760bbcc574057065f"
   },
   {
     "id": "T08",
@@ -69,6 +76,7 @@
     "capacity": 8,
     "active": true,
     "createdAt": "2026-06-19T10:00:00.000Z",
-    "updatedAt": "2026-06-19T10:00:00.000Z"
+    "updatedAt": "2026-06-19T10:00:00.000Z",
+    "qrToken": "940b007573e8ac556665e809db99449c6dade51335155d76"
   }
 ]

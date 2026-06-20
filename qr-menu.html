@@ -185,40 +185,62 @@ body{display:flex;flex-direction:column}
       baseUrl = window.location.origin;
     }
     baseUrl = baseUrl.replace(/\/+$/, '');
-    const link = baseUrl + '/table-menu.html?table=' + encodeURIComponent(table);
 
-    const linkInput = $('generated-link');
-    if (linkInput) {
-      linkInput.value = link;
-    }
+    // Fetch tables to get the qrToken for this table
+    const headers = {};
+    const token = sessionStorage.getItem('louloToken');
+    if (token) headers['Authorization'] = 'Bearer ' + token;
 
-    // Generate QR using qrserver.com API with quickchart.io fallback
-    const qrImg = $('qr-image');
-    if (qrImg) {
-      qrImg.style.display = 'inline';
-      const firstQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent(link);
-      qrImg.src = firstQrUrl;
-      qrImg.style.display = '';
-      qrImg.onerror = function() {
-        const fallbackUrl = 'https://quickchart.io/qr?size=240&text=' + encodeURIComponent(link);
-        this.src = fallbackUrl;
-        this.onerror = function() {
-          this.style.display = 'none';
-          const hint = this.nextElementSibling;
-          if (hint) hint.textContent = 'تعذر تحميل صورة QR. يمكنك نسخ الرابط أدناه.';
-        };
-        this.onload = function() {
-          const hint = this.nextElementSibling;
-          if (hint) hint.textContent = 'امسح الرمز لفتح المنيو من هاتفك';
-        };
-      };
-      qrImg.onload = function() {
-        const hint = this.nextElementSibling;
-        if (hint) hint.textContent = 'امسح الرمز لفتح المنيو من هاتفك';
-      };
-    }
+    fetch('/api/tables', { headers: headers })
+      .then(r => r.json())
+      .then(tables => {
+        const found = Array.isArray(tables) ? tables.find(t => String(t.id) === String(table) || String(t.code) === String(table)) : null;
+        const qrToken = found && found.qrToken ? found.qrToken : '';
 
-    $('result-area').classList.add('show');
+        const link = qrToken
+          ? baseUrl + '/table-menu.html?table=' + encodeURIComponent(table) + '&token=' + encodeURIComponent(qrToken)
+          : baseUrl + '/table-menu.html?table=' + encodeURIComponent(table);
+
+        const linkInput = $('generated-link');
+        if (linkInput) {
+          linkInput.value = link;
+        }
+
+        // Generate QR using qrserver.com API with quickchart.io fallback
+        const qrImg = $('qr-image');
+        if (qrImg) {
+          qrImg.style.display = 'inline';
+          const firstQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent(link);
+          qrImg.src = firstQrUrl;
+          qrImg.style.display = '';
+          qrImg.onerror = function() {
+            const fallbackUrl = 'https://quickchart.io/qr?size=240&text=' + encodeURIComponent(link);
+            this.src = fallbackUrl;
+            this.onerror = function() {
+              this.style.display = 'none';
+              const hint = this.nextElementSibling;
+              if (hint) hint.textContent = 'تعذر تحميل صورة QR. يمكنك نسخ الرابط أدناه.';
+            };
+            this.onload = function() {
+              const hint = this.nextElementSibling;
+              if (hint) hint.textContent = 'امسح الرمز لفتح المنيو من هاتفك';
+            };
+          };
+          qrImg.onload = function() {
+            const hint = this.nextElementSibling;
+            if (hint) hint.textContent = 'امسح الرمز لفتح المنيو من هاتفك';
+          };
+        }
+
+        $('result-area').classList.add('show');
+      })
+      .catch(() => {
+        // Fallback: generate link without token if API fails
+        const link = baseUrl + '/table-menu.html?table=' + encodeURIComponent(table);
+        const linkInput = $('generated-link');
+        if (linkInput) linkInput.value = link;
+        $('result-area').classList.add('show');
+      });
   }
 
   function copyLink() {

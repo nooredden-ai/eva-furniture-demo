@@ -1303,7 +1303,7 @@ app.post('/api/orders', simpleRateLimit, (req, res) => {
       return res.status(403).json({ success: false, message: 'المتجر لا يقبل طلبات حالياً (الميزة غير مفعّلة في خطة المتجر)' });
     }
 
-    const { customer, phone, city, address, zone, zoneName, items, subtotal: rawSubtotal, shipping: rawShipping, total: rawTotal, notes, paymentMethod, couponCode, discount, orderType, tableNumber } = req.body;
+    const { customer, phone, city, address, zone, zoneName, items, subtotal: rawSubtotal, shipping: rawShipping, total: rawTotal, notes, paymentMethod, couponCode, discount, orderType, tableNumber, tableToken } = req.body;
 
     if (!customer || !phone || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ success: false, message: 'بيانات الطلب غير مكتملة' });
@@ -1352,6 +1352,30 @@ app.post('/api/orders', simpleRateLimit, (req, res) => {
         if (Number(item.price) !== expectedPrice) {
           return res.status(400).json({ success: false, message: `سعر المنتج "${item.name}" غير صحيح` });
         }
+      }
+    }
+
+    // QR Table Token Validation
+    if (req.body.source === 'qr-menu') {
+      if (validatedOrderType !== 'dinein') {
+        return res.status(400).json({ success: false, message: 'رابط الطاولة غير صالح. يرجى مسح رمز QR الموجود على الطاولة.' });
+      }
+      if (!tableNumber) {
+        return res.status(400).json({ success: false, message: 'رابط الطاولة غير صالح. يرجى مسح رمز QR الموجود على الطاولة.' });
+      }
+      if (!tableToken) {
+        return res.status(400).json({ success: false, message: 'رابط الطاولة غير صالح. يرجى مسح رمز QR الموجود على الطاولة.' });
+      }
+      const tables = readTables();
+      const table = tables.find(t => String(t.id) === String(tableNumber) || String(t.code) === String(tableNumber));
+      if (!table) {
+        return res.status(400).json({ success: false, message: 'رابط الطاولة غير صالح. يرجى مسح رمز QR الموجود على الطاولة.' });
+      }
+      if (table.active !== true) {
+        return res.status(400).json({ success: false, message: 'رابط الطاولة غير صالح. يرجى مسح رمز QR الموجود على الطاولة.' });
+      }
+      if (table.qrToken !== tableToken) {
+        return res.status(400).json({ success: false, message: 'رابط الطاولة غير صالح. يرجى مسح رمز QR الموجود على الطاولة.' });
       }
     }
 
