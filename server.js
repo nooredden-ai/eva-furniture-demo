@@ -1631,6 +1631,89 @@ app.post('/api/orders/:id/note', requirePerm('add_order_notes'), (req, res) => {
   res.json({ success: true, order: updatedOrder });
 });
 
+// Add items to an existing open dine-in order
+app.post('/api/orders/:id/items', requirePerm('update_orders'), (req, res) => {
+  try {
+    const order = orderRepository.findByIdOrNumber(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'الطلب غير موجود' });
+    }
+    if (order.orderType !== 'dinein') {
+      return res.status(400).json({ success: false, message: 'لا يمكن إضافة أصناف إلا لطلبات الطاولات.' });
+    }
+    const openStatuses = ['pending', 'confirmed', 'processing'];
+    if (!openStatuses.includes(order.status)) {
+      return res.status(400).json({ success: false, message: 'لا يمكن إضافة أصناف إلى طلب مغلق أو جاهز.' });
+    }
+    const { items } = req.body;
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, message: 'لا توجد أصناف للإضافة.' });
+    }
+    const products = readJSON('products.json');
+    const validatedItems = [];
+    for (const item of items) {
+      const product = products.find(p => String(p.id) === String(item.productId));
+      if (product) {
+        if (product.active === false) {
+          return res.status(400).json({ success: false, message: `الصنف "${product.name}" غير متاح حالياً` });
+        }
+        if (product.temporarilyUnavailable === true) {
+          return res.status(400).json({ success: false, message: `الصنف "${product.name}" غير متاح مؤقتاً` });
+        }
+      }
+      let unitPrice = product ? Number(product.price) : (Number(item.price) || 0);
+      if (item.selectedOptions && product) {
+        for (const opt of item.selectedOptions) {
+          if (opt.selected) {
+            for (const sel of opt.selected) {
+              unitPrice += Number(sel.priceDelta) || 0;
+            }
+          }
+        }
+      }
+      validatedItems.push({
+        productId: item.productId,
+        name: item.name || (product ? product.name : ''),
+        qty: Number(item.qty) || 1,
+        price: unitPrice,
+        unitPrice: unitPrice,
+        selectedOptions: item.selectedOptions || [],
+        notes: item.notes || ''
+      });
+    }
+    const mergedItems = [...(order.items || [])];
+    for (const newItem of validatedItems) {
+      const existingIdx = mergedItems.findIndex(i =>
+        String(i.productId) === String(newItem.productId) &&
+        JSON.stringify(i.selectedOptions || []) === JSON.stringify(newItem.selectedOptions || [])
+      );
+      if (existingIdx >= 0) {
+        mergedItems[existingIdx].qty = (mergedItems[existingIdx].qty || 0) + (newItem.qty || 0);
+        mergedItems[existingIdx].price = newItem.price;
+        mergedItems[existingIdx].unitPrice = newItem.unitPrice;
+      } else {
+        mergedItems.push(newItem);
+      }
+    }
+    const subtotal = mergedItems.reduce((sum, i) => sum + ((i.unitPrice || i.price || 0) * (i.qty || 0)), 0);
+    const shipping = Number(order.shipping) || 0;
+    const discount = Number(order.discount) || 0;
+    const total = subtotal + shipping - discount;
+    const updatedOrder = orderRepository.update(order.id, {
+      items: mergedItems,
+      subtotal,
+      total
+    });
+    if (!updatedOrder) {
+      return res.status(500).json({ success: false, message: 'فشل تحديث الطلب' });
+    }
+    res.json({ success: true, order: updatedOrder, message: 'تمت إضافة الأصناف بنجاح' });
+  } catch (err) {
+    console.error('[ADD ITEMS ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل إضافة الأصناف' });
+  }
+});
+
 /* =========================
    API: DIRECT SALE (Stock Deduction)
 ========================= */
