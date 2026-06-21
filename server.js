@@ -1289,6 +1289,22 @@ app.get('/api/orders', requirePerm('view_orders'), (req, res) => {
   res.json(orderRepository.findAll());
 });
 
+// Get open dine-in order by table number
+app.get('/api/orders/open', requirePerm('view_orders'), (req, res) => {
+  const tableNumber = String(req.query.tableNumber || '').trim();
+  if (!tableNumber) {
+    return res.status(400).json({ success: false, message: 'tableNumber is required' });
+  }
+  const allOrders = orderRepository.findAll();
+  const openStatuses = ['pending', 'confirmed', 'processing'];
+  const existingOrder = allOrders.find(o =>
+    o.orderType === 'dinein' &&
+    String(o.tableNumber) === tableNumber &&
+    openStatuses.includes(o.status)
+  );
+  res.json({ order: existingOrder || null });
+});
+
 // Get single order by ID
 app.get('/api/orders/:id', (req, res) => {
   const order = orderRepository.findByIdOrNumber(req.params.id);
