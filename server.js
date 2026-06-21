@@ -1718,7 +1718,8 @@ app.post('/api/orders/:id/items', requirePerm('update_orders'), (req, res) => {
     const updatedOrder = orderRepository.update(order.id, {
       items: mergedItems,
       subtotal,
-      total
+      total,
+      lastAdditionAt: new Date().toISOString()
     });
     if (!updatedOrder) {
       return res.status(500).json({ success: false, message: 'فشل تحديث الطلب' });
@@ -1860,7 +1861,8 @@ app.post('/api/table-menu/orders/:id/items', simpleRateLimit, (req, res) => {
     const updatedOrder = orderRepository.update(order.id, {
       items: mergedItems,
       subtotal,
-      total
+      total,
+      lastAdditionAt: new Date().toISOString()
     });
     if (!updatedOrder) {
       return res.status(500).json({ success: false, message: 'فشل تحديث الطلب.' });

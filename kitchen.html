@@ -249,6 +249,20 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
   100%{box-shadow:none;border-color:transparent}
 }
 .card.new-glow{animation:glow-pending 3s ease-out forwards}
+/* New addition glow */
+@keyframes glow-addition{
+  0%{box-shadow:0 0 0 0 rgba(16,185,129,.6);border-color:var(--shipped)}
+  50%{box-shadow:0 0 24px 8px rgba(16,185,129,.3)}
+  100%{box-shadow:none;border-color:transparent}
+}
+.card.has-new-additions{animation:glow-addition 3s ease-out forwards}
+.addition-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  background:#065f46;color:#a7f3d0;
+  font-size:.75rem;font-weight:800;padding:3px 12px;
+  border-radius:20px;white-space:nowrap;line-height:1.6
+}
+.addition-badge svg{width:13px;height:13px}
 /* Access denied */
 .access-denied{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -404,6 +418,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
   let isRefreshing = false;
   let lastFetchFailed = false;
   let seenOrderIds = new Set();
+  let seenOrderAdditions = {};
   let audioCtx = null;
   let soundEnabled = localStorage.getItem('kitchenSoundEnabled') !== 'false';
   let audioInitialized = false;
@@ -490,11 +505,16 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
     var printUrl = '/print-order.html?id=' + order.id + '&type=kitchen';
     actionsHtml += '<button class="btn-action btn-print" onclick="window.open(\'' + printUrl + '\',\'_blank\')"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> طباعة</button>';
 
-    return '<div class="card" data-order-id="' + order.id + '" data-status="' + status + '">' +
+    var additionsBadge = '';
+    if (order._newlyAdded) {
+      additionsBadge = '<div class="addition-badge"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> إضافة جديدة</div>';
+    }
+    return '<div class="card' + (order._newlyAdded ? ' has-new-additions' : '') + '" data-order-id="' + order.id + '" data-status="' + status + '">' +
       '<div class="card-header">' +
         '<span class="card-order-id">#' + (order.orderNumber || order.id) + '</span>' +
         '<span class="card-time" title="' + timeFull + '"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> ' + timeStr + '</span>' +
       '</div>' +
+      additionsBadge +
       '<div class="card-meta">' + getOrderTypeHtml(order.orderType) + '</div>' +
       tableHtml +
       '<div class="card-customer"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> ' + (order.customer || 'زائر') + '</div>' +
@@ -557,7 +577,22 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
       ordersData = Array.isArray(data) ? data : (data && data.data ? data.data : []);
       lastFetchFailed = false;
       clearFetchError();
+      // Detect new item additions to existing orders
+      var haveNewAdditions = false;
+      ordersData.forEach(function(o){
+        if (KITCHEN_STATUSES.indexOf(o.status) === -1) return;
+        var currentAddition = o.lastAdditionAt || '';
+        var seen = seenOrderAdditions[o.id];
+        if (seen !== undefined && seen !== currentAddition && currentAddition !== '') {
+          o._newlyAdded = true;
+          haveNewAdditions = true;
+        } else {
+          o._newlyAdded = false;
+        }
+        seenOrderAdditions[o.id] = currentAddition;
+      });
       renderColumns();
+      if (haveNewAdditions && soundEnabled) { playBeep(); }
       var currentIds = new Set(ordersData.filter(function(o){ return KITCHEN_STATUSES.indexOf(o.status) !== -1; }).map(function(o){ return String(o.id); }));
       if (seenOrderIds.size > 0) {
         var newIds = [];
