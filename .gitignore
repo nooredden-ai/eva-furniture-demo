@@ -14,3 +14,15 @@ node_modules/
 
 # Large archive (staging artifact)
 /ArabicStoreDemo.zip
+
+# Local runtime data
+data/
+
+# Broken or local demo package
+demo-package/
+
+# Orphaned debug file
+0
+
+# Auto-generated branding uploads
+images/branding/[0-9]*.png
