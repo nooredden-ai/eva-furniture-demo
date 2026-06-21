@@ -1731,6 +1731,160 @@ app.post('/api/orders/:id/items', requirePerm('update_orders'), (req, res) => {
 });
 
 /* =========================
+   API: QR TABLE MENU — Check Open Order
+========================= */
+app.get('/api/table-menu/open', simpleRateLimit, (req, res) => {
+  try {
+    const tableNum = String(req.query.table || '').trim();
+    const token = String(req.query.token || '').trim();
+    if (!tableNum || !token) {
+      return res.status(400).json({ success: false, message: 'رابط الطاولة غير صالح. يرجى مسح رمز QR الموجود على الطاولة.' });
+    }
+    const tables = readTables();
+    const table = tables.find(t => String(t.code) === tableNum);
+    if (!table || table.active !== true || table.qrToken !== token) {
+      return res.status(400).json({ success: false, message: 'رابط الطاولة غير صالح. يرجى مسح رمز QR الموجود على الطاولة.' });
+    }
+    const allOrders = orderRepository.findAll();
+    const openStatuses = ['pending', 'confirmed', 'processing'];
+    const existingOrder = allOrders.find(o =>
+      o.orderType === 'dinein' &&
+      String(o.tableNumber) === tableNum &&
+      openStatuses.includes(o.status)
+    );
+    if (!existingOrder) {
+      return res.json({ order: null });
+    }
+    res.json({
+      order: {
+        id: existingOrder.id,
+        orderNumber: existingOrder.orderNumber || existingOrder.id,
+        tableNumber: existingOrder.tableNumber,
+        status: existingOrder.status,
+        total: existingOrder.total || 0,
+        itemsCount: (existingOrder.items || []).reduce((s, i) => s + (Number(i.qty) || 0), 0)
+      }
+    });
+  } catch (err) {
+    console.error('[TABLE-MENU OPEN ERROR]', err);
+    res.status(500).json({ success: false, message: 'حدث خطأ أثناء فحص الطلب المفتوح.' });
+  }
+});
+
+/* =========================
+   API: QR TABLE MENU — Add Items to Open Order
+========================= */
+app.post('/api/table-menu/orders/:id/items', simpleRateLimit, (req, res) => {
+  try {
+    const { tableNumber, tableToken, items } = req.body;
+    if (!tableNumber || !tableToken) {
+      return res.status(400).json({ success: false, message: 'رابط الطاولة غير صالح. يرجى مسح رمز QR الموجود على الطاولة.' });
+    }
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, message: 'لا توجد أصناف للإضافة.' });
+    }
+    // Validate table token
+    const tables = readTables();
+    const table = tables.find(t => String(t.code) === String(tableNumber));
+    if (!table || table.active !== true || table.qrToken !== tableToken) {
+      return res.status(400).json({ success: false, message: 'رابط الطاولة غير صالح. يرجى مسح رمز QR الموجود على الطاولة.' });
+    }
+    // Find order
+    const order = orderRepository.findByIdOrNumber(req.params.id);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'الطلب غير موجود.' });
+    }
+    if (order.orderType !== 'dinein') {
+      return res.status(400).json({ success: false, message: 'لا يمكن إضافة أصناف إلا لطلبات الطاولات.' });
+    }
+    if (String(order.tableNumber) !== String(tableNumber)) {
+      return res.status(400).json({ success: false, message: 'هذا الطلب لا يخص هذه الطاولة.' });
+    }
+    const openStatuses = ['pending', 'confirmed', 'processing'];
+    if (!openStatuses.includes(order.status)) {
+      return res.status(400).json({ success: false, message: 'لا يمكن إضافة أصناف إلى طلب مغلق أو جاهز.' });
+    }
+    // Validate and build items using product prices from server
+    const products = jsonStore.readJsonFile('products.json');
+    const validatedItems = [];
+    for (const item of items) {
+      const product = products.find(p => String(p.id) === String(item.productId));
+      if (product) {
+        if (product.active === false) {
+          return res.status(400).json({ success: false, message: 'الصنف "' + product.name + '" غير متاح حالياً.' });
+        }
+        if (product.temporarilyUnavailable === true) {
+          return res.status(400).json({ success: false, message: 'الصنف "' + product.name + '" غير متاح مؤقتاً.' });
+        }
+      }
+      let unitPrice = product ? Number(product.price) : (Number(item.price) || 0);
+      if (item.selectedOptions && product) {
+        for (const opt of item.selectedOptions) {
+          if (opt.selected) {
+            for (const sel of opt.selected) {
+              unitPrice += Number(sel.priceDelta) || 0;
+            }
+          }
+        }
+      }
+      validatedItems.push({
+        productId: item.productId,
+        name: item.name || (product ? product.name : ''),
+        qty: Number(item.qty) || 1,
+        price: unitPrice,
+        unitPrice: unitPrice,
+        selectedOptions: item.selectedOptions || [],
+        notes: item.notes || ''
+      });
+    }
+    // Merge with existing items
+    const mergedItems = [...(order.items || [])];
+    for (const newItem of validatedItems) {
+      const existingIdx = mergedItems.findIndex(i =>
+        String(i.productId) === String(newItem.productId) &&
+        JSON.stringify(i.selectedOptions || []) === JSON.stringify(newItem.selectedOptions || [])
+      );
+      if (existingIdx >= 0) {
+        mergedItems[existingIdx].qty = (mergedItems[existingIdx].qty || 0) + (newItem.qty || 0);
+        mergedItems[existingIdx].price = newItem.price;
+        mergedItems[existingIdx].unitPrice = newItem.unitPrice;
+      } else {
+        mergedItems.push(newItem);
+      }
+    }
+    // Recalculate totals
+    const subtotal = mergedItems.reduce((sum, i) => sum + ((i.unitPrice || i.price || 0) * (i.qty || 0)), 0);
+    const shipping = Number(order.shipping) || 0;
+    const discount = Number(order.discount) || 0;
+    const total = subtotal + shipping - discount;
+    const updatedOrder = orderRepository.update(order.id, {
+      items: mergedItems,
+      subtotal,
+      total
+    });
+    if (!updatedOrder) {
+      return res.status(500).json({ success: false, message: 'فشل تحديث الطلب.' });
+    }
+    const newItemsCount = validatedItems.reduce((s, i) => s + (Number(i.qty) || 0), 0);
+    const totalItemsCount = mergedItems.reduce((s, i) => s + (Number(i.qty) || 0), 0);
+    res.json({
+      success: true,
+      message: 'تمت إضافة الأصناف بنجاح.',
+      order: {
+        id: updatedOrder.id,
+        orderNumber: updatedOrder.orderNumber || updatedOrder.id,
+        total: updatedOrder.total || 0,
+        itemsCount: totalItemsCount,
+        addedCount: newItemsCount
+      }
+    });
+  } catch (err) {
+    console.error('[TABLE-MENU ADD ITEMS ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل إضافة الأصناف.' });
+  }
+});
+
+/* =========================
    API: DIRECT SALE (Stock Deduction)
 ========================= */
 app.post('/api/direct-sale', requirePerm('update_orders'), (req, res) => {
