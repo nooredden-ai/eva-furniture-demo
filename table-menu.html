@@ -176,24 +176,14 @@ img{max-width:100%;display:block}
 .toast-info{background:var(--surface);color:var(--text);border:1px solid var(--border)}
 .toast-error{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
 @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-/* RESPONSIVE DESKTOP */
+/* Responsive */
 @media(min-width:900px){
-  .products-wrap{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));padding:16px;gap:16px}
-  .prod-card-img{height:150px}
+  .products-wrap{grid-template-columns:repeat(auto-fill,minmax(210px,1fr));padding:16px;gap:16px}
+  .prod-card-img{height:140px}
   .modal-box{border-radius:var(--radius-lg);margin:auto 16px;animation:none}
   .modal-overlay.show{align-items:center}
-  .cart-fab{display:none!important}
-  .cart-sheet{position:sticky;top:0;width:380px;flex-shrink:0;height:100%;display:flex!important;animation:none;border-right:1px solid var(--border)}
-  .app-root{flex-direction:row}
-  .main-area{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-  .cart-sheet-header{min-height:var(--header-h)}
-  .cart-sheet-close{display:none}
 }
-@media(max-width:899px){
-  .app-root.has-cart-items .cart-fab{display:flex}
-  .cart-sheet{position:fixed}
-  .desktop-cart-label{display:none}
-}
+.app-root.has-cart-items .cart-fab{display:flex}
 </style>
 </head>
 <body>
