@@ -687,7 +687,12 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
   };
 
   window.copyQR=function(code){
-    var url=window.location.origin+'/?type=dinein&table='+encodeURIComponent(code);
+    var table = tables.find(function(t){return String(t.code)===String(code)});
+    if(!table||!table.qrToken){
+      showToast('رمز QR غير متاح لهذه الطاولة','error');
+      return;
+    }
+    var url=window.location.origin+'/table-menu.html?table='+encodeURIComponent(code)+'&token='+encodeURIComponent(table.qrToken);
     if(navigator.clipboard&&navigator.clipboard.writeText){
       navigator.clipboard.writeText(url).then(function(){showToast('تم نسخ رابط الطاولة '+code,'success')})['catch'](function(){showToast('فشل نسخ الرابط','error')});
     }else{
@@ -701,7 +706,12 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
   };
 
   window.openQR=function(code){
-    var url=window.location.origin+'/?type=dinein&table='+encodeURIComponent(code);
+    var table = tables.find(function(t){return String(t.code)===String(code)});
+    if(!table||!table.qrToken){
+      showToast('رمز QR غير متاح لهذه الطاولة','error');
+      return;
+    }
+    var url=window.location.origin+'/table-menu.html?table='+encodeURIComponent(code)+'&token='+encodeURIComponent(table.qrToken);
     window.open(url,'_blank');
   };
 
