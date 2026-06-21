@@ -150,6 +150,7 @@ img{max-width:100%;display:block}
 .cart-submit{width:100%;padding:14px;border-radius:var(--radius-sm);font-size:1.05rem;font-weight:800;background:var(--primary);color:#fff;min-height:52px;transition:background .15s}
 .cart-submit:active{background:var(--primary-hover)}
 .cart-submit:disabled{opacity:.45;pointer-events:none}
+.open-order-banner{display:none;padding:10px 14px;margin-bottom:8px;border-radius:var(--radius-sm);background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);font-size:.85rem;font-weight:700;color:#f59e0b;text-align:center;line-height:1.5}
 /* LOADING STATE ON CART BUTTON */
 .cart-submit.loading{pointer-events:none;opacity:.7}
 /* SUCCESS SCREEN */
@@ -218,7 +219,7 @@ img{max-width:100%;display:block}
         <span id="table-badge-text">طاولة T01</span>
       </div>
     </header>
-    <div class="hint-bar">اختر طلبك وسيصل مباشرة للمطبخ</div>
+    <div class="hint-bar" id="hint-bar">اختر طلبك وسيصل مباشرة للمطبخ</div>
     <!-- CATEGORIES -->
     <nav class="cat-bar" id="cat-bar"></nav>
     <!-- SEARCH -->
@@ -251,6 +252,7 @@ img{max-width:100%;display:block}
     </div>
     <div class="cart-sheet-body" id="cart-body"></div>
     <div class="cart-sheet-footer">
+      <div class="open-order-banner" id="open-order-banner"></div>
       <div class="cart-total-row"><span>الإجمالي</span><span class="val" id="cart-total">0 ₪</span></div>
       <textarea class="cart-notes" id="cart-general-notes" placeholder="ملاحظة عامة للطلب (اختياري)" rows="1"></textarea>
       <button class="cart-submit" id="cart-submit" onclick="submitOrder()">إرسال الطلب للمطبخ</button>
@@ -269,10 +271,10 @@ img{max-width:100%;display:block}
 <!-- SUCCESS SCREEN -->
 <div class="success-screen" id="success-screen">
   <svg class="success-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-  <div class="success-title">تم إرسال طلبك للمطبخ</div>
+  <div class="success-title" id="success-title">تم إرسال طلبك للمطبخ</div>
   <div class="success-order" id="success-order">#---</div>
   <div class="success-table" id="success-table">طاولة T01</div>
-  <div class="success-hint">يمكنك متابعة الطلب من شاشة الطلبات داخل المطعم</div>
+  <div class="success-hint" id="success-hint">يمكنك متابعة الطلب من شاشة الطلبات داخل المطعم</div>
   <div class="success-actions">
     <button class="success-btn primary" onclick="window.startNewOrder()">طلب إضافي</button>
     <button class="success-btn secondary" onclick="window.backToMenu()">العودة للمنيو</button>
@@ -289,6 +291,8 @@ img{max-width:100%;display:block}
   let tableNumber = '';
   let tableToken = '';
   let storeName = '';
+  let openOrderId = null;
+  let openOrderNumber = null;
 
   function showError(msg, cls){
     const t = $('toast');
@@ -305,6 +309,27 @@ img{max-width:100%;display:block}
     if(!r.ok) return null;
     const d = await r.json();
     return d && d.data ? d.data : (Array.isArray(d) ? d : null);
+  }
+
+  async function checkOpenOrder(){
+    try{
+      const r=await fetch('/api/table-menu/open?table='+encodeURIComponent(tableNumber)+'&token='+encodeURIComponent(tableToken));
+      if(!r.ok) return;
+      const d=await r.json();
+      if(d&&d.order){
+        openOrderId=d.order.id;
+        openOrderNumber=d.order.orderNumber||d.order.id;
+        var banner=$('open-order-banner');
+        var btn=$('cart-submit');
+        var hint=$('hint-bar');
+        if(banner){
+          banner.textContent='لديك طلب مفتوح على هذه الطاولة (#'+openOrderNumber+')، سيتم إضافة الأصناف لهذا الطلب.';
+          banner.style.display='block';
+        }
+        if(btn) btn.textContent='إضافة للطلب الحالي';
+        if(hint) hint.textContent='يوجد طلب مفتوح على هذه الطاولة. سيتم إضافة أصنافك إليه.';
+      }
+    }catch(e){console.error('[QR] checkOpenOrder error:',e);}
   }
 
   // ---- INIT ----
@@ -336,6 +361,7 @@ img{max-width:100%;display:block}
     renderCategories();
     renderProducts();
     updateCartFab();
+    await checkOpenOrder();
   }
 
   async function loadSettings(){
@@ -743,7 +769,7 @@ img{max-width:100%;display:block}
     _submitting = true;
     const btn = $('cart-submit');
     const originalText = btn.textContent;
-    btn.textContent = 'جاري إرسال الطلب للمطبخ...';
+    btn.textContent = 'جاري الإرسال...';
     btn.classList.add('loading');
     closeCart();
 
@@ -758,51 +784,88 @@ img{max-width:100%;display:block}
 
     const generalNotes = ($('cart-general-notes') ? $('cart-general-notes').value.trim() : '') || '';
 
-    const body = {
-      customer: 'طاولة ' + tableNumber,
-      phone: '0000000000',
-      items: items,
-      orderType: 'dinein',
-      tableNumber: tableNumber,
-      tableToken: tableToken,
-      notes: generalNotes || undefined,
-      paymentMethod: 'cash',
-      source: 'qr-menu'
-    };
-
-    const headers = {'Content-Type': 'application/json'};
-    const token = sessionStorage.getItem('louloToken');
-    if(token) headers['Authorization'] = 'Bearer ' + token;
-
-    fetch('/api/orders', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(body)
-    })
-    .then(r => r.json())
-    .then(res => {
-      _submitting = false;
-      if(res && res.success && res.data){
-        const order = res.data;
-        const orderId = order.orderNumber || order.id;
-        showSuccess(orderId, tableNumber);
-        cart = [];
-        renderCart();
-        updateCartFab();
+    if(openOrderId){
+      // Add to existing open order
+      fetch('/api/table-menu/orders/'+encodeURIComponent(openOrderId)+'/items', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          tableNumber: tableNumber,
+          tableToken: tableToken,
+          items: items,
+          notes: generalNotes || undefined
+        })
+      })
+      .then(r => r.json())
+      .then(res => {
+        _submitting = false;
+        if(res && res.success){
+          showSuccessAdded(openOrderNumber, tableNumber);
+          cart = [];
+          renderCart();
+          updateCartFab();
+          btn.textContent = originalText;
+          btn.classList.remove('loading');
+        } else {
+          btn.textContent = originalText;
+          btn.classList.remove('loading');
+          showError('تعذر إضافة الأصناف. يرجى المحاولة مرة أخرى أو طلب المساعدة من الموظف.', 'toast-error');
+        }
+      })
+      .catch(err => {
+        _submitting = false;
         btn.textContent = originalText;
         btn.classList.remove('loading');
-      } else {
+        showError('تعذر إضافة الأصناف. يرجى المحاولة مرة أخرى أو طلب المساعدة من الموظف.', 'toast-error');
+      });
+    } else {
+      // New order
+      const body = {
+        customer: 'طاولة ' + tableNumber,
+        phone: '0000000000',
+        items: items,
+        orderType: 'dinein',
+        tableNumber: tableNumber,
+        tableToken: tableToken,
+        notes: generalNotes || undefined,
+        paymentMethod: 'cash',
+        source: 'qr-menu'
+      };
+
+      const headers = {'Content-Type': 'application/json'};
+      const token = sessionStorage.getItem('louloToken');
+      if(token) headers['Authorization'] = 'Bearer ' + token;
+
+      fetch('/api/orders', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(body)
+      })
+      .then(r => r.json())
+      .then(res => {
+        _submitting = false;
+        if(res && res.success && res.data){
+          const order = res.data;
+          const orderId = order.orderNumber || order.id;
+          showSuccess(orderId, tableNumber);
+          cart = [];
+          renderCart();
+          updateCartFab();
+          btn.textContent = originalText;
+          btn.classList.remove('loading');
+        } else {
+          btn.textContent = originalText;
+          btn.classList.remove('loading');
+          showError('تعذر إرسال الطلب. يرجى المحاولة مرة أخرى أو طلب المساعدة من الموظف.', 'toast-error');
+        }
+      })
+      .catch(err => {
+        _submitting = false;
         btn.textContent = originalText;
         btn.classList.remove('loading');
         showError('تعذر إرسال الطلب. يرجى المحاولة مرة أخرى أو طلب المساعدة من الموظف.', 'toast-error');
-      }
-    })
-    .catch(err => {
-      _submitting = false;
-      btn.textContent = originalText;
-      btn.classList.remove('loading');
-      showError('تعذر إرسال الطلب. يرجى المحاولة مرة أخرى أو طلب المساعدة من الموظف.', 'toast-error');
-    });
+      });
+    }
   }
   window.submitOrder = submitOrder;
 
@@ -810,7 +873,25 @@ img{max-width:100%;display:block}
     const scr = $('success-screen');
     const orderEl = $('success-order');
     const tableEl = $('success-table');
+    var title=$('success-title');
+    var hint=$('success-hint');
+    if(title) title.textContent = 'تم إرسال طلبك للمطبخ';
+    if(hint) hint.textContent = 'يمكنك متابعة الطلب من شاشة الطلبات داخل المطعم';
     if(orderEl) orderEl.textContent = '#' + orderId;
+    if(tableEl) tableEl.textContent = 'طاولة ' + table;
+    if(scr) scr.classList.add('show');
+    closeCart();
+  }
+
+  function showSuccessAdded(orderNumber, table){
+    const scr = $('success-screen');
+    const orderEl = $('success-order');
+    const tableEl = $('success-table');
+    var title=$('success-title');
+    var hint=$('success-hint');
+    if(title) title.textContent = 'تمت إضافة الأصناف إلى طلبك الحالي';
+    if(hint) hint.textContent = 'الأصناف الجديدة تم إرسالها للمطبخ. يمكنك إضافة المزيد من الأصناف.';
+    if(orderEl) orderEl.textContent = '#' + orderNumber;
     if(tableEl) tableEl.textContent = 'طاولة ' + table;
     if(scr) scr.classList.add('show');
     closeCart();
@@ -834,6 +915,8 @@ img{max-width:100%;display:block}
     renderCart();
     updateCartFab();
     $('cart-general-notes').value = '';
+    // Re-check open order when going back to menu
+    checkOpenOrder();
   }
   window.backToMenu = backToMenu;
 
