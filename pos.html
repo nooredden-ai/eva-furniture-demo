@@ -50,17 +50,20 @@ input,select,textarea{font-family:inherit}
 #pos-table-badge{display:none;align-items:center;gap:6px;background:var(--clr-primary-light);border:1px solid var(--clr-primary);border-radius:8px;padding:4px 14px;font-size:.85rem;font-weight:700;color:var(--clr-primary)}
 /* MAIN LAYOUT */
 .pos-layout{height:calc(100vh - var(--header-h));display:flex;flex-direction:row-reverse;overflow:hidden}
-.pos-products{flex:1;display:flex;flex-direction:column;overflow:hidden;border-left:1px solid var(--clr-border);min-width:0}
-.pos-cart{width:clamp(360px,30vw,430px);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;border-right:1px solid var(--clr-border);background:var(--clr-surface);box-shadow:-4px 0 24px rgba(45,42,36,0.06)}
-/* SEARCH & FILTERS */
-.products-top{padding:10px 18px 8px;display:flex;gap:10px;flex-shrink:0;flex-wrap:wrap;background:var(--clr-surface);border-bottom:1px solid var(--clr-border)}
-.search-box{flex:1;min-width:160px;padding:14px 18px;border-radius:12px;border:1px solid var(--clr-border);background:var(--clr-surface2);color:var(--clr-text);font-size:1rem;outline:none;transition:border-color var(--transition),box-shadow var(--transition)}
+/* CATEGORY RAIL */
+.pos-categories{width:130px;flex-shrink:0;display:flex;flex-direction:column;background:var(--clr-surface);border-left:1px solid var(--clr-border);padding:8px;overflow-y:auto;gap:4px}
+.pos-categories .cat-filter{display:flex;flex-direction:column;gap:4px;padding:0;background:transparent;border:none}
+.pos-categories .cat-btn{width:100%;padding:10px 8px;border-radius:10px;font-size:.8rem;font-weight:700;background:var(--clr-surface2);color:var(--clr-text2);transition:all var(--transition);white-space:nowrap;min-height:42px;text-align:center;display:flex;align-items:center;justify-content:center}
+.pos-categories .cat-btn:hover{background:var(--clr-surface3);color:var(--clr-text)}
+.pos-categories .cat-btn.active{background:var(--clr-primary);color:#fff;box-shadow:0 2px 8px rgba(194,65,12,0.2)}
+/* PRODUCTS */
+.pos-products{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.products-top{padding:10px 14px 8px;display:flex;gap:10px;flex-shrink:0;background:var(--clr-surface);border-bottom:1px solid var(--clr-border)}
+.search-box{flex:1;min-width:160px;padding:12px 16px;border-radius:12px;border:1px solid var(--clr-border);background:var(--clr-surface2);color:var(--clr-text);font-size:.95rem;outline:none;transition:border-color var(--transition),box-shadow var(--transition)}
 .search-box:focus{border-color:var(--clr-primary);box-shadow:0 0 0 3px var(--clr-primary-light)}
 .search-box::placeholder{color:var(--clr-text2)}
-.cat-filter{display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;padding:6px 18px;background:var(--clr-surface);border-bottom:1px solid var(--clr-border)}
-.cat-btn{padding:8px 18px;border-radius:20px;font-size:.85rem;font-weight:600;background:var(--clr-surface2);color:var(--clr-text2);transition:all var(--transition);white-space:nowrap;min-height:40px}
-.cat-btn:hover{background:var(--clr-surface3);color:var(--clr-text)}
-.cat-btn.active{background:var(--clr-primary);color:#fff}
+/* CART */
+.pos-cart{width:clamp(380px,28vw,420px);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;background:var(--clr-surface);box-shadow:-4px 0 20px rgba(45,42,36,0.05)}
 /* PRODUCTS GRID */
 .products-grid{flex:1;overflow-y:auto;padding:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;align-content:start}
 .products-grid::-webkit-scrollbar{width:6px}
@@ -100,7 +103,7 @@ input,select,textarea{font-family:inherit}
 .ci-options{font-size:.65rem;color:var(--clr-text2);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ci-notes{font-size:.65rem;color:var(--clr-warning);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ci-actions{display:flex;align-items:center;gap:4px;margin-top:4px;padding-top:4px;border-top:1px solid var(--clr-border)}
-.qty-btn{width:28px;height:28px;border-radius:6px;background:var(--clr-surface2);color:var(--clr-text);font-size:.95rem;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all var(--transition)}
+.qty-btn{width:32px;height:32px;border-radius:8px;background:var(--clr-surface2);color:var(--clr-text);font-size:1rem;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all var(--transition)}
 .qty-btn:hover{background:var(--clr-primary);color:#fff}
 .qty-btn.danger:hover{background:var(--clr-danger);color:#fff}
 .qty-val{min-width:24px;text-align:center;font-size:.9rem;font-weight:800;color:var(--clr-primary)}
@@ -176,9 +179,12 @@ input,select,textarea{font-family:inherit}
 /* RESPONSIVE */
 @media(max-width:900px){
   .pos-layout{flex-direction:column-reverse}
-  .pos-cart{width:100%;height:50%}
-  .pos-products{height:50%}
-  .products-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  .pos-cart{width:100%;height:45%}
+  .pos-products{height:55%}
+  .pos-categories{width:100%;height:auto;flex-direction:row;border-left:none;border-top:1px solid var(--clr-border);padding:6px 8px;overflow-x:auto;overflow-y:hidden}
+  .pos-categories .cat-filter{flex-direction:row;overflow-y:hidden;flex-wrap:nowrap}
+  .pos-categories .cat-btn{min-height:38px;padding:8px 14px;width:auto;flex-shrink:0}
+  .products-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
 }
 </style>
 </head>
@@ -195,13 +201,6 @@ input,select,textarea{font-family:inherit}
     </div>
   </header>
   <div class="pos-layout">
-    <div class="pos-products">
-      <div class="products-top">
-        <input class="search-box" id="search-box" type="text" placeholder="بحث عن منتج..." oninput="filterProducts()">
-      </div>
-      <div class="cat-filter" id="cat-filter"></div>
-      <div class="products-grid" id="products-grid"></div>
-    </div>
       <div class="pos-cart">
         <div class="cart-header">
           <h3 id="cart-header-title">الطلب الحالي</h3>
@@ -240,6 +239,15 @@ input,select,textarea{font-family:inherit}
           </div>
         </div>
       </div>
+    <div class="pos-products">
+      <div class="products-top">
+        <input class="search-box" id="search-box" type="text" placeholder="بحث عن منتج..." oninput="filterProducts()">
+      </div>
+      <div class="products-grid" id="products-grid"></div>
+    </div>
+    <div class="pos-categories">
+      <div class="cat-filter" id="cat-filter"></div>
+    </div>
   </div>
 </div>
 <div class="modal-overlay" id="options-modal">
