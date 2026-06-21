@@ -1296,7 +1296,7 @@ app.get('/api/orders/open', requirePerm('view_orders'), (req, res) => {
     return res.status(400).json({ success: false, message: 'tableNumber is required' });
   }
   const allOrders = orderRepository.findAll();
-  const openStatuses = ['pending', 'confirmed', 'processing'];
+  const openStatuses = ['pending', 'confirmed', 'processing', 'shipped'];
   const existingOrder = allOrders.find(o =>
     o.orderType === 'dinein' &&
     String(o.tableNumber) === tableNumber &&
@@ -1657,7 +1657,7 @@ app.post('/api/orders/:id/items', requirePerm('update_orders'), (req, res) => {
     if (order.orderType !== 'dinein') {
       return res.status(400).json({ success: false, message: 'لا يمكن إضافة أصناف إلا لطلبات الطاولات.' });
     }
-    const openStatuses = ['pending', 'confirmed', 'processing'];
+    const openStatuses = ['pending', 'confirmed', 'processing', 'shipped'];
     if (!openStatuses.includes(order.status)) {
       return res.status(400).json({ success: false, message: 'لا يمكن إضافة أصناف إلى طلب مغلق أو جاهز.' });
     }
@@ -1746,7 +1746,7 @@ app.get('/api/table-menu/open', simpleRateLimit, (req, res) => {
       return res.status(400).json({ success: false, message: 'رابط الطاولة غير صالح. يرجى مسح رمز QR الموجود على الطاولة.' });
     }
     const allOrders = orderRepository.findAll();
-    const openStatuses = ['pending', 'confirmed', 'processing'];
+    const openStatuses = ['pending', 'confirmed', 'processing', 'shipped'];
     const existingOrder = allOrders.find(o =>
       o.orderType === 'dinein' &&
       String(o.tableNumber) === tableNum &&
@@ -1800,7 +1800,7 @@ app.post('/api/table-menu/orders/:id/items', simpleRateLimit, (req, res) => {
     if (String(order.tableNumber) !== String(tableNumber)) {
       return res.status(400).json({ success: false, message: 'هذا الطلب لا يخص هذه الطاولة.' });
     }
-    const openStatuses = ['pending', 'confirmed', 'processing'];
+    const openStatuses = ['pending', 'confirmed', 'processing', 'shipped'];
     if (!openStatuses.includes(order.status)) {
       return res.status(400).json({ success: false, message: 'لا يمكن إضافة أصناف إلى طلب مغلق أو جاهز.' });
     }
