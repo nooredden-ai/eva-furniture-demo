@@ -131,20 +131,20 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 /* Grid */
 .tables-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
-  gap:14px;
+  grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:12px;
   flex:1
 }
 /* Card */
 .table-card{
   background:var(--surface);
   border-radius:var(--radius);
-  padding:16px 18px;
+  padding:14px 16px;
   border:1px solid var(--border);
   transition:all .2s;
   display:flex;
   flex-direction:column;
-  gap:10px;
+  gap:8px;
   box-shadow:var(--shadow)
 }
 .table-card:hover{border-color:var(--surface3);box-shadow:0 6px 24px rgba(45,42,36,0.10)}
@@ -152,30 +152,37 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 .table-card:has(.status-badge.occupied){border-right:4px solid var(--occupied)}
 .table-card:has(.status-badge.ready){border-right:4px solid var(--ready)}
 .table-card:has(.status-badge.inactive){border-right:4px solid var(--inactive)}
-.table-card.disabled{opacity:.55}
-.table-card.disabled:hover{border-color:var(--border);box-shadow:var(--shadow)}
-.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
-.card-title-group{display:flex;flex-direction:column;gap:1px}
-.card-table-code{font-size:1.4rem;font-weight:900;color:var(--text);line-height:1.2}
-.card-table-code .code-hash{color:var(--primary);margin-left:2px}
-.card-table-name{font-size:.82rem;color:var(--text2)}
-.card-capacity{
-  display:flex;align-items:center;gap:4px;
-  font-size:.75rem;color:var(--text3);margin-top:1px
+/* Available tables (no order) are shorter & lighter */
+.table-card:has(.status-badge.available):not(:has(.order-box)){
+  padding:12px 14px;gap:6px
 }
-.card-capacity svg{width:13px;height:13px;color:var(--text3)}
+.table-card:has(.status-badge.available):not(:has(.order-box)) .card-actions{margin-top:0}
+/* Occupied/ready tables get subtle bg tint */
+.table-card:has(.order-box){background:var(--surface);border-color:var(--surface3)}
+.table-card.disabled{opacity:.5}
+.table-card.disabled:hover{border-color:var(--border);box-shadow:var(--shadow)}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+.card-title-group{display:flex;flex-direction:column;gap:0}
+.card-table-code{font-size:1.25rem;font-weight:900;color:var(--text);line-height:1.2}
+.card-table-code .code-hash{color:var(--primary);margin-left:2px}
+.card-table-name{font-size:.78rem;color:var(--text2)}
+.card-capacity{
+  display:flex;align-items:center;gap:3px;
+  font-size:.7rem;color:var(--text3);margin-top:0
+}
+.card-capacity svg{width:12px;height:12px;color:var(--text3)}
 /* Status badge */
 .status-badge{
   display:flex;
   align-items:center;
-  gap:4px;
-  padding:4px 12px;
-  border-radius:16px;
-  font-size:.72rem;
+  gap:3px;
+  padding:3px 10px;
+  border-radius:14px;
+  font-size:.68rem;
   font-weight:700;
   white-space:nowrap
 }
-.status-badge svg{width:14px;height:14px}
+.status-badge svg{width:12px;height:12px}
 .status-badge.available{background:var(--available-bg);color:var(--available)}
 .status-badge.occupied{background:var(--occupied-bg);color:var(--occupied)}
 .status-badge.ready{background:var(--ready-bg);color:var(--ready)}
@@ -184,10 +191,10 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 .order-box{
   background:var(--surface2);
   border-radius:var(--radius-sm);
-  padding:10px 12px;
+  padding:8px 10px;
   display:flex;
   flex-direction:column;
-  gap:5px;
+  gap:4px;
   border-right:3px solid var(--occupied)
 }
 .order-box.status-ready{border-right-color:var(--ready)}
@@ -207,57 +214,66 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
 .dot-processing{background:#d97706}
 .dot-shipped{background:#0ea5e9}
 /* Actions */
-.card-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:1px}
+.card-actions{display:flex;gap:4px;flex-wrap:wrap;margin-top:1px}
 .card-btn{
-  display:flex;align-items:center;justify-content:center;gap:5px;
-  padding:8px 12px;
+  display:flex;align-items:center;justify-content:center;gap:4px;
+  padding:7px 10px;
   border-radius:var(--radius-sm);
-  font-size:.76rem;
+  font-size:.74rem;
   font-weight:700;
   transition:all .15s;
   text-align:center;
-  min-height:38px
+  min-height:36px
 }
-.card-btn svg{width:16px;height:16px}
+.card-btn svg{width:15px;height:15px}
+/* POS — primary action */
 .card-btn.pos{
-  flex:2;
+  flex:3;
   background:var(--primary);
   color:#fff;
-  min-width:90px
+  min-width:80px;
+  font-size:.82rem;
+  min-height:42px;
+  box-shadow:0 2px 8px rgba(194,65,12,0.15)
 }
-.card-btn.pos:hover{background:var(--primary-hover)}
+.card-btn.pos:hover{background:var(--primary-hover);box-shadow:0 3px 12px rgba(194,65,12,0.2)}
+/* QR & Link — secondary */
 .card-btn.qr{
   flex:1;
   background:var(--surface2);
   color:var(--text2);
-  min-width:54px
+  min-width:44px;
+  font-size:.72rem
 }
 .card-btn.qr:hover{background:var(--surface3);color:var(--text)}
 .card-btn.link{
   flex:1;
   background:var(--surface2);
   color:var(--text2);
-  min-width:54px
+  min-width:44px;
+  font-size:.72rem
 }
 .card-btn.link:hover{background:var(--surface3);color:var(--text)}
+/* Admin — tertiary */
 .card-btn.admin-edit{
-  background:var(--surface2);
-  color:var(--text2);
-  padding:8px 10px;
-  min-width:38px;
-  flex:0
-}
-.card-btn.admin-edit:hover{background:var(--surface3);color:var(--text)}
-.card-btn.admin-toggle{
-  min-width:38px;
+  background:transparent;
+  color:var(--text3);
+  padding:6px 8px;
+  min-width:34px;
   flex:0;
-  padding:8px 10px
+  font-size:.7rem
 }
-.card-btn.admin-toggle.on{background:var(--danger-bg);color:var(--danger)}
-.card-btn.admin-toggle.on:hover{background:rgba(220,38,38,.25)}
-.card-btn.admin-toggle.off{background:var(--available-bg);color:var(--available)}
-.card-btn.admin-toggle.off:hover{background:rgba(5,150,105,.25)}
-.admin-actions{display:flex;gap:5px}
+.card-btn.admin-edit:hover{background:var(--surface2);color:var(--text2)}
+.card-btn.admin-toggle{
+  min-width:34px;
+  flex:0;
+  padding:6px 8px
+}
+.card-btn.admin-toggle.on{background:transparent;color:var(--danger)}
+.card-btn.admin-toggle.on:hover{background:var(--danger-bg)}
+.card-btn.admin-toggle.off{background:transparent;color:var(--available)}
+.card-btn.admin-toggle.off:hover{background:var(--available-bg)}
+.admin-actions{display:flex;gap:3px}
 /* Empty state */
 .empty-state{
   grid-column:1/-1;
