@@ -50,18 +50,19 @@ input,select,textarea{font-family:inherit}
 #pos-table-badge{display:none;align-items:center;gap:6px;background:var(--clr-primary-light);border:1px solid var(--clr-primary);border-radius:8px;padding:4px 14px;font-size:.85rem;font-weight:700;color:var(--clr-primary)}
 /* MAIN LAYOUT */
 .pos-layout{height:calc(100vh - var(--header-h));display:flex;flex-direction:row-reverse;overflow:hidden}
-/* CATEGORY RAIL */
-.pos-categories{width:130px;flex-shrink:0;display:flex;flex-direction:column;background:var(--clr-surface);border-left:1px solid var(--clr-border);padding:8px;overflow-y:auto;gap:4px}
-.pos-categories .cat-filter{display:flex;flex-direction:column;gap:4px;padding:0;background:transparent;border:none}
-.pos-categories .cat-btn{width:100%;padding:10px 8px;border-radius:10px;font-size:.8rem;font-weight:700;background:var(--clr-surface2);color:var(--clr-text2);transition:all var(--transition);white-space:nowrap;min-height:42px;text-align:center;display:flex;align-items:center;justify-content:center}
-.pos-categories .cat-btn:hover{background:var(--clr-surface3);color:var(--clr-text)}
-.pos-categories .cat-btn.active{background:var(--clr-primary);color:#fff;box-shadow:0 2px 8px rgba(194,65,12,0.2)}
 /* PRODUCTS */
-.pos-products{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
-.products-top{padding:10px 14px 8px;display:flex;gap:10px;flex-shrink:0;background:var(--clr-surface);border-bottom:1px solid var(--clr-border)}
+.pos-products{flex:1;display:flex;flex-direction:column;overflow:hidden;border-left:1px solid var(--clr-border);min-width:0}
+.products-top{padding:10px 14px 6px;display:flex;gap:10px;flex-shrink:0;background:var(--clr-surface);border-bottom:1px solid var(--clr-border)}
 .search-box{flex:1;min-width:160px;padding:12px 16px;border-radius:12px;border:1px solid var(--clr-border);background:var(--clr-surface2);color:var(--clr-text);font-size:.95rem;outline:none;transition:border-color var(--transition),box-shadow var(--transition)}
 .search-box:focus{border-color:var(--clr-primary);box-shadow:0 0 0 3px var(--clr-primary-light)}
 .search-box::placeholder{color:var(--clr-text2)}
+/* CATEGORIES */
+.cat-filter{display:flex;gap:6px;flex-shrink:0;padding:6px 14px 8px;background:var(--clr-surface);overflow-x:auto;overflow-y:hidden;white-space:nowrap}
+.cat-filter::-webkit-scrollbar{height:3px}
+.cat-filter::-webkit-scrollbar-thumb{background:var(--clr-surface3);border-radius:4px}
+.cat-btn{padding:6px 16px;border-radius:20px;font-size:.82rem;font-weight:700;background:var(--clr-surface2);color:var(--clr-text2);transition:all var(--transition);white-space:nowrap;min-height:36px;flex-shrink:0}
+.cat-btn:hover{background:var(--clr-surface3);color:var(--clr-text)}
+.cat-btn.active{background:var(--clr-primary);color:#fff;box-shadow:0 2px 8px rgba(194,65,12,0.2)}
 /* CART */
 .pos-cart{width:clamp(380px,28vw,420px);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;background:var(--clr-surface);box-shadow:-4px 0 20px rgba(45,42,36,0.05)}
 /* PRODUCTS GRID */
@@ -181,10 +182,9 @@ input,select,textarea{font-family:inherit}
   .pos-layout{flex-direction:column-reverse}
   .pos-cart{width:100%;height:45%}
   .pos-products{height:55%}
-  .pos-categories{width:100%;height:auto;flex-direction:row;border-left:none;border-top:1px solid var(--clr-border);padding:6px 8px;overflow-x:auto;overflow-y:hidden}
-  .pos-categories .cat-filter{flex-direction:row;overflow-y:hidden;flex-wrap:nowrap}
-  .pos-categories .cat-btn{min-height:38px;padding:8px 14px;width:auto;flex-shrink:0}
-  .products-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+  .cat-filter{padding:4px 10px 6px}
+  .cat-btn{min-height:34px;padding:5px 14px;font-size:.78rem}
+  .products-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));padding:8px;gap:8px}
 }
 </style>
 </head>
@@ -201,6 +201,13 @@ input,select,textarea{font-family:inherit}
     </div>
   </header>
   <div class="pos-layout">
+    <div class="pos-products">
+      <div class="products-top">
+        <input class="search-box" id="search-box" type="text" placeholder="بحث عن منتج..." oninput="filterProducts()">
+      </div>
+      <div class="cat-filter" id="cat-filter"></div>
+      <div class="products-grid" id="products-grid"></div>
+    </div>
       <div class="pos-cart">
         <div class="cart-header">
           <h3 id="cart-header-title">الطلب الحالي</h3>
@@ -239,15 +246,7 @@ input,select,textarea{font-family:inherit}
           </div>
         </div>
       </div>
-    <div class="pos-products">
-      <div class="products-top">
-        <input class="search-box" id="search-box" type="text" placeholder="بحث عن منتج..." oninput="filterProducts()">
-      </div>
-      <div class="products-grid" id="products-grid"></div>
-    </div>
-    <div class="pos-categories">
-      <div class="cat-filter" id="cat-filter"></div>
-    </div>
+  </div>
   </div>
 </div>
 <div class="modal-overlay" id="options-modal">
