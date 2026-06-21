@@ -194,6 +194,27 @@
 
     <!-- ==================== ADVANCED DASHBOARD (super_admin) ==================== -->
     <div class="admin-page active" id="admin-dashboard-advanced" style="display:none">
+
+      <!-- Hero Section -->
+      <div style="background:linear-gradient(135deg,#c2410c,#d97706);border-radius:16px;padding:28px 32px;margin-bottom:24px;color:#fff">
+        <h2 style="font-size:1.6rem;font-weight:800;margin-bottom:4px;color:#fff">لوحة تشغيل المطعم</h2>
+        <p style="opacity:.85;font-size:.95rem;margin-bottom:18px">إدارة الطلبات، الطاولات، المطبخ، والمنتجات من مكان واحد</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <a href="/pos" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);color:#fff;padding:10px 20px;border-radius:10px;font-size:.85rem;font-weight:700;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(255,255,255,.3)'" onmouseout="this.style.background='rgba(255,255,255,.2)'">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> فتح POS
+          </a>
+          <a href="/tables" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);color:#fff;padding:10px 20px;border-radius:10px;font-size:.85rem;font-weight:700;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(255,255,255,.3)'" onmouseout="this.style.background='rgba(255,255,255,.2)'">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c6 0 1.1.9 2 2 2h3Zm0 0v7"/></svg> الطاولات
+          </a>
+          <a href="/kitchen" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);color:#fff;padding:10px 20px;border-radius:10px;font-size:.85rem;font-weight:700;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(255,255,255,.3)'" onmouseout="this.style.background='rgba(255,255,255,.2)'">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> المطبخ
+          </a>
+          <a href="/customer-display" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);color:#fff;padding:10px 20px;border-radius:10px;font-size:.85rem;font-weight:700;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(255,255,255,.3)'" onmouseout="this.style.background='rgba(255,255,255,.2)'">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> شاشة الزبائن
+          </a>
+        </div>
+      </div>
+
       <div class="stats-grid">
         <div class="stat-card purple">
           <div class="stat-icon"><i data-lucide="package" style="width:28px;height:28px"></i></div>
@@ -265,6 +286,13 @@
         </div>
       </div>
 
+      <!-- Divider for analytics sections -->
+      <div style="display:flex;align-items:center;gap:8px;margin:24px 0 16px">
+        <div style="flex:1;height:1px;background:var(--admin-border)"></div>
+        <span style="font-size:.75rem;font-weight:600;color:var(--admin-text2);white-space:nowrap">تحليلات وإعدادات</span>
+        <div style="flex:1;height:1px;background:var(--admin-border)"></div>
+      </div>
+
       <!-- Admin Quick Actions -->
       <div class="quick-actions-card">
         <h3><i data-lucide="zap" style="width:18px;height:18px;vertical-align:middle;margin-left:6px;color:var(--admin-primary)"></i>إجراءات سريعة</h3>
@@ -323,6 +351,26 @@
 
     <!-- ==================== PREMIUM SIMPLIFIED DASHBOARD (store_owner / manager / employee) ==================== -->
     <div class="admin-page" id="admin-dashboard-simple" style="display:none">
+
+      <!-- Hero Section -->
+      <div style="background:linear-gradient(135deg,#c2410c,#d97706);border-radius:16px;padding:24px 28px;margin-bottom:20px;color:#fff">
+        <h2 style="font-size:1.4rem;font-weight:800;margin-bottom:4px;color:#fff">لوحة تشغيل المطعم</h2>
+        <p style="opacity:.85;font-size:.9rem;margin-bottom:16px">إدارة الطلبات، الطاولات، المطبخ، والمنتجات من مكان واحد</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a href="/pos" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);color:#fff;padding:8px 16px;border-radius:10px;font-size:.8rem;font-weight:700;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(255,255,255,.3)'" onmouseout="this.style.background='rgba(255,255,255,.2)'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> POS
+          </a>
+          <a href="/tables" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);color:#fff;padding:8px 16px;border-radius:10px;font-size:.8rem;font-weight:700;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(255,255,255,.3)'" onmouseout="this.style.background='rgba(255,255,255,.2)'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c6 0 1.1.9 2 2 2h3Zm0 0v7"/></svg> طاولات
+          </a>
+          <a href="/kitchen" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);color:#fff;padding:8px 16px;border-radius:10px;font-size:.8rem;font-weight:700;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(255,255,255,.3)'" onmouseout="this.style.background='rgba(255,255,255,.2)'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> مطبخ
+          </a>
+          <a href="/customer-display" target="_blank" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);color:#fff;padding:8px 16px;border-radius:10px;font-size:.8rem;font-weight:700;text-decoration:none;transition:.2s" onmouseover="this.style.background='rgba(255,255,255,.3)'" onmouseout="this.style.background='rgba(255,255,255,.2)'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> زبائن
+          </a>
+        </div>
+      </div>
 
       <!-- SECTION 1: Smart Welcome -->
       <div class="dash-welcome">
@@ -418,6 +466,15 @@
             <span class="ops-card-title">QR Menu</span>
             <span class="ops-card-desc">عرض قائمة QR للمنيو</span>
           </a>
+        </div>
+      </div>
+
+      <!-- SECTION 3: Extended Details -->
+      <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--admin-border)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="flex:1;height:1px;background:var(--admin-border)"></div>
+          <span style="font-size:.75rem;font-weight:600;color:var(--admin-text2);white-space:nowrap">تفاصيل وتحليلات إضافية</span>
+          <div style="flex:1;height:1px;background:var(--admin-border)"></div>
         </div>
       </div>
 
