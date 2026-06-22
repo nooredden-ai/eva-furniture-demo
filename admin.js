@@ -3018,6 +3018,7 @@ function openAddProduct() {
   $a('pm-state').value   = 'available';
   clearImagePreview();
   populateProductCategories();
+  loadProductOptions([]);
   $a('product-modal').classList.add('open');
   if (window.lucide) lucide.createIcons();
 }
@@ -3054,6 +3055,7 @@ function openEditProduct(productId) {
       clearImagePreview();
     }
     
+    loadProductOptions(p.options || []);
     $a('product-modal').classList.add('open');
     if (window.lucide) lucide.createIcons();
   });
@@ -3130,9 +3132,7 @@ async function processSaveProduct() {
     } catch (e) { /* ignore — safe fallback */ }
   }
 
-  if (editingProduct && editingProduct.productOptions) {
-    data.options = editingProduct.productOptions;
-  }
+  data.options = collectProductOptions();
   return withLock('save-product', () => {
     if (editingProduct) {
       return API.updateProduct(editingProduct.productId, data).then(res => {
@@ -3151,6 +3151,140 @@ async function processSaveProduct() {
         showAdminToast('تم إضافة الصنف بنجاح');
       });
     }
+  });
+}
+
+// ===== Product Options Editor =====
+let _optionGroupCounter = 0;
+
+function loadProductOptions(options) {
+  const container = $a('product-options-container');
+  container.innerHTML = '';
+  _optionGroupCounter = 0;
+  if (options && options.length) {
+    options.forEach((og) => addOptionGroup(og));
+  }
+}
+
+function addOptionGroup(data) {
+  const container = $a('product-options-container');
+  const idx = _optionGroupCounter++;
+  const div = document.createElement('div');
+  div.id = 'og-' + idx;
+  div.className = 'option-group';
+  div.style.cssText = 'border:1px solid var(--admin-border);border-radius:8px;padding:12px;margin-bottom:10px;background:var(--admin-card-bg)';
+  div.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+      '<span style="font-weight:600;font-size:0.85rem;color:var(--admin-text2)">مجموعة خيارات</span>' +
+      '<button type="button" class="topbar-btn btn-sm btn-outline" style="padding:2px 8px;font-size:0.75rem;color:#ef4444;border-color:#ef4444" onclick="removeOptionGroup(' + idx + ')"><i data-lucide="trash-2" style="width:12px;height:12px;vertical-align:middle;margin-left:2px"></i> حذف</button>' +
+    '</div>' +
+    '<div style="display:flex;gap:8px;margin-bottom:8px">' +
+      '<div style="flex:1"><label style="font-size:0.78rem;color:var(--admin-text2);display:block;margin-bottom:2px">اسم المجموعة</label><input type="text" class="og-name" value="' + ((data && data.name) || '') + '" placeholder="نوع الشريحة" style="width:100%;padding:6px 8px;border:1px solid var(--admin-border);border-radius:4px;font-size:0.85rem"></div>' +
+      '<div style="flex:1"><label style="font-size:0.78rem;color:var(--admin-text2);display:block;margin-bottom:2px">الاسم بالإنجليزي</label><input type="text" class="og-name-en" value="' + ((data && data.nameEn) || '') + '" placeholder="Patty Type" style="width:100%;padding:6px 8px;border:1px solid var(--admin-border);border-radius:4px;font-size:0.85rem"></div>' +
+    '</div>' +
+    '<div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">' +
+      '<label style="font-size:0.78rem;color:var(--admin-text2);display:flex;align-items:center;gap:4px">نوع الاختيار: ' +
+        '<select class="og-type" style="padding:4px 6px;border:1px solid var(--admin-border);border-radius:4px;font-size:0.85rem">' +
+          '<option value="select"' + ((data && data.type === 'select') ? ' selected' : '') + '>اختيار واحد</option>' +
+          '<option value="checkbox"' + ((data && data.type === 'checkbox') ? ' selected' : '') + '>إضافات متعددة</option>' +
+        '</select>' +
+      '</label>' +
+      '<label style="font-size:0.78rem;color:var(--admin-text2);display:flex;align-items:center;gap:4px;cursor:pointer">' +
+        '<input type="checkbox" class="og-required" ' + ((data && data.required) ? 'checked' : '') + ' style="width:14px;height:14px"> إجباري' +
+      '</label>' +
+    '</div>' +
+    '<div class="og-choices" style="padding-right:4px">' +
+      '<label style="font-size:0.78rem;color:var(--admin-text2);display:block;margin-bottom:4px">الاختيارات:</label>' +
+    '</div>' +
+    '<button type="button" class="topbar-btn btn-sm btn-outline" style="padding:2px 8px;font-size:0.78rem;margin-top:4px" onclick="addChoice(' + idx + ')"><i data-lucide="plus" style="width:12px;height:12px;vertical-align:middle;margin-left:2px"></i> إضافة خيار</button>';
+  container.appendChild(div);
+  const choicesDiv = div.querySelector('.og-choices');
+  if (data && data.choices && data.choices.length) {
+    data.choices.forEach((c) => {
+      const ci = choicesDiv.children.length;
+      addChoiceRow(choicesDiv, idx, ci, c);
+    });
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function addChoiceRow(container, gIdx, cIdx, data) {
+  const row = document.createElement('div');
+  row.className = 'og-choice-row';
+  row.style.cssText = 'display:flex;gap:6px;align-items:center;margin-bottom:4px';
+  row.innerHTML =
+    '<input type="text" class="oc-label" value="' + ((data && data.label) || '') + '" placeholder="الاسم" style="flex:2;padding:4px 6px;border:1px solid var(--admin-border);border-radius:4px;font-size:0.82rem">' +
+    '<input type="text" class="oc-label-en" value="' + ((data && data.labelEn) || '') + '" placeholder="English" style="flex:2;padding:4px 6px;border:1px solid var(--admin-border);border-radius:4px;font-size:0.82rem">' +
+    '<input type="number" class="oc-delta" value="' + ((data && data.priceDelta) || 0) + '" placeholder="0" min="0" step="0.5" style="width:60px;padding:4px 6px;border:1px solid var(--admin-border);border-radius:4px;font-size:0.82rem">' +
+    '<button type="button" class="topbar-btn btn-sm btn-outline" style="padding:2px 6px;font-size:0.7rem;color:#ef4444;border-color:#ef4444" onclick="removeChoice(' + gIdx + ',' + cIdx + ')"><i data-lucide="x" style="width:10px;height:10px;vertical-align:middle"></i></button>';
+  container.appendChild(row);
+}
+
+function addChoice(gIdx) {
+  const group = document.getElementById('og-' + gIdx);
+  if (!group) return;
+  const choicesDiv = group.querySelector('.og-choices');
+  const cIdx = choicesDiv.querySelectorAll('.og-choice-row').length;
+  addChoiceRow(choicesDiv, gIdx, cIdx, null);
+  if (window.lucide) lucide.createIcons();
+}
+
+function removeOptionGroup(idx) {
+  const el = document.getElementById('og-' + idx);
+  if (el) el.remove();
+}
+
+function removeChoice(gIdx, cIdx) {
+  const group = document.getElementById('og-' + gIdx);
+  if (!group) return;
+  const rows = group.querySelectorAll('.og-choice-row');
+  if (rows[cIdx]) rows[cIdx].remove();
+}
+
+function collectProductOptions() {
+  const container = $a('product-options-container');
+  const groups = container.querySelectorAll('.option-group');
+  const options = [];
+  groups.forEach((g) => {
+    const name = g.querySelector('.og-name').value.trim();
+    if (!name) return;
+    const nameEn = g.querySelector('.og-name-en').value.trim() || name;
+    const type = g.querySelector('.og-type').value;
+    const required = g.querySelector('.og-required').checked;
+    const choices = [];
+    g.querySelectorAll('.og-choice-row').forEach((row) => {
+      const label = row.querySelector('.oc-label').value.trim();
+      if (!label) return;
+      const labelEn = row.querySelector('.oc-label-en').value.trim() || label;
+      const priceDelta = parseFloat(row.querySelector('.oc-delta').value) || 0;
+      choices.push({ label, labelEn, priceDelta });
+    });
+    if (!choices.length) return;
+    options.push({ name, nameEn, type, required, choices });
+  });
+  return options;
+}
+
+function applyBurgerTemplate() {
+  const container = $a('product-options-container');
+  container.innerHTML = '';
+  _optionGroupCounter = 0;
+  addOptionGroup({
+    name: 'نوع الشريحة', nameEn: 'Patty Type', type: 'select', required: true,
+    choices: [
+      { label: 'لحم بقري', labelEn: 'Beef', priceDelta: 0 },
+      { label: 'دجاج', labelEn: 'Chicken', priceDelta: 0 }
+    ]
+  });
+  addOptionGroup({
+    name: 'إضافات', nameEn: 'Extras', type: 'checkbox', required: false,
+    choices: [
+      { label: 'جبنة إضافية', labelEn: 'Extra Cheese', priceDelta: 3 },
+      { label: 'خردل', labelEn: 'Mustard', priceDelta: 0 },
+      { label: 'صوص حار', labelEn: 'Hot Sauce', priceDelta: 2 },
+      { label: 'بطاطا', labelEn: 'Fries', priceDelta: 5 },
+      { label: 'مشروب', labelEn: 'Drink', priceDelta: 4 }
+    ]
   });
 }
 

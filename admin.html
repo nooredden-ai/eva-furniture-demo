@@ -2262,7 +2262,16 @@
           <input type="number" id="pm-reviews" value="0"/>
         </div>
       </div>
-    </div>
+      <div class="form-section" style="margin-top:16px;border-top:1px solid var(--admin-border);padding-top:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <label style="font-weight:600;font-size:0.95rem">خيارات المنتج</label>
+          <button type="button" class="topbar-btn btn-sm btn-outline" onclick="applyBurgerTemplate()" title="إضافة خيارات البرغر القياسية"><i data-lucide="copy" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> إضافة قالب برغر</button>
+        </div>
+        <div id="product-options-container"></div>
+        <button type="button" class="topbar-btn btn-sm btn-outline" onclick="addOptionGroup()" style="margin-top:8px;width:100%">
+          <i data-lucide="plus" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> إضافة مجموعة خيارات
+        </button>
+      </div>
     <div class="modal-footer">
       <button class="topbar-btn btn-primary btn-active-scale" onclick="saveProduct(this)"><i data-lucide="save" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> حفظ الصنف</button>
       <button class="topbar-btn btn-outline" onclick="closeModal('product-modal')">إلغاء</button>
