@@ -3025,7 +3025,7 @@ function openAddProduct() {
 function openEditProduct(productId) {
   API.getProduct(productId).then(p => {
     if (!p) return;
-    editingProduct = { productId };
+    editingProduct = { productId, productOptions: p.options || [] };
     $a('product-modal-title').innerHTML = '<i data-lucide="edit" style="width:18px;height:18px;vertical-align:middle;margin-left:4px"></i> تعديل الصنف';
     populateProductCategories();
     $a('pm-category').value   = p.category;
@@ -3130,6 +3130,9 @@ async function processSaveProduct() {
     } catch (e) { /* ignore — safe fallback */ }
   }
 
+  if (editingProduct && editingProduct.productOptions) {
+    data.options = editingProduct.productOptions;
+  }
   return withLock('save-product', () => {
     if (editingProduct) {
       return API.updateProduct(editingProduct.productId, data).then(res => {
