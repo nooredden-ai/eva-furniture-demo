@@ -51,6 +51,33 @@ input,select,textarea{font-family:inherit;outline:none}
 #pos-table-badge{display:none;align-items:center;gap:5px;background:var(--clr-primary-light);border:1px solid var(--clr-primary);border-radius:6px;padding:3px 10px;font-size:.78rem;font-weight:700;color:var(--clr-primary)}
 /* MAIN LAYOUT */
 .pos-layout{height:calc(100vh - var(--header-h));display:flex;flex-direction:row-reverse;overflow:hidden}
+/* QR APPROVAL QUEUE PANEL */
+.pos-queue{width:clamp(280px,20vw,360px);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;background:var(--clr-surface);border-left:1px solid var(--clr-border)}
+.queue-header{padding:7px 10px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--clr-border);flex-shrink:0;background:var(--clr-surface)}
+.queue-header h3{font-size:.82rem;margin:0;color:var(--clr-text)}
+.queue-header .count{font-size:.7rem;color:var(--clr-text2);font-weight:600}
+.queue-items{flex:1;overflow-y:auto;padding:6px}
+.queue-items::-webkit-scrollbar{width:4px}
+.queue-items::-webkit-scrollbar-thumb{background:var(--clr-surface3);border-radius:4px}
+.queue-empty{padding:20px;text-align:center;color:var(--clr-text2);font-size:.78rem}
+.qr-card{border:1px solid var(--clr-border);border-radius:8px;padding:8px;margin-bottom:6px;background:var(--clr-surface2)}
+.qr-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.qr-card-table{font-size:.78rem;font-weight:800;color:var(--clr-primary)}
+.qr-card-order{font-size:.7rem;color:var(--clr-text2)}
+.qr-card-items{margin-bottom:6px}
+.qr-card-item{font-size:.72rem;color:var(--clr-text);padding:2px 0;border-bottom:1px solid var(--clr-border);display:flex;justify-content:space-between}
+.qr-card-item:last-child{border-bottom:none}
+.qr-card-item-qty{font-weight:700;color:var(--clr-primary);margin-left:4px}
+.qr-card-item-price{color:var(--clr-text2)}
+.qr-card-total{font-size:.75rem;font-weight:700;color:var(--clr-text);text-align:left;padding:3px 0;margin-bottom:6px;border-top:1px dashed var(--clr-border)}
+.qr-card-actions{display:flex;gap:4px}
+.qr-card-actions button{flex:1;padding:5px 8px;border:none;border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;transition:all var(--transition)}
+.qr-btn-approve{background:var(--clr-primary);color:#fff}
+.qr-btn-approve:hover{background:var(--clr-primary-hover)}
+.qr-btn-reject{background:var(--clr-danger);color:#fff}
+.qr-btn-reject:hover{opacity:.85}
+.qr-btn-view{background:var(--clr-surface3);color:var(--clr-text)}
+.qr-btn-view:hover{background:var(--clr-border)}
 /* PRODUCTS WORKSPACE */
 .pos-products{flex:1;display:flex;flex-direction:column;overflow:hidden;border-left:1px solid var(--clr-border);min-width:0}
 .products-top{padding:5px 12px 2px;display:flex;gap:6px;flex-shrink:0;background:var(--clr-surface);border-bottom:1px solid var(--clr-border)}
@@ -210,6 +237,15 @@ input,select,textarea{font-family:inherit;outline:none}
       </div>
       <div class="cat-filter" id="cat-filter"></div>
       <div class="products-grid" id="products-grid"></div>
+    </div>
+    <div class="pos-queue" id="pos-queue">
+      <div class="queue-header">
+        <h3><i data-lucide="smartphone" style="width:14px;height:14px;vertical-align:middle;margin-left:4px"></i> طلبات QR بانتظار الموافقة</h3>
+        <span class="count" id="queue-count">0</span>
+      </div>
+      <div class="queue-items" id="queue-items">
+        <div class="queue-empty">لا توجد طلبات QR معلقة</div>
+      </div>
     </div>
       <div class="pos-cart">
         <div class="cart-header">
@@ -700,6 +736,98 @@ input,select,textarea{font-family:inherit;outline:none}
   }
   function closeToast(){$('toast').classList.remove('show');}
 
+  // ===== QR Pending Queue =====
+  let _qrQueueTimer = null;
+
+  async function fetchQrPendingOrders() {
+    try {
+      const token = sessionStorage.getItem('louloToken');
+      if (!token) return;
+      const h = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+      const r = await fetch('/api/pos/qr-pending-orders', { headers: h });
+      if (!r.ok) return;
+      const orders = await r.json();
+      renderQrQueue(Array.isArray(orders) ? orders : []);
+    } catch (e) { /* silent */ }
+  }
+
+  function renderQrQueue(orders) {
+    const container = $('queue-items');
+    const countEl = $('queue-count');
+    if (countEl) countEl.textContent = orders.length;
+    if (!orders.length) {
+      container.innerHTML = '<div class="queue-empty">لا توجد طلبات QR معلقة</div>';
+      return;
+    }
+    let html = '';
+    orders.forEach(function(o) {
+      const orderNum = o.orderNumber || o.id;
+      const pendingTotal = (o.qrPendingItems || []).reduce(function(s, i) { return s + ((i.unitPrice || i.price || 0) * (i.qty || 0)); }, 0);
+      let itemsHtml = '';
+      (o.qrPendingItems || []).forEach(function(i) {
+        itemsHtml += '<div class="qr-card-item"><span><span class="qr-card-item-qty">' + i.qty + '×</span>' + (i.name || '') + '</span><span class="qr-card-item-price">' + ((i.unitPrice || i.price || 0) * (i.qty || 0)).toFixed(0) + ' ₪</span></div>';
+      });
+      html += '<div class="qr-card" data-order-id="' + o.id + '">' +
+        '<div class="qr-card-header">' +
+          '<span class="qr-card-table"><i data-lucide="grid-2x2" style="width:12px;height:12px;vertical-align:middle;margin-left:2px"></i>طاولة ' + (o.tableNumber || '—') + '</span>' +
+          '<span class="qr-card-order">#' + orderNum + '</span>' +
+        '</div>' +
+        '<div class="qr-card-items">' + itemsHtml + '</div>' +
+        '<div class="qr-card-total">الإجمالي: ' + pendingTotal.toFixed(0) + ' ₪</div>' +
+        '<div class="qr-card-actions">' +
+          '<button class="qr-btn-approve" onclick="approveQrPending(\'' + o.id + '\')"><i data-lucide="check" style="width:12px;height:12px;vertical-align:middle;margin-left:2px"></i> قبول وإرسال للمطبخ</button>' +
+          '<button class="qr-btn-reject" onclick="rejectQrPending(\'' + o.id + '\')"><i data-lucide="x" style="width:12px;height:12px;vertical-align:middle;margin-left:2px"></i> رفض</button>' +
+        '</div>' +
+      '</div>';
+    });
+    container.innerHTML = html;
+    if (window.lucide) lucide.createIcons();
+  }
+
+  async function approveQrPending(orderId) {
+    try {
+      const token = sessionStorage.getItem('louloToken');
+      const h = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+      const r = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/qr-pending/approve', { method: 'POST', headers: h });
+      const res = await r.json();
+      if (res && res.success) {
+        showToastExt('تم قبول الأصناف وإرسالها للمطبخ', orderId);
+        fetchQrPendingOrders();
+        // Reload POS orders list to reflect updated order data
+        if (typeof fetchTables === 'function') fetchTables();
+      } else {
+        alert(res && res.message ? res.message : 'فشل قبول الطلب');
+      }
+    } catch (e) {
+      console.error('[QR APPROVE]', e);
+      alert('حدث خطأ أثناء قبول الطلب');
+    }
+  }
+
+  async function rejectQrPending(orderId) {
+    try {
+      const token = sessionStorage.getItem('louloToken');
+      const h = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+      const r = await fetch('/api/orders/' + encodeURIComponent(orderId) + '/qr-pending/reject', { method: 'POST', headers: h });
+      const res = await r.json();
+      if (res && res.success) {
+        showToastExt('تم رفض الأصناف المعلقة', orderId);
+        fetchQrPendingOrders();
+      } else {
+        alert(res && res.message ? res.message : 'فشل رفض الطلب');
+      }
+    } catch (e) {
+      console.error('[QR REJECT]', e);
+      alert('حدث خطأ أثناء رفض الطلب');
+    }
+  }
+
+  function startQueueRefresh() {
+    if (_qrQueueTimer) clearInterval(_qrQueueTimer);
+    fetchQrPendingOrders();
+    _qrQueueTimer = setInterval(fetchQrPendingOrders, 12000);
+  }
+
   // Expose add mode functions for event listener
 
   function printInvoice(){
@@ -755,6 +883,7 @@ input,select,textarea{font-family:inherit;outline:none}
       renderCategories();
       renderProducts();
       updateTotals();
+      startQueueRefresh();
       $('btn-submit').disabled=true;
       if($('table-input')) $('table-input').addEventListener('change',function(){checkOpenOrder(this.value);});
       // Read table param from URL

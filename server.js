@@ -1451,9 +1451,19 @@ app.post('/api/orders', simpleRateLimit, (req, res) => {
       }
     }
 
-    const calculatedSubtotal = (Array.isArray(items) ? items.reduce((sum, i) => sum + ((i.price || 0) * (i.qty || 0)), 0) : 0);
+    let calculatedSubtotal = (Array.isArray(items) ? items.reduce((sum, i) => sum + ((i.price || 0) * (i.qty || 0)), 0) : 0);
     const calculatedDiscount = discount || 0;
-    const calculatedTotal = calculatedSubtotal + calculatedShipping - calculatedDiscount;
+    let calculatedTotal = calculatedSubtotal + calculatedShipping - calculatedDiscount;
+
+    // QR orders: store items in qrPendingItems and keep items empty until POS approval
+    let qrPendingItems = [];
+    let orderItems = items;
+    if (req.body.source === 'qr-menu') {
+      qrPendingItems = items || [];
+      orderItems = [];
+      calculatedSubtotal = 0;
+      calculatedTotal = 0;
+    }
 
     const newOrderPayload = {
       customer,
@@ -1464,7 +1474,8 @@ app.post('/api/orders', simpleRateLimit, (req, res) => {
       zoneName: calculatedZoneName,
       orderType: validatedOrderType,
       tableNumber: tableNumber || '',
-      items,
+      items: orderItems,
+      qrPendingItems,
       subtotal: calculatedSubtotal,
       shipping: calculatedShipping,
       discount: calculatedDiscount,
@@ -1838,9 +1849,74 @@ app.post('/api/table-menu/orders/:id/items', simpleRateLimit, (req, res) => {
         notes: item.notes || ''
       });
     }
-    // Merge with existing items
-    const mergedItems = [...(order.items || [])];
+    // Merge into qrPendingItems (POS must approve before they go to items)
+    const mergedPending = [...(order.qrPendingItems || [])];
     for (const newItem of validatedItems) {
+      const existingIdx = mergedPending.findIndex(i =>
+        String(i.productId) === String(newItem.productId) &&
+        JSON.stringify(i.selectedOptions || []) === JSON.stringify(newItem.selectedOptions || [])
+      );
+      if (existingIdx >= 0) {
+        mergedPending[existingIdx].qty = (mergedPending[existingIdx].qty || 0) + (newItem.qty || 0);
+        mergedPending[existingIdx].price = newItem.price;
+        mergedPending[existingIdx].unitPrice = newItem.unitPrice;
+      } else {
+        mergedPending.push(newItem);
+      }
+    }
+    const updatedOrder = orderRepository.update(order.id, {
+      qrPendingItems: mergedPending,
+      lastAdditionAt: new Date().toISOString()
+    });
+    if (!updatedOrder) {
+      return res.status(500).json({ success: false, message: 'فشل تحديث الطلب.' });
+    }
+    const newItemsCount = validatedItems.reduce((s, i) => s + (Number(i.qty) || 0), 0);
+    res.json({
+      success: true,
+      message: 'تم إرسال طلبك، بانتظار موافقة الكاشير.',
+      order: {
+        id: updatedOrder.id,
+        orderNumber: updatedOrder.orderNumber || updatedOrder.id,
+        total: updatedOrder.total || 0,
+        itemsCount: (updatedOrder.items || []).reduce((s, i) => s + (Number(i.qty) || 0), 0),
+        addedCount: newItemsCount,
+        pendingApproval: true
+      }
+    });
+  } catch (err) {
+    console.error('[TABLE-MENU ADD ITEMS ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل إضافة الأصناف.' });
+  }
+});
+
+/* =========================
+   API: POS — QR Pending Orders Queue
+========================= */
+app.get('/api/pos/qr-pending-orders', requirePerm('update_orders'), (req, res) => {
+  try {
+    const allOrders = orderRepository.findAll();
+    const pending = allOrders.filter(o =>
+      o.qrPendingItems && Array.isArray(o.qrPendingItems) && o.qrPendingItems.length > 0 &&
+      ['pending', 'confirmed', 'processing', 'shipped'].includes(o.status)
+    );
+    res.json(pending);
+  } catch (err) {
+    console.error('[QR PENDING ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل جلب طلبات QR المعلقة.' });
+  }
+});
+
+app.post('/api/orders/:id/qr-pending/approve', requirePerm('update_orders'), (req, res) => {
+  try {
+    const order = orderRepository.findByIdOrNumber(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: 'الطلب غير موجود.' });
+    const pending = order.qrPendingItems || [];
+    if (!pending.length) return res.status(400).json({ success: false, message: 'لا توجد أصناف QR معلقة للموافقة.' });
+
+    // Merge pending items into current items
+    const mergedItems = [...(order.items || [])];
+    for (const newItem of pending) {
       const existingIdx = mergedItems.findIndex(i =>
         String(i.productId) === String(newItem.productId) &&
         JSON.stringify(i.selectedOptions || []) === JSON.stringify(newItem.selectedOptions || [])
@@ -1853,36 +1929,52 @@ app.post('/api/table-menu/orders/:id/items', simpleRateLimit, (req, res) => {
         mergedItems.push(newItem);
       }
     }
-    // Recalculate totals
+
     const subtotal = mergedItems.reduce((sum, i) => sum + ((i.unitPrice || i.price || 0) * (i.qty || 0)), 0);
     const shipping = Number(order.shipping) || 0;
     const discount = Number(order.discount) || 0;
     const total = subtotal + shipping - discount;
+
     const updatedOrder = orderRepository.update(order.id, {
       items: mergedItems,
+      qrPendingItems: [],
       subtotal,
       total,
       lastAdditionAt: new Date().toISOString()
     });
-    if (!updatedOrder) {
-      return res.status(500).json({ success: false, message: 'فشل تحديث الطلب.' });
-    }
-    const newItemsCount = validatedItems.reduce((s, i) => s + (Number(i.qty) || 0), 0);
-    const totalItemsCount = mergedItems.reduce((s, i) => s + (Number(i.qty) || 0), 0);
-    res.json({
-      success: true,
-      message: 'تمت إضافة الأصناف بنجاح.',
-      order: {
-        id: updatedOrder.id,
-        orderNumber: updatedOrder.orderNumber || updatedOrder.id,
-        total: updatedOrder.total || 0,
-        itemsCount: totalItemsCount,
-        addedCount: newItemsCount
-      }
-    });
+    if (!updatedOrder) return res.status(500).json({ success: false, message: 'فشل تحديث الطلب.' });
+
+    res.json({ success: true, message: 'تم قبول الأصناف وإرسالها للمطبخ.', order: updatedOrder });
   } catch (err) {
-    console.error('[TABLE-MENU ADD ITEMS ERROR]', err);
-    res.status(500).json({ success: false, message: 'فشل إضافة الأصناف.' });
+    console.error('[QR APPROVE ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل قبول طلب QR.' });
+  }
+});
+
+app.post('/api/orders/:id/qr-pending/reject', requirePerm('update_orders'), (req, res) => {
+  try {
+    const order = orderRepository.findByIdOrNumber(req.params.id);
+    if (!order) return res.status(404).json({ success: false, message: 'الطلب غير موجود.' });
+    const pending = order.qrPendingItems || [];
+    if (!pending.length) return res.status(400).json({ success: false, message: 'لا توجد أصناف QR معلقة للرفض.' });
+
+    const hasOriginalItems = order.items && order.items.length > 0;
+
+    if (hasOriginalItems) {
+      // Just clear pending items, keep original order intact
+      const updatedOrder = orderRepository.update(order.id, { qrPendingItems: [] });
+      if (!updatedOrder) return res.status(500).json({ success: false, message: 'فشل تحديث الطلب.' });
+      return res.json({ success: true, message: 'تم رفض الأصناف المعلقة.', order: updatedOrder });
+    } else {
+      // No original items — cancel the order
+      const changedBy = req.headers['x-impersonated-by'] || req.headers['x-user-role'] || 'system';
+      const result = orderRepository.updateStatus(order.id, 'cancelled', changedBy);
+      if (!result) return res.status(500).json({ success: false, message: 'فشل إلغاء الطلب.' });
+      return res.json({ success: true, message: 'تم رفض طلب QR وإلغاؤه.', order: result });
+    }
+  } catch (err) {
+    console.error('[QR REJECT ERROR]', err);
+    res.status(500).json({ success: false, message: 'فشل رفض طلب QR.' });
   }
 });
 

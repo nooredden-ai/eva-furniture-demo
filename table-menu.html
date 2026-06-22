@@ -895,8 +895,8 @@ img{max-width:100%;display:block}
     const tableEl = $('success-table');
     var title=$('success-title');
     var hint=$('success-hint');
-    if(title) title.textContent = 'تم إرسال طلبك للمطبخ';
-    if(hint) hint.textContent = 'يمكنك متابعة الطلب من شاشة الطلبات داخل المطعم';
+    if(title) title.textContent = 'تم إرسال طلبك، بانتظار موافقة الكاشير';
+    if(hint) hint.textContent = 'سيتم تأكيد طلبك من قبل الكاشير وإرساله للمطبخ';
     if(orderEl) orderEl.textContent = '#' + orderId;
     if(tableEl) tableEl.textContent = 'طاولة ' + table;
     if(scr) scr.classList.add('show');
@@ -910,7 +910,7 @@ img{max-width:100%;display:block}
     var title=$('success-title');
     var hint=$('success-hint');
     if(title) title.textContent = 'تمت إضافة الأصناف إلى طلبك الحالي';
-    if(hint) hint.textContent = 'الأصناف الجديدة تم إرسالها للمطبخ. يمكنك إضافة المزيد من الأصناف.';
+    if(hint) hint.textContent = 'سيتم تأكيد الإضافة من قبل الكاشير وإرسالها للمطبخ. يمكنك إضافة المزيد من الأصناف.';
     if(orderEl) orderEl.textContent = '#' + orderNumber;
     if(tableEl) tableEl.textContent = 'طاولة ' + table;
     if(scr) scr.classList.add('show');

@@ -547,7 +547,7 @@ svg{display:inline-block;vertical-align:middle;flex-shrink:0}
   function renderColumns() {
     var grouped = { pending: [], confirmed: [], processing: [], shipped: [] };
     ordersData.forEach(function(o){
-      if (KITCHEN_STATUSES.indexOf(o.status) !== -1) {
+      if (KITCHEN_STATUSES.indexOf(o.status) !== -1 && o.items && o.items.length > 0) {
         if (grouped[o.status]) grouped[o.status].push(o);
       }
     });
